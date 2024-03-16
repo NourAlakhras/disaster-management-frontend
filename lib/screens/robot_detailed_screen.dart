@@ -4,33 +4,15 @@ import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 
-class RobotDetailedScreen extends StatefulWidget {
+class RobotDetailedScreen extends StatelessWidget {
   final String robotId;
-  final String mqttTopic;
   final MQTTClientWrapper mqttClient;
 
-  const RobotDetailedScreen({
+  RobotDetailedScreen({
     Key? key,
     required this.robotId,
-    required this.mqttTopic,
-    required this.mqttClient
+    required this.mqttClient,
   }) : super(key: key);
-
-  @override
-  _RobotDetailedScreenState createState() => _RobotDetailedScreenState();
-}
-
-class _RobotDetailedScreenState extends State<RobotDetailedScreen> {
-  late MQTTClientWrapper mqttClient;
-  Map<String, dynamic> receivedData = {};
-
-  @override
-  void initState() {
-    super.initState();
-    mqttClient = widget.mqttClient;
-    mqttClient.onDataReceived = onDataReceived;
-    mqttClient.subscribeToTopic(widget.mqttTopic);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +26,7 @@ class _RobotDetailedScreenState extends State<RobotDetailedScreen> {
             Navigator.pop(context);
           },
         ),
-        title: 'Robot Details - ${widget.robotId}',
+        title: 'Robot Details - $robotId',
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -86,10 +68,8 @@ class _RobotDetailedScreenState extends State<RobotDetailedScreen> {
                 Container(
                   padding: const EdgeInsets.only(top: 10),
                   child: MonitoringView(
-                    robotId: widget.robotId,
-                    mqttTopic: widget.mqttTopic,
+                    robotId: robotId,
                     mqttClient: mqttClient,
-                    receivedData: receivedData,
                   ),
                 ),
                 Container(
@@ -102,17 +82,5 @@ class _RobotDetailedScreenState extends State<RobotDetailedScreen> {
         ],
       ),
     );
-  }
-
-  void onDataReceived(Map<String, dynamic> data) {
-    setState(() {
-      receivedData = data;
-    });
-  }
-
-  @override
-  void dispose() {
-    mqttClient.unsubscribeFromTopic(widget.mqttTopic);
-    super.dispose();
   }
 }

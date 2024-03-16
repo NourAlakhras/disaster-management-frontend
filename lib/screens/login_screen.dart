@@ -126,7 +126,8 @@ class _LoginScreenState extends State<LoginScreen> {
     // check if username and password are not empty
 
     // Connect to MQTT broker with the provided credentials
-    await _mqttClient.connect(username, password);
+    // await _mqttClient.connect(username, password);
+    await _mqttClient.connect('test-mobile-app', 'Test-mobile12');
 
     // Navigate to the main screen
     Navigator.pushReplacement(

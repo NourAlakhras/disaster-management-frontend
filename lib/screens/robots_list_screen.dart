@@ -4,13 +4,21 @@ import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/robots_list_view.dart';
 import 'package:flutter_3/widgets/robots_map_view.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
-import 'package:flutter_3/services/mqtt_client_wrapper.dart'; // Import the MQTTClientWrapper
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/models/robot.dart';
+
 
 class RobotsListScreen extends StatelessWidget {
-  final MQTTClientWrapper mqttClient; // Declare mqttClient as a member variable
+  final MQTTClientWrapper mqttClient;
+  final List<Robot> robots = [
+    Robot(id: "1", name: 'Robot 1'),
+    Robot(id: "2", name: 'Robot 2'),
+    Robot(id: "3", name: 'Robot 3'),
+  ];
 
-  const RobotsListScreen({Key? key, required this.mqttClient}) : super(key: key); 
- // Update constructor
+
+  RobotsListScreen({Key? key, required this.mqttClient}) : super(key: key); 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -54,14 +62,13 @@ class RobotsListScreen extends StatelessWidget {
                   ),
                   Tab(
                     icon: Icon(Icons.map_outlined),
-                    // text: 'Map',
                   ),
                 ],
                 tabContents: <Widget>[
                   // Content for Tab 1
-                  RobotsListView(mqttClient: mqttClient),
-                  // Content for Tab 2 (replace with your map view widget)
-                  RobotsMapView(mqttClient: mqttClient),
+                  RobotsListView(mqttClient: mqttClient,robots:robots),
+                  // Content for Tab 2 
+                  RobotsMapView(mqttClient: mqttClient, robots:robots),
                 ],
               ),
             ),

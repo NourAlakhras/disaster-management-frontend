@@ -95,9 +95,32 @@ class MQTTClientWrapper {
   void unsubscribeFromTopic(String topicName) {
     client.unsubscribe(topicName);
   }
-  Map<String, dynamic> parseMessage(String message) {
+
+
+void subscribeToMultipleTopics(List<String> topics) {
+  topics.forEach((topic) {
+    print('Subscribing to the $topic topic');
+    client.subscribe(topic, MqttQos.atMostOnce);
+  });
+}
+
+void unsubscribeFromMultipleTopics(List<String> topics) {
+  topics.forEach((topic) {
+    print('Unsubscribing from the $topic topic');
+    client.unsubscribe(topic);
+  });
+}
+
+
+  dynamic parseMessage(String message) {
+  try {
+    // Attempt to parse the message as JSON
     return json.decode(message);
+  } catch (e) {
+    // If parsing as JSON fails, return the original message
+    return message;
   }
+}
 
   void publishMessage(String topic, String message) {
     final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();

@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_3/services/mqtt_client_wrapper.dart'; // Import the MQTTClientWrapper
+import 'package:flutter_3/services/mqtt_client_wrapper.dart'; 
 
 class MonitoringView extends StatefulWidget {
   final String robotId;
-  final String mqttTopic;
   final MQTTClientWrapper mqttClient;
-  final Map<String, dynamic> receivedData; // Declare receivedData as a parameter
 
   const MonitoringView({
     Key? key,
     required this.robotId,
-    required this.mqttTopic,
     required this.mqttClient,
-    required this.receivedData, // Update constructor
   }) : super(key: key);
 
   @override
@@ -23,8 +19,50 @@ class MonitoringView extends StatefulWidget {
 
 class _MonitoringViewState extends State<MonitoringView> {
   late LatLng _robotLocation;
+  late double _batteryLevel;
+  late double _wifiLevel;
+  late Map<String, dynamic> _sensorData;
+
+  @override
+  void initState() {
+    super.initState();
+    _robotLocation = LatLng(0.0, 0.0);
+    _batteryLevel = 0.0;
+    _wifiLevel = 0.0;
+    _sensorData = {};
+
+    widget.mqttClient.onDataReceived = onDataReceived;
+    widget.mqttClient.subscribeToMultipleTopics([
+      '${widget.robotId}/gps',
+      '${widget.robotId}/sensor_data',
+      '${widget.robotId}/connectivity',
+      '${widget.robotId}/battery',
+    ]);
+  }
+
+  void onDataReceived(Map<String, dynamic> data) {
+    if (data.containsKey('lat') && data.containsKey('long')) {
+      final latitude = data['lat'] ?? 0.0;
+      final longitude = data['long'] ?? 0.0;
+      setState(() {
+        _robotLocation = LatLng(latitude, longitude);
+      });
+    }
+    if (data.containsKey('wifi')) {
+      final wifiLevel = data['wifi'] ?? 0.0;
+      setState(() {
+        _wifiLevel = wifiLevel;
+      });
+    }
+    if (data.containsKey('battery')) {
+      final batteryLevel = data['battery'] ?? 0.0;
+      setState(() {
+        _batteryLevel = batteryLevel;
+      });
+    }
+  }
+
   final Map<String, IconData> iconMap = {
-    'Location': Icons.location_on,
     'Operating Status': Icons.directions_run,
     'Battery Status': Icons.battery_full,
     'Temperature': Icons.thermostat,
@@ -39,8 +77,8 @@ class _MonitoringViewState extends State<MonitoringView> {
     'Light': Icons.lightbulb_outline,
     'Timestamp': Icons.access_time,
   };
+
   final List<String> allKeys = [
-    'Location',
     'Operating Status',
     'Battery Status',
     'Temperature',
@@ -55,47 +93,13 @@ class _MonitoringViewState extends State<MonitoringView> {
     'Light',
     'Timestamp',
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _robotLocation = LatLng(0.0, 0.0); // Initialize with default values
-    updateRobotLocation(widget.receivedData); // Update location with initial data
-  }
-
-  @override
-  void didUpdateWidget(MonitoringView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.receivedData != widget.receivedData) {
-      setState(() {
-        _robotLocation = LatLng(0.0, 0.0); // Reset location
-      });
-      updateRobotLocation(widget.receivedData); // Update location with new data
-    }
-  }
-
-  void updateRobotLocation(Map<String, dynamic> data) {
-    if (data.containsKey('Location')) {
-      final locationData = data['Location'].toString().split(',');
-      final latitude = double.tryParse(locationData[0]) ?? 0.0;
-      final longitude = double.tryParse(locationData[1]) ?? 0.0;
-      setState(() {
-        _robotLocation = LatLng(latitude, longitude);
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       itemCount: allKeys.length,
       itemBuilder: (context, index) {
         final key = allKeys[index];
-        final value = widget.receivedData.isEmpty
-            ? 'No data'
-            : widget.receivedData.containsKey(key.toLowerCase())
-                ? widget.receivedData[key.toLowerCase()].toString()
-                : 'No value';
+        final value = _sensorData[key.toLowerCase()] ?? 'No data';
         final icon = iconMap[key] ?? Icons.info;
         if (index == 0) {
           return Column(
@@ -132,8 +136,8 @@ class _MonitoringViewState extends State<MonitoringView> {
                   children: [
                     FlutterMap(
                       options: MapOptions(
-                        center: _robotLocation,
-                        zoom: 15.0,
+                        initialCenter: _robotLocation,
+                        initialZoom: 15.0,
                       ),
                       children: [
                         TileLayer(
@@ -195,4 +199,16 @@ class _MonitoringViewState extends State<MonitoringView> {
       },
     );
   }
+    
+
+  @override
+  void dispose() {
+    widget.mqttClient.unsubscribeFromMultipleTopics([
+      '${widget.robotId}/gps',
+      '${widget.robotId}/sensor_data',
+      '${widget.robotId}/connectivity',
+      '${widget.robotId}/battery',
+    ]);
+    super.dispose();
+}
 }

@@ -25,10 +25,13 @@ class MQTTClientWrapper {
   MqttCurrentConnectionState connectionState = MqttCurrentConnectionState.IDLE;
   MqttSubscriptionState subscriptionState = MqttSubscriptionState.IDLE;
   late MqttDataCallback onDataReceived;
+  Set<String> subscribedTopics = Set<String>();
+
 
   void prepareMqttClient() async {
     _setupMqttClient();
     await _connectClient('test-mobile-app', 'Test-mobile12'); // Pass user credentials dynamically
+    setupMessageListener();
   }
   Future<void> connect(String username, String password) async {
   await _setupMqttClient();
@@ -73,36 +76,35 @@ class MQTTClientWrapper {
 }
 
 
-  void subscribeToTopic(String topicName) {
-    print('Subscribing to the $topicName topic');
-    client.subscribe(topicName, MqttQos.atMostOnce);
-
-    client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-      final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
-      var message =
-          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-
-      print('YOU GOT A NEW MESSAGE:');
-      print(message);
-
-      // Parse message to Map<String, dynamic>
-      final Map<String, dynamic> data = parseMessage(message);
-
-      // Invoke callback with parsed data
-      onDataReceived(data);
-    });
-  }
-  void unsubscribeFromTopic(String topicName) {
-    client.unsubscribe(topicName);
-  }
-
+void subscribeToTopic(String topicName) {
+  print('Subscribing to the $topicName topic');
+  client.subscribe(topicName, MqttQos.atMostOnce);
+}
 
 void subscribeToMultipleTopics(List<String> topics) {
   topics.forEach((topic) {
-    print('Subscribing to the $topic topic');
-    client.subscribe(topic, MqttQos.atMostOnce);
+    subscribeToTopic(topic);
   });
 }
+
+void setupMessageListener() {
+  client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+    final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+    var message =
+        MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+    // Print the name of the topic
+    print('Received message from topic: ${c[0].topic}');
+    print(message);
+
+    // Parse message to Map<String, dynamic>
+    final Map<String, dynamic> data = parseMessage(message);
+
+    // Invoke callback with parsed data
+    onDataReceived(data);
+  });
+}
+
 
 void unsubscribeFromMultipleTopics(List<String> topics) {
   topics.forEach((topic) {

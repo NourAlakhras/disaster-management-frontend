@@ -127,4 +127,15 @@ class _RobotsListViewState extends State<RobotsListView> {
       ),
     );
   }
+    @override
+  void dispose() {
+        widget.robots.forEach((robot) {
+      List<String> mqttTopics = [
+        '${robot.id}/battery',
+        '${robot.id}/connectivity',
+      ];
+      widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
+        });   
+super.dispose();
+  }
 }

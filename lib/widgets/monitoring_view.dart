@@ -33,36 +33,43 @@ class _MonitoringViewState extends State<MonitoringView> {
 
     widget.mqttClient.onDataReceived = onDataReceived;
     widget.mqttClient.subscribeToMultipleTopics([
+      'test-ugv/sensor_data',
       '${widget.robotId}/gps',
       '${widget.robotId}/sensor_data',
       '${widget.robotId}/connectivity',
       '${widget.robotId}/battery',
     ]);
+    // widget.mqttClient.setupMessageListener(); 
   }
 
   void onDataReceived(Map<String, dynamic> data) {
-    if (data.containsKey('lat') && data.containsKey('long')) {
-      final latitude = data['lat'] ?? 0.0;
-      final longitude = data['long'] ?? 0.0;
+  if (data.containsKey('lat') && data.containsKey('long')) {
+    final latitude = data['lat'] ?? 0.0;
+    final longitude = data['long'] ?? 0.0;
+    setState(() {
+      _robotLocation = LatLng(latitude, longitude);
+    });
+  } else if (data.containsKey('wifi')) {
+    final wifiLevel = data['wifi'] ?? 0.0;
+    setState(() {
+      _wifiLevel = wifiLevel;
+    });
+  } else if (data.containsKey('battery')) {
+    final batteryLevel = data['battery'] ?? 0.0;
+    setState(() {
+      _batteryLevel = batteryLevel;
+    });
+  } else {
+    // Handle other sensor data here
+    data.forEach((key, value) {
       setState(() {
-        _robotLocation = LatLng(latitude, longitude);
-      });
-    }
-    if (data.containsKey('wifi')) {
-      final wifiLevel = data['wifi'] ?? 0.0;
-      setState(() {
-        _wifiLevel = wifiLevel;
-      });
-    }
-    if (data.containsKey('battery')) {
-      final batteryLevel = data['battery'] ?? 0.0;
-      setState(() {
-        _batteryLevel = batteryLevel;
-      });
-    }
+      _sensorData[key] = value;});
+    });
   }
+}
 
   final Map<String, IconData> iconMap = {
+    'Location': Icons.map_outlined,
     'Operating Status': Icons.directions_run,
     'Battery Status': Icons.battery_full,
     'Temperature': Icons.thermostat,
@@ -79,7 +86,10 @@ class _MonitoringViewState extends State<MonitoringView> {
   };
 
   final List<String> allKeys = [
+
+    'Location',
     'Operating Status',
+    'id',
     'Battery Status',
     'Temperature',
     'Humidity',

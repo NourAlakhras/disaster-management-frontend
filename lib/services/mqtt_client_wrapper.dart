@@ -110,6 +110,8 @@ void unsubscribeFromMultipleTopics(List<String> topics) {
   topics.forEach((topic) {
     print('Unsubscribing from the $topic topic');
     client.unsubscribe(topic);
+    // Remove unsubscribed topics from the subscribedTopics set
+    subscribedTopics.remove(topic);
   });
 }
 
@@ -137,13 +139,36 @@ void unsubscribeFromMultipleTopics(List<String> topics) {
     subscriptionState = MqttSubscriptionState.SUBSCRIBED;
   }
 
-  void _onDisconnected() {
-    print('OnDisconnected client callback - Client disconnection');
-    connectionState = MqttCurrentConnectionState.DISCONNECTED;
-  }
+void _onDisconnected() {
+  print('OnDisconnected client callback - Client disconnection');
+  connectionState = MqttCurrentConnectionState.DISCONNECTED;
+  
+  // Attempt reconnection
+  _reconnect();
+}
 
   void _onConnected() {
     connectionState = MqttCurrentConnectionState.CONNECTED;
     print('OnConnected client callback - Client connection was successful');
   }
+
+void _reconnect() async {
+  print('Attempting to reconnect...');
+  connectionState = MqttCurrentConnectionState.CONNECTING;
+  
+  // Add a delay before attempting to reconnect to avoid flooding the server with connection requests
+  await Future.delayed(Duration(seconds: 15));
+  
+  // Call _connectClient with your username and password
+  await _connectClient('test-mobile-app', 'Test-mobile12');
+  
+  if (connectionState == MqttCurrentConnectionState.CONNECTED) {
+    // If reconnection is successful, resubscribe to topics
+    subscribedTopics.forEach(subscribeToTopic);
+  } else {
+    // If reconnection fails, schedule another attempt
+    _reconnect();
+  }
+}
+
 }

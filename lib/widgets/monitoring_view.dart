@@ -39,7 +39,7 @@ class _MonitoringViewState extends State<MonitoringView> {
       '${widget.robotId}/connectivity',
       '${widget.robotId}/battery',
     ]);
-    // widget.mqttClient.setupMessageListener(); 
+    widget.mqttClient.setupMessageListener(); 
   }
 
   void onDataReceived(Map<String, dynamic> data) {
@@ -86,7 +86,6 @@ class _MonitoringViewState extends State<MonitoringView> {
   };
 
   final List<String> allKeys = [
-
     'Location',
     'Operating Status',
     'id',
@@ -214,6 +213,7 @@ class _MonitoringViewState extends State<MonitoringView> {
   @override
   void dispose() {
     widget.mqttClient.unsubscribeFromMultipleTopics([
+      'test-ugv/sensor_data',
       '${widget.robotId}/gps',
       '${widget.robotId}/sensor_data',
       '${widget.robotId}/connectivity',

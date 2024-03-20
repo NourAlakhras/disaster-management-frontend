@@ -31,7 +31,8 @@ class _RobotsListViewState extends State<RobotsListView> {
         '${robot.id}/battery',
         '${robot.id}/connectivity',
       ];
-      widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
+
+          widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
     });
   }
 

@@ -100,6 +100,10 @@ void setupMessageListener() {
     // Parse message to Map<String, dynamic>
     final Map<String, dynamic> data = parseMessage(message);
 
+
+    // Add the topic to the data map
+    data['topic'] = c[0].topic;
+
     // Invoke callback with parsed data
     onDataReceived(data);
   });
@@ -157,7 +161,7 @@ void _reconnect() async {
   connectionState = MqttCurrentConnectionState.CONNECTING;
   
   // Add a delay before attempting to reconnect to avoid flooding the server with connection requests
-  await Future.delayed(Duration(seconds: 15));
+  await Future.delayed(Duration(seconds: 30));
   
   // Call _connectClient with your username and password
   await _connectClient('test-mobile-app', 'Test-mobile12');

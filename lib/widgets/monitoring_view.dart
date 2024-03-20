@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:flutter_3/services/mqtt_client_wrapper.dart'; 
+// import 'package:flutter_map/flutter_map.dart';
+// import 'package:latlong2/latlong.dart';
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 
 class MonitoringView extends StatefulWidget {
   final String robotId;
@@ -18,7 +21,9 @@ class MonitoringView extends StatefulWidget {
 }
 
 class _MonitoringViewState extends State<MonitoringView> {
+  late GoogleMapController _controller;
   late LatLng _robotLocation;
+  final Set<Marker> _markers = {};
   late double _batteryLevel;
   late double _wifiLevel;
   late Map<String, dynamic> _sensorData;
@@ -31,7 +36,7 @@ class _MonitoringViewState extends State<MonitoringView> {
     _wifiLevel = 0.0;
     _sensorData = {};
 
-    widget.mqttClient.onDataReceived = onDataReceived;
+    widget.mqttClient.onDataReceived = _onDataReceived;
     widget.mqttClient.subscribeToMultipleTopics([
       'test-ugv/sensor_data',
       '${widget.robotId}/gps',
@@ -39,34 +44,57 @@ class _MonitoringViewState extends State<MonitoringView> {
       '${widget.robotId}/connectivity',
       '${widget.robotId}/battery',
     ]);
-    widget.mqttClient.setupMessageListener(); 
+    widget.mqttClient.setupMessageListener();
   }
 
-  void onDataReceived(Map<String, dynamic> data) {
-  if (data.containsKey('lat') && data.containsKey('long')) {
-    final latitude = data['lat'] ?? 0.0;
-    final longitude = data['long'] ?? 0.0;
-    setState(() {
-      _robotLocation = LatLng(latitude, longitude);
-    });
-  } else if (data.containsKey('wifi')) {
-    final wifiLevel = data['wifi'] ?? 0.0;
-    setState(() {
-      _wifiLevel = wifiLevel;
-    });
-  } else if (data.containsKey('battery')) {
-    final batteryLevel = data['battery'] ?? 0.0;
-    setState(() {
-      _batteryLevel = batteryLevel;
-    });
-  } else {
-    // Handle other sensor data here
-    data.forEach((key, value) {
+  void _onDataReceived(Map<String, dynamic> data) {
+    if (data.containsKey('lat') && data.containsKey('long')) {
+      final latitude = data['lat'] ?? 0.0;
+      final longitude = data['long'] ?? 0.0;
+      // Update robot's location
       setState(() {
-      _sensorData[key] = value;});
-    });
+        _robotLocation = LatLng(latitude, longitude);
+        // Update camera position to center on the robot's location
+        _updateCameraPosition(_robotLocation);
+        // Update marker position
+        _updateMarker(_robotLocation);
+      });
+    } else if (data.containsKey('wifi')) {
+      final wifiLevel = data['wifi'] ?? 0.0;
+      setState(() {
+        _wifiLevel = wifiLevel;
+      });
+    } else if (data.containsKey('battery')) {
+      final batteryLevel = data['battery'] ?? 0.0;
+      setState(() {
+        _batteryLevel = batteryLevel;
+      });
+    } else {
+      // Handle other sensor data here
+      data.forEach((key, value) {
+        setState(() {
+          _sensorData[key] = value;
+        });
+      });
+    }
   }
-}
+
+  void _updateCameraPosition(LatLng target) {
+    if (_controller != null) {
+      _controller.animateCamera(CameraUpdate.newLatLng(target));
+    }
+  }
+
+  void _updateMarker(LatLng location) {
+    _markers.clear();
+    _markers.add(
+      Marker(
+        markerId: MarkerId('robot_marker'),
+        position: location,
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      ),
+    );
+  }
 
   final Map<String, IconData> iconMap = {
     'Location': Icons.map_outlined,
@@ -141,35 +169,40 @@ class _MonitoringViewState extends State<MonitoringView> {
                     const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                 height: MediaQuery.of(context).size.height / 3,
                 width: double.infinity,
-                child: Stack(
-                  children: [
-                    FlutterMap(
-                      options: MapOptions(
-                        initialCenter: _robotLocation,
-                        initialZoom: 15.0,
-                      ),
-                      children: [
-                        TileLayer(
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                        ),
-                        MarkerLayer(
-                          markers: [
-                            Marker(
-                              width: 80.0,
-                              height: 80.0,
-                              point: _robotLocation,
-                              child: const Icon(
-                                Icons.location_pin,
-                                color: Colors.red,
-                                size: 40.0,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                child: GoogleMap(
+                  gestureRecognizers: Set()
+                    ..add(Factory<PanGestureRecognizer>(
+                        () => PanGestureRecognizer()))
+                    ..add(Factory<ScaleGestureRecognizer>(
+                        () => ScaleGestureRecognizer()))
+                    ..add(Factory<TapGestureRecognizer>(
+                        () => TapGestureRecognizer()))
+                    ..add(Factory<VerticalDragGestureRecognizer>(
+                        () => VerticalDragGestureRecognizer()))
+                    ..add(Factory<HorizontalDragGestureRecognizer>(
+                        () => HorizontalDragGestureRecognizer()))
+                    ..add(Factory<LongPressGestureRecognizer>(
+                        () => LongPressGestureRecognizer())),
+                    
+                  compassEnabled: true,
+                  buildingsEnabled: true,
+                  indoorViewEnabled: true, 
+                  myLocationButtonEnabled:
+                      true, 
+                  rotateGesturesEnabled: true, // Respond to rotate gestures
+                  tiltGesturesEnabled: true, // Respond to tilt gestures
+                  zoomControlsEnabled: true, // Show zoom controls
+                  zoomGesturesEnabled: true, // Respond to zoom gestures
+                  initialCameraPosition: CameraPosition(
+                    target:
+                        _robotLocation, // Set initial camera position to robot's location
+                    zoom: 15.0,
+                  ),
+                  markers: _markers,
+
+                  onMapCreated: (GoogleMapController controller) {
+                    _controller = controller;
+                  },
                 ),
               ),
             ],
@@ -208,7 +241,6 @@ class _MonitoringViewState extends State<MonitoringView> {
       },
     );
   }
-    
 
   @override
   void dispose() {
@@ -220,5 +252,6 @@ class _MonitoringViewState extends State<MonitoringView> {
       '${widget.robotId}/battery',
     ]);
     super.dispose();
+  }
 }
-}
+// AIzaSyDDFulgNdbHHrR3cR2EbSJ4ZiNEnKaoHUg

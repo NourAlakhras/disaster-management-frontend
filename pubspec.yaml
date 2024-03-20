@@ -31,13 +31,16 @@ dependencies:
   flutter:
     sdk: flutter
   velocity_x: ^3.0.0
-  flutter_svg: ^0.22.0
+  flutter_svg: ^2.0.10+1  
   mqtt_client: ^10.2.0
   gap: ^3.0.1
   curved_labeled_navigation_bar: ^2.0.2 
   flutter_map: ^6.1.0
-  # flutter_polyline_points: ^1.0.0
-  # google_maps_flutter: ^2.1.7
+  google_maps_flutter: ^2.6.0
+  basic_utils: ^5.7.0
+
+
+
   # location: ^4.4.0
 
 

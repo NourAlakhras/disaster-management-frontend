@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Define the widgets for each screen here
           Center(child: DashboardScreen(mqttClient: widget.mqttClient)),
           Center(child: RobotsListScreen(mqttClient: widget.mqttClient)),
-          const Center(child: SettingsScreen()),
+          Center(child: SettingsScreen(mqttClient: widget.mqttClient)),
         ],
       ),
     );

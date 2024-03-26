@@ -4,7 +4,8 @@ import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_text_field.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
 import 'package:gap/gap.dart';
-import 'package:flutter_3/services/mqtt_client_wrapper.dart'; 
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -12,23 +13,67 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  late TextEditingController _usernameController;
+  late TextEditingController _emailOrUsernameController;
   late TextEditingController _passwordController;
   late MQTTClientWrapper _mqttClient;
+
+  String get emailOrUsername => _emailOrUsernameController.text;
+  String get password => _passwordController.text;
+
+  bool isEmailOrUsernameValid = true;
+  bool isPasswordValid = true;
 
   @override
   void initState() {
     super.initState();
-    _usernameController = TextEditingController();
+    _emailOrUsernameController = TextEditingController();
     _passwordController = TextEditingController();
     _mqttClient = MQTTClientWrapper();
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailOrUsernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _login(BuildContext context) async {
+    try {
+      final Map<String, dynamic> responseData =
+          await ApiService.login(emailOrUsername, password);
+      final String username = responseData['username'];
+
+      // Set user credentials globally
+      final credentials = UserCredentials();
+      credentials.setUserCredentials(username, password);
+
+      // Connect to MQTT broker
+      await _mqttClient.prepareMqttClient();
+
+      // Navigate to the main screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(mqttClient: _mqttClient),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Login failed: $e')));
+    }
+  }
+
+  bool _validateForm() {
+    return isEmailOrUsernameValid && isPasswordValid;
+  }
+
+  bool _validateEmailOrUsername(String value) {
+    return value.isNotEmpty;
+  }
+
+  bool _validatePassword(String value) {
+    return value.isNotEmpty;
   }
 
   @override
@@ -65,9 +110,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const Gap(40),
                   CustomTextField(
-                    hintText: "Email",
+                    hintText: "Email or Username",
                     prefixIcon: Icons.email,
-                    controller: _usernameController,
+                    controller: _emailOrUsernameController,
+                    onChanged: (value) {
+                      setState(() {
+                        isEmailOrUsernameValid =
+                            _validateEmailOrUsername(value);
+                      });
+                    },
+                    errorText: isEmailOrUsernameValid
+                        ? null
+                        : 'Empty Email or Username',
                   ),
                   const Gap(20),
                   CustomTextField(
@@ -75,13 +129,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: Icons.lock,
                     controller: _passwordController,
                     obscureText: true,
+                    onChanged: (value) {
+                      setState(() {
+                        isPasswordValid = _validatePassword(value);
+                      });
+                    },
+                    errorText: isPasswordValid ? null : 'Invalid password',
                   ),
                   const Gap(40),
                   CustomButton(
                     text: "Login",
                     onPressed: () {
-                _login();
-              },
+                      if (_validateForm()) {
+                        _login(context);
+                      }
+                    },
                   ),
                 ],
               ),
@@ -107,35 +169,4 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
-  Future<bool> authenticateUser(String email, String password) async {
-    // Implement your token-based authentication logic here
-    // Make a request to your authentication API endpoint with email and password
-    // If authentication is successful, return true; otherwise, return false
-
-    // For demonstration, assume authentication is successful
-    return true;
-  }
-
-
-  void _login() async {
-    String username = _usernameController.text;
-    String password = _passwordController.text;
-
-    // perform any necessary validation
-    // check if username and password are not empty
-
-    // Connect to MQTT broker with the provided credentials
-    // await _mqttClient.connect(username, password);
-    await _mqttClient.connect('test-mobile-app', 'Test-mobile12');
-
-    // Navigate to the main screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomeScreen(mqttClient: _mqttClient),
-      ),
-    );
-  }
-
 }

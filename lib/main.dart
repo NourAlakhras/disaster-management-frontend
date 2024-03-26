@@ -28,7 +28,7 @@ void main() => runApp(MaterialApp(
         '/signup': (context) => const SignupScreen(),
         // '/mainNavigator': (context) => HomeScreen(),
         // '/dashboard': (context) => DashboardScreen(),
-        // '/robots': (context) => RobotsListScreen(),
-        '/settings': (context) => SettingsScreen(),
+        // // '/robots': (context) => RobotsListScreen(),
+        // '/settings': (context) => SettingsScreen(),
       },
     ));

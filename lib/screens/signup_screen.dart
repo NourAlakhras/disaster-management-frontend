@@ -1,11 +1,104 @@
+// lib\screens\signup_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_3/screens/home_screen.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
-import 'package:flutter_3/widgets/custom_text_field.dart'; 
+import 'package:flutter_3/widgets/custom_text_field.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
 import 'package:gap/gap.dart';
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/services/api_service.dart';
 
-class SignupScreen extends StatelessWidget {
-  const SignupScreen({super.key});
+class SignupScreen extends StatefulWidget {
+  const SignupScreen({Key? key}) : super(key: key);
+
+  @override
+  _SignupScreenState createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  late TextEditingController _emailController;
+  late TextEditingController _usernameController;
+  late TextEditingController _passwordController;
+  late TextEditingController _confirmPasswordController;
+  late MQTTClientWrapper _mqttClient;
+
+  String get email => _emailController.text;
+  String get username => _usernameController.text;
+  String get password => _passwordController.text;
+  String get confirmPassword => _confirmPasswordController.text;
+
+  bool isEmailValid = true;
+  bool isUsernameValid = true;
+  bool isPasswordValid = true;
+  bool isConfirmPasswordValid = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController();
+    _usernameController = TextEditingController();
+    _passwordController = TextEditingController();
+    _confirmPasswordController = TextEditingController();
+    _mqttClient = MQTTClientWrapper();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signUp(BuildContext context) async {
+    try {
+      print('hjji');
+      await ApiService.signUp(email, username, password);
+
+      // Set user credentials globally
+      final credentials = UserCredentials();
+      credentials.setUserCredentials(username, password);
+
+      // Connect to MQTT broker
+      await _mqttClient.prepareMqttClient();
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(mqttClient: _mqttClient),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Signup failed: $e')));
+    }
+  }
+
+  bool _validateForm() {
+    return isEmailValid &&
+        isUsernameValid &&
+        isPasswordValid &&
+        isConfirmPasswordValid;
+  }
+
+  bool _validateEmail(String value) {
+    return value.isNotEmpty &&
+        value.contains('@') &&
+        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value);
+  }
+
+  bool _validateUsername(String value) {
+    return value.isNotEmpty && value.length >= 2;
+  }
+
+  bool _validatePassword(String value) {
+    return value.isNotEmpty && value.length >= 8;
+  }
+
+  bool _validateConfirmPassword(String password, String confirmPassword) {
+    return password == confirmPassword;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +119,11 @@ class SignupScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 30),
           height: MediaQuery.of(context).size.height,
           width: double.infinity,
-          child:   Column(
+          child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[ Column(
+            children: <Widget>[
+              Column(
                 children: <Widget>[
                   const Align(
                     alignment: Alignment.topCenter,
@@ -41,17 +135,55 @@ class SignupScreen extends StatelessWidget {
                   const Gap(40),
                   CustomTextField(
                     hintText: "Email",
-                    prefixIcon: Icons.email, controller: null, obscureText: null,
+                    prefixIcon: Icons.email,
+                    controller: _emailController,
+                    onChanged: (value) {
+                      setState(() {
+                        isEmailValid = _validateEmail(value);
+                      });
+                    },
+                    errorText: isEmailValid ? null : 'Invalid email',
+                  ),
+                  const Gap(20),
+                  CustomTextField(
+                    hintText: "Username",
+                    prefixIcon: Icons.account_circle,
+                    controller: _usernameController,
+                    onChanged: (value) {
+                      setState(() {
+                        isUsernameValid = _validateUsername(value);
+                      });
+                    },
+                    errorText: isUsernameValid ? null : 'Invalid username',
                   ),
                   const Gap(20),
                   CustomTextField(
                     hintText: "Password",
-                    prefixIcon: Icons.lock, controller: null, obscureText: null,
+                    prefixIcon: Icons.lock,
+                    controller: _passwordController,
+                    obscureText: true,
+                    onChanged: (value) {
+                      setState(() {
+                        isPasswordValid = _validatePassword(value);
+                      });
+                    },
+                    errorText: isPasswordValid ? null : 'Invalid password',
                   ),
                   const Gap(20),
                   CustomTextField(
                     hintText: "Confirm Password",
-                    prefixIcon: Icons.lock, controller: null, obscureText: null,
+                    prefixIcon: Icons.lock,
+                    controller: _confirmPasswordController,
+                    obscureText: true,
+                    onChanged: (value) {
+                      setState(() {
+                        isConfirmPasswordValid =
+                            _validateConfirmPassword(password, value);
+                      });
+                    },
+                    errorText: isConfirmPasswordValid
+                        ? null
+                        : 'Passwords do not match',
                   ),
                   const Gap(40),
                   RichText(
@@ -76,7 +208,9 @@ class SignupScreen extends StatelessWidget {
                   CustomButton(
                     text: "Sign up",
                     onPressed: () {
-                      Navigator.pushNamed(context, '/mainNavigator');
+                      if (_validateForm()) {
+                        _signUp(context);
+                      }
                     },
                   ),
                 ],
@@ -97,12 +231,9 @@ class SignupScreen extends StatelessWidget {
                 ],
               )
             ],
-          ),),
+          ),
         ),
-      
+      ),
     );
   }
 }
-
-
-// after signing up ,the user should not be able to access any robot unless the admin assigns him a project, and related robots will automatically appear after the admin assigns the user to specific projects.

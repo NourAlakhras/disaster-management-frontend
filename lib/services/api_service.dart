@@ -35,6 +35,12 @@ class ApiService {
     } else if (response.statusCode == 409) {
       print('Email or Username is already taken');
       throw Exception('Email or Username is already taken');
+    } else if (response.statusCode == 400) {
+      print('Bad Request');
+      throw Exception('Bad Request');
+    } else if (response.statusCode == 500) {
+      print('Internal Server Error');
+      throw Exception('Internal Server Error');
     } else {
       print('Failed to sign up');
       throw Exception('Failed to sign up');
@@ -71,6 +77,9 @@ class ApiService {
     } else if (response.statusCode == 401) {
       // Unauthorized - Invalid email or password
       throw Exception('Unauthorized - Invalid email or password');
+    } else if (response.statusCode == 500) {
+      print('Internal Server Error');
+      throw Exception('Internal Server Error');
     } else {
       // Internal Server Error or other unexpected error
       throw Exception('Failed to login');
@@ -96,14 +105,16 @@ class ApiService {
       // Successfully logged out, clear the cached token
       await _clearToken();
       UserCredentials().clearUserCredentials();
-          // Update MQTT client state to LOGGED_OUT
-
+      // Update MQTT client state to LOGGED_OUT
     } else if (response.statusCode == 400) {
       // Invalid token
       throw Exception('Bad Request - Invalid token');
     } else if (response.statusCode == 404) {
       // User not found
       throw Exception('Not Found - User not found');
+    } else if (response.statusCode == 500) {
+      print('Internal Server Error');
+      throw Exception('Internal Server Error');
     } else {
       // Internal server error or other unexpected error
       throw Exception('Failed to logout');

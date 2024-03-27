@@ -121,6 +121,158 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> getUserInfo() async {
+    String? token = await getAuthToken();
+    final Uri url = Uri.parse('$baseUrl/user');
+    final response = await http.get(
+      url,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 404) {
+      throw Exception('Not Found - User not found');
+    } else if (response.statusCode == 500) {
+      throw Exception('Internal Server Error');
+    } else {
+      throw Exception('Failed to fetch user info');
+    }
+  }
+
+  static Future<void> updateUserInfo(String username, String email) async {
+    String? token = await getAuthToken();
+    final Uri url = Uri.parse('$baseUrl/user');
+    final Map<String, String> body = {
+      'username': username,
+      'email': email,
+    };
+
+    final response = await http.put(
+      url,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      // User information updated successfully
+    } else if (response.statusCode == 400) {
+      throw Exception('Bad Request');
+    } else if (response.statusCode == 404) {
+      throw Exception('Not Found - User not found');
+    } else if (response.statusCode == 409) {
+      throw Exception(
+          'Conflict - The username or email is already taken or identical to the current one');
+    } else if (response.statusCode == 500) {
+      throw Exception('Internal Server Error');
+    } else {
+      throw Exception('Failed to update user info');
+    }
+  }
+
+  static Future<void> updatePassword(
+      String oldPassword, String newPassword) async {
+    String? token = await getAuthToken();
+    final Uri url = Uri.parse('$baseUrl/user/password');
+    final Map<String, String> body = {
+      'old_password': oldPassword,
+      'new_password': newPassword,
+    };
+
+    final response = await http.put(
+      url,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      // Password updated successfully
+    } else if (response.statusCode == 400) {
+      throw Exception(
+          'Bad Request - No password provided or new password is identical to the current one');
+    } else if (response.statusCode == 401) {
+      throw Exception('Unauthorized - Incorrect old password');
+    } else if (response.statusCode == 404) {
+      throw Exception('Not Found - User not found');
+    } else if (response.statusCode == 500) {
+      throw Exception('Internal Server Error');
+    } else {
+      throw Exception('Failed to update password');
+    }
+  }
+
+  static Map<String, dynamic> dummyApiResponse = {
+    'cur_missions': [
+      {"_id": "6055a0ae80e90e08641e22ef", "name": "MissionABC", "status": 1},
+      {"_id": "6055a0ae80e90e08641e22f0", "name": "MissionXYZ", "status": 2},
+      // Add more missions as needed
+    ]
+  };
+
+  static Future<List<dynamic>> getCurrentMissions() async {
+    String? token = await getAuthToken();
+    final Uri url = Uri.parse('$baseUrl/user/cur_missions');
+    final response = await http.get(
+      url,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      // final Map<String, dynamic> responseData = jsonDecode(response.body);
+      final Map<String, dynamic> responseData = dummyApiResponse;
+      // Extract missions from the map
+      final List<dynamic> missionData = responseData['cur_missions'];
+      return missionData; // Return the list of missions
+    } else if (response.statusCode == 404) {
+      throw Exception('Not Found - User not found');
+    } else if (response.statusCode == 500) {
+      throw Exception('Internal Server Error');
+    } else {
+      throw Exception('Failed to fetch current missions');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getMissionInfo(String missionId) async {
+    String? token = await getAuthToken();
+    final Uri url = Uri.parse('$baseUrl/mission/$missionId');
+    final response = await http.get(
+      url,
+      headers: <String, String>{
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+    );
+
+    Map<String, dynamic> dummyMissionData = {
+      '_id': '6055a0ae80e90e08641e22ef',
+      'name': 'MissionABC',
+      'status': 1,
+    };
+    return dummyMissionData;
+
+    // if (response.statusCode == 200) {
+    //   return jsonDecode(response.body);
+    // } else if (response.statusCode == 404) {
+    //   throw Exception('Not Found - Mission not found');
+    // } else if (response.statusCode == 500) {
+    //   throw Exception('Internal Server Error');
+    // } else {
+    //   throw Exception('Failed to fetch mission information');
+    // }
+  }
+
   static Future<void> _cacheToken(String token) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);

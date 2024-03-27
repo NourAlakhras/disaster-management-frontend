@@ -57,6 +57,13 @@ class MQTTClientWrapper {
   }
 
   Future<void> _connectClient(String username, String password) async {
+    // Check if already connected or connecting
+    if (client.connectionStatus?.state == MqttConnectionState.connected ||
+        connectionState == MqttCurrentConnectionState.CONNECTING) {
+      print('Already connected or connecting, skipping connection attempt.');
+      return;
+    }
+
     try {
       print('client connecting....');
       connectionState = MqttCurrentConnectionState.CONNECTING;
@@ -65,6 +72,7 @@ class MQTTClientWrapper {
       print('client exception - $e');
       connectionState = MqttCurrentConnectionState.ERROR_WHEN_CONNECTING;
       client.disconnect();
+      return;
     }
 
     if (client.connectionStatus?.state == MqttConnectionState.connected) {
@@ -77,6 +85,7 @@ class MQTTClientWrapper {
       client.disconnect();
     }
   }
+
 
   Future<void> disconnect() async {
     print('Disconnecting MQTT client...');

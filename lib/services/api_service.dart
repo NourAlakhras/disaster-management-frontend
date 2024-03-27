@@ -8,7 +8,6 @@ class ApiService {
 
   static Future<Map<String, dynamic>> signUp(
       String email, String username, String password) async {
-    print('hoo');
     final Uri url = Uri.parse('$baseUrl/user/signup');
     print(url);
     final Map<String, String> body = {
@@ -16,7 +15,7 @@ class ApiService {
       'username': username,
       'password': password,
     };
-    print('hee');
+
     final response = await http.post(
       url,
       headers: <String, String>{

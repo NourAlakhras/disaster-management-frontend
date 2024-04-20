@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
-import 'package:flutter_3/services/api_service.dart';
+import 'package:flutter_3/services/user_api_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -28,7 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<Map<String, dynamic>> _fetchUserData() async {
     try {
-      return await ApiService.getUserInfo();
+      return await UserApiService.getUserInfo();
     } catch (e) {
       print('Failed to fetch user data: $e');
       throw e;
@@ -37,7 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<List<dynamic>> _getCurrentMissions() async {
     try {
-      final List<dynamic> missionData = await ApiService.getCurrentMissions();
+      final List<dynamic> missionData = await UserApiService.getCurrentMissions();
 
       return missionData;
     } catch (e) {
@@ -49,7 +49,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _logout(BuildContext context) async {
     try {
       await widget.mqttClient.logout();
-      await ApiService.logout();
+      await UserApiService.logout();
       Navigator.pushNamedAndRemoveUntil(
         context,
         '/',
@@ -62,7 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _updateEmail(String newEmail) async {
     try {
-      await ApiService.updateUserInfo('', newEmail);
+      await UserApiService.updateUserInfo('', newEmail);
       setState(() {
         // Update UI with new email
         _userDataFuture = _fetchUserData(); // Refresh user data after update
@@ -103,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               TextButton(
                 onPressed: () async {
                   Navigator.of(context).pop();
-                  await ApiService.updatePassword('', newPassword);
+                  await UserApiService.updatePassword('', newPassword);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Password updated successfully'),
@@ -130,7 +130,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadDefaultMission() async {
     // Fetch the list of current missions
-    final missions = await ApiService.getCurrentMissions();
+    final missions = await UserApiService.getCurrentMissions();
     print(missions);
     if (missions.isNotEmpty) {
       setState(() {
@@ -147,7 +147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       // Fetch the details of the selected mission
       final missionInfo =
-          await ApiService.getMissionInfo(missionId); // Check this method
+          await UserApiService.getMissionInfo(missionId); // Check this method
       setState(() {
         // Update selected mission info
         _selectedMissionInfo = missionInfo;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/robot.dart';
-import 'package:flutter_3/screens/robot_detailed_screen.dart';
+import 'package:flutter_3/screens/user/robot_detailed_screen.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 
 class RobotsListView extends StatefulWidget {

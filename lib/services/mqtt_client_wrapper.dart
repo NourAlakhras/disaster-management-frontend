@@ -29,7 +29,7 @@ class UserCredentials {
 
 enum MqttCurrentConnectionState {
   IDLE,
-  CONNECTING,
+  CONNECTING, 
   CONNECTED,
   DISCONNECTED,
   ERROR_WHEN_CONNECTING,
@@ -63,7 +63,7 @@ class MQTTClientWrapper {
       print('Already connected or connecting, skipping connection attempt.');
       return;
     }
-
+  
     try {
       print('client connecting....');
       connectionState = MqttCurrentConnectionState.CONNECTING;
@@ -89,10 +89,12 @@ class MQTTClientWrapper {
 
   Future<void> disconnect() async {
     print('Disconnecting MQTT client...');
+    client.autoReconnect = false; // Disable auto-reconnect
     client.disconnect();
     print('MQTT client disconnected');
     connectionState = MqttCurrentConnectionState.DISCONNECTED;
   }
+
 
   Future<void> logout() async {
     print('Logging out from the MQTT ...');
@@ -184,15 +186,19 @@ class MQTTClientWrapper {
     final username = credentials.username;
     final password = credentials.password;
 
-    if (connectionState != MqttCurrentConnectionState.LOGGED_OUT) {
+    if (connectionState != MqttCurrentConnectionState.LOGGED_OUT &&
+        connectionState != MqttCurrentConnectionState.CONNECTING &&
+        client.connectionStatus?.state != MqttConnectionState.connected) {
       print('Attempting to reconnect...');
       connectionState = MqttCurrentConnectionState.CONNECTING;
 
       _connectClient(username, password);
     } else {
-      print('User logged out, skipping reconnection attempt.');
+      print(
+          'User logged out or already reconnecting, skipping reconnection attempt.');
     }
   }
+
 
   void _onConnected() {
     connectionState = MqttCurrentConnectionState.CONNECTED;

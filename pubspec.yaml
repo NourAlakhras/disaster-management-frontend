@@ -40,6 +40,8 @@ dependencies:
   basic_utils: ^5.7.0
   http: ^1.2.1
   shared_preferences: ^2.2.2
+  multi_dropdown: ^2.1.4
+
 
   # location: ^4.4.0
 

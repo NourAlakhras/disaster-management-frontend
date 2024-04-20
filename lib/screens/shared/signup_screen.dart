@@ -1,12 +1,12 @@
 // lib\screens\signup_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_3/screens/home_screen.dart';
+import 'package:flutter_3/screens/shared/welcome_screen.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_text_field.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
-import 'package:flutter_3/services/api_service.dart';
+import 'package:flutter_3/services/user_api_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -20,7 +20,6 @@ class _SignupScreenState extends State<SignupScreen> {
   late TextEditingController _usernameController;
   late TextEditingController _passwordController;
   late TextEditingController _confirmPasswordController;
-  late MQTTClientWrapper _mqttClient;
 
   String get email => _emailController.text;
   String get username => _usernameController.text;
@@ -39,7 +38,6 @@ class _SignupScreenState extends State<SignupScreen> {
     _usernameController = TextEditingController();
     _passwordController = TextEditingController();
     _confirmPasswordController = TextEditingController();
-    _mqttClient = MQTTClientWrapper();
   }
 
   @override
@@ -53,21 +51,34 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _signUp(BuildContext context) async {
     try {
-      print('hjji');
-      await ApiService.signUp(email, username, password);
+      await UserApiService.signUp(email, password, username);
 
-      // Set user credentials globally
-      final credentials = UserCredentials();
-      credentials.setUserCredentials(username, password);
-
-      // Connect to MQTT broker
-      await _mqttClient.prepareMqttClient();
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(mqttClient: _mqttClient),
-        ),
+      // Show a dialog with a message
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Signup Successful'),
+            content: Text(
+              'You have successfully signed up. Please wait for admin approval to log in.',
+            ),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          WelcomeScreen(), // Navigate to the welcome screen
+                    ),
+                  );
+                },
+                child: Text('OK'),
+              ),
+            ],
+          );
+        },
       );
     } catch (e) {
       ScaffoldMessenger.of(context)
@@ -118,7 +129,7 @@ class _SignupScreenState extends State<SignupScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 30),
           height: MediaQuery.of(context).size.height,
-          width: double.infinity,
+          // width: double.infinity,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -215,20 +226,22 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ],
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Text("Already have an account?",
-                      style: TextStyle(color: Colors.white54)),
-                  TextButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/login');
-                      },
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(color: Colors.white),
-                      ))
-                ],
+              Container(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const Text("Already have an account?",
+                        style: TextStyle(color: Colors.white54)),
+                    TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/login');
+                        },
+                        child: const Text(
+                          "Login",
+                          style: TextStyle(color: Colors.white),
+                        ))
+                  ],
+                ),
               )
             ],
           ),

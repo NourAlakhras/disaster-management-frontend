@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_3/screens/home_screen.dart';
+import 'package:flutter_3/screens/user/home_screen.dart';
+import 'package:flutter_3/screens/admin/home_screen.dart';
+import 'package:flutter_3/services/auth_api_service.dart';
+import 'package:flutter_3/utils/enums.dart';
+
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_text_field.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
-import 'package:flutter_3/services/api_service.dart';
+import 'package:flutter_3/services/user_api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -38,11 +42,27 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+// Helper method to convert integer type to UserType enum
+  UserType _getUserType(int typeValue) {
+    return userTypeValues.entries
+        .firstWhere((entry) => entry.value == typeValue,
+            orElse: () =>
+                MapEntry(UserType.REGULAR, userTypeValues[UserType.REGULAR]!))
+        .key;
+  }
+
   Future<void> _login(BuildContext context) async {
     try {
       final Map<String, dynamic> responseData =
-          await ApiService.login(emailOrUsername, password);
+          await UserApiService.login(emailOrUsername, password);
+
+      // Extract data from the response
       final String username = responseData['username'];
+      final String token = responseData['token'];
+      final UserType userType = _getUserType(responseData['type']);
+
+      // Cache the token
+      await AuthApiService.cacheToken(token);
 
       // Set user credentials globally
       final credentials = UserCredentials();
@@ -51,18 +71,65 @@ class _LoginScreenState extends State<LoginScreen> {
       // Connect to MQTT broker
       await _mqttClient.prepareMqttClient();
 
-      // Navigate to the main screen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(mqttClient: _mqttClient),
-        ),
-      );
+      // Navigate to the appropriate screen based on user type
+      if (userType == UserType.ADMIN) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                AdminHomeScreen(), // Redirect to AdminHomeScreen
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(mqttClient: _mqttClient),
+          ),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Login failed: $e')));
     }
   }
+
+  // Future<void> _login(BuildContext context) async {
+  //   try {
+  //     final Map<String, dynamic> responseData =
+  //         await UserApiService.login(emailOrUsername, password);
+  //     final String username = responseData['username'];
+  //     // final bool isAdmin = responseData['admin'] ?? false; // Get admin status
+
+  //     // Set user credentials globally
+  //     final credentials = UserCredentials();
+  //     credentials.setUserCredentials(username, password);
+
+  //     // Connect to MQTT broker
+  //     await _mqttClient.prepareMqttClient();
+
+  //     // Navigate to the appropriate screen based on admin status
+  //     if (isAdmin) {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) =>
+  //               AdminHomeScreen(), // Redirect to AdminHomeScreen
+  //         ),
+  //       );
+  //     } else {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => HomeScreen(mqttClient: _mqttClient),
+  //         ),
+  //       );
+  //     }
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context)
+  //         .showSnackBar(SnackBar(content: Text('Login failed: $e')));
+  //   }
+  // }
 
   bool _validateForm() {
     return isEmailOrUsernameValid && isPasswordValid;

@@ -17,8 +17,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
-  PageController _pageController = PageController(initialPage: 0);
+  final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
+  final PageController _pageController = PageController(initialPage: 0);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,11 +39,12 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'Settings',
               labelStyle: TextStyle(color: Colors.white)),
         ],
-        color: Color(0xff293038),
-        buttonBackgroundColor: Color(0xff293038),
+        color: const Color(0xff293038),
+        buttonBackgroundColor: const Color(0xff293038),
         backgroundColor: const Color(0xff121417),
         animationCurve: Curves.easeInOut,
         animationDuration: const Duration(milliseconds: 600),
+        
         onTap: (index) {
           setState(() {});
           _pageController.animateToPage(

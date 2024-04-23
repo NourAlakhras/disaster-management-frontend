@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
 import 'package:gap/gap.dart';
-import 'package:flutter_3/screens/shared/signup_screen.dart';
-import 'package:flutter_3/screens/shared/login_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});

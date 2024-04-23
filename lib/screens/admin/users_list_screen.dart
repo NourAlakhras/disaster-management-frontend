@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/user_api_service.dart';
-import 'package:flutter_3/widgets/user_tile.dart';
+import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/utils/helpers.dart';
 import 'package:flutter_3/models/mission.dart';
@@ -10,7 +10,7 @@ import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 
 class UsersListScreen extends StatefulWidget {
-  const UsersListScreen({Key? key}) : super(key: key);
+  const UsersListScreen({super.key});
 
   @override
   _UsersListScreenState createState() => _UsersListScreenState();
@@ -23,7 +23,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
   int _pageNumber = 1;
   final int _pageSize = 7;
   final TextEditingController _searchController = TextEditingController();
-
+  Status? _selectedStatus;
+  UserType? _selectedType;
   @override
   void initState() {
     super.initState();
@@ -58,6 +59,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
       backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: "Users' List",
+        leading: IconButton(
+          icon: const Icon(Icons.settings),
+          color: Colors.white,
+          onPressed: () {
+            // Handle settings icon tap
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -66,183 +74,157 @@ class _UsersListScreenState extends State<UsersListScreen> {
           )
         ],
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : _filteredUsers.isEmpty
-              ? Center(
-                  child: Text(
-                    'No users available',
-                    style: TextStyle(color: Colors.white), // White text color
-                  ),
-                )
-              : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: _filterUsers,
-                    decoration: const InputDecoration(
-                      labelText: 'Search',
-                      hintText: 'Search users by username',
-                      prefixIcon: Icon(Icons.search),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 00),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CustomSearchBar(
+              controller: _searchController,
+              onChanged: _filterUsers,
+              onStatusFilterPressed: _showStatusFilterDialog,
+              onTypeFilterPressed: _showTypeFilterDialog,
+            ),
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator())
+            else if (_filteredUsers.isEmpty)
+              const Center(
+                child: Text(
+                  'No users available',
+                  style: TextStyle(color: Colors.white), // White text color
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(3.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              )
+            else
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _buildUserStatisticsCard(
-                          title: 'All Users', count: _allUsers.length),
-                      _buildUserStatisticsCard(
-                        title: 'Pending Users',
-                        count: _getUsersCountByStatus(Status.PENDING),
+                      const SizedBox(
+                        height: 20,
                       ),
-                      _buildUserStatisticsCard(
-                          title: 'Available Users',
-                          count: _getUsersCountByStatus(Status.AVAILABLE)),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.vertical,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Labels Row
-                        Container(
-                          decoration: const BoxDecoration(
-                            border:
-                                Border(bottom: BorderSide(color: Colors.grey)),
-                          ),
-                          height:
-                              60, // Set the minimum height for the labels row
-
-                          child: const Padding(
-                            padding: EdgeInsets.fromLTRB(8.0, 0, 0.0, 0),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: Text('Username',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors.white70)),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Text('Type',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors
-                                              .white70)), // Light text color),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Text('Status',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors
-                                              .white70)), // Light text color),
-                                ),
-                                Expanded(
-                                  child:
-                                      SizedBox(), // Placeholder for actions column
-                                ),
-                              ],
-                            ),
-                          ),
+                      // Labels Row
+                      Container(
+                        decoration: const BoxDecoration(
+                          border:
+                              Border(bottom: BorderSide(color: Colors.grey)),
                         ),
-                        // User Rows
-                        ..._filteredUsers.map((user) {
-                          return Container(
+                        height: 60,
+                        child: const Row(
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: Text('Username',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color: Colors.white)),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text('Type',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color:
+                                          Colors.white)), // Light text color),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Text('Status',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 18,
+                                      color:
+                                          Colors.white)), // Light text color),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child:
+                                  SizedBox(), // Placeholder for actions column
+                            ),
+                          ],
+                        ),
+                      ),
+                      // User Rows
+                      ..._filteredUsers.map((user) {
+                        return InkWell(
+                          onTap: () => _showUserDetailsDialog(user),
+                          child: Container(
                             decoration: const BoxDecoration(
                               border: Border(
                                   bottom: BorderSide(color: Colors.grey)),
                             ),
-                            height:
-                                55, // Set the minimum height for the labels row
-
-                            child: InkWell(
-                              onTap: () => _showUserDetailsDialog(user),
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                    8.0, 8.0, 0.0, 8.0),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      flex:
-                                          3, // Adjust flex values for responsive distribution
-                                      child: Text(user.username,
-                                          style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors
-                                                  .white70)), // Light text color
+                            height: 70,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 5,
+                                  child: Text(
+                                    user.username,
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      color: Colors.white70,
                                     ),
-                                    Expanded(
-                                      flex:
-                                          2, // Adjust flex values for responsive distribution
-                                      child: Text(statusToString(user.status),
-                                          style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors
-                                                  .white70)), // Light text color
-                                    ),
-                                    Expanded(
-                                      flex:
-                                          2, // Adjust flex values for responsive distribution
-                                      child: Text(userTypeToString(user.type),
-                                          style: const TextStyle(
-                                              fontSize: 16,
-                                              color: Colors
-                                                  .white70)), // Light text color
-                                    ),
-                                    Expanded(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.end,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: _buildUserActions(user),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    statusToString(user.status),
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    userTypeToString(user.type),
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: _buildUserActions(user),
+                                  ),
+                                ),
+                              ],
                             ),
-                          );
-                        }).toList(),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10.0, 20, 30),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ElevatedButton(
-                        
-                        onPressed: _pageNumber > 1 ? _previousPage : null,
-                        child: const Text('<'),
-                      ),
-                      ElevatedButton(
-                        onPressed:
-                            _allUsers.length >= _pageSize ? _nextPage : null,
-                        child: const Text('>'),
-                      ),
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ),
-              ],
+              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10.0, 20, 30),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: _pageNumber > 1 ? _previousPage : null,
+                    child: const Text('<'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _allUsers.length >= _pageSize ? _nextPage : null,
+                    child: const Text('>'),
+                  ),
+                ],
+              ),
             ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -255,7 +237,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
               constraints.maxWidth * 0.12; // Adjust multiplier as needed
 
           // Set a minimum height for the card
-          final minHeight = 100.0;
+          const minHeight = 100.0;
 
           return Card(
             child: SizedBox(
@@ -282,10 +264,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
         .where((user) =>
             user.status != Status.INACTIVE && user.status != Status.REJECTED)
         .length;
-  }
-
-  int _getUsersCountByStatus(Status status) {
-    return _allUsers.where((user) => user.status == status).length;
   }
 
   void _filterUsers(String query) {
@@ -487,9 +465,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
     if (user.status == Status.PENDING) {
       return [
         PopupMenuButton<int>(
-          icon: const Icon(
-            Icons.more_vert,
-          ),
+          icon: const Icon(Icons.more_vert, color: Colors.white70),
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 1,
@@ -567,5 +543,72 @@ class _UsersListScreenState extends State<UsersListScreen> {
       });
       await _fetchUsers();
     }
+  }
+
+  void _showStatusFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Filter by Status'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: Status.values.map((status) {
+                return ListTile(
+                  title: Text(statusToString(status)),
+                  onTap: () {
+                    setState(() {
+                      _selectedStatus = status;
+                      _applyFilters();
+                    });
+                    Navigator.pop(context);
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showTypeFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Filter by Type'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: UserType.values.map((type) {
+                return ListTile(
+                  title: Text(userTypeToString(type)),
+                  onTap: () {
+                    setState(() {
+                      _selectedType = type;
+                      _applyFilters();
+                    });
+                    Navigator.pop(context);
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _applyFilters() {
+    setState(() {
+      _filteredUsers = _allUsers.where((user) {
+        bool statusFilter =
+            _selectedStatus == null || user.status == _selectedStatus;
+        bool typeFilter = _selectedType == null || user.type == _selectedType;
+        return statusFilter && typeFilter;
+      }).toList();
+    });
   }
 }

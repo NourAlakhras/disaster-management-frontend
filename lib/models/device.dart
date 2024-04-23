@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_3/utils/enums.dart'; // Import enums file
 
 class Device {

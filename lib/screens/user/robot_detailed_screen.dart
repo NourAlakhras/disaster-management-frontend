@@ -8,11 +8,11 @@ class RobotDetailedScreen extends StatelessWidget {
   final String robotId;
   final MQTTClientWrapper mqttClient;
 
-  RobotDetailedScreen({
-    Key? key,
+  const RobotDetailedScreen({
+    super.key,
     required this.robotId,
     required this.mqttClient,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

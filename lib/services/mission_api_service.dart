@@ -11,7 +11,7 @@ class MissionApiService {
     required List<String> deviceIds,
     required List<String> userIds,
   }) async {
-    final String baseUrl = Constants.baseUrl;
+    const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse('$baseUrl/api/missions');
 
     final Map<String, dynamic> requestBody = {
@@ -57,7 +57,7 @@ class MissionApiService {
   }
 
   static Future<Mission> getMissionById(String missionId) async {
-    final String baseUrl = Constants.baseUrl;
+    const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse('$baseUrl/api/missions/$missionId');
 
     try {
@@ -93,7 +93,7 @@ class MissionApiService {
     required List<String> deviceIds,
     required List<String> userIds,
   }) async {
-    final String baseUrl = Constants.baseUrl;
+    const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse('$baseUrl/api/missions/$missionId');
 
     final Map<String, dynamic> requestBody = {
@@ -142,7 +142,7 @@ class MissionApiService {
     required int pageSize,
     int? status,
   }) async {
-    final String baseUrl = Constants.baseUrl;
+    const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse(
         '$baseUrl/api/missions/all?page-number=$pageNumber&page-size=$pageSize${status != null ? '&status=$status' : ''}');
 

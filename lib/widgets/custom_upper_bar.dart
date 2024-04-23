@@ -6,11 +6,11 @@ class CustomUpperBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget> actions;
 
   const CustomUpperBar({
-    Key? key,
+    super.key,
     required this.title,
     this.leading = const SizedBox(),
     this.actions = const [], 
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

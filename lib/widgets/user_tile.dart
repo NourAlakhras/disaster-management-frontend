@@ -11,14 +11,14 @@ class UserTile extends StatelessWidget {
   final VoidCallback onViewDetails;
 
   const UserTile({
-    Key? key,
+    super.key,
     required this.user,
     required this.onApprove,
     required this.onReject,
     required this.onEdit,
     required this.onDelete,
     required this.onViewDetails,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +31,12 @@ class UserTile extends StatelessWidget {
             case Status.PENDING:
               return [
                 PopupMenuItem(
-                  child: Text('Approve'),
                   onTap: onApprove,
+                  child: const Text('Approve'),
                 ),
                 PopupMenuItem(
-                  child: Text('Reject'),
                   onTap: onReject,
+                  child: const Text('Reject'),
                 ),
               ];
             case Status.AVAILABLE:
@@ -45,12 +45,12 @@ class UserTile extends StatelessWidget {
             case Status.REJECTED:
               return [
                 PopupMenuItem(
-                  child: Text('Edit'),
                   onTap: onEdit,
+                  child: const Text('Edit'),
                 ),
                 PopupMenuItem(
-                  child: Text('Delete'),
                   onTap: onDelete,
+                  child: const Text('Delete'),
                 ),
               ];
             default:

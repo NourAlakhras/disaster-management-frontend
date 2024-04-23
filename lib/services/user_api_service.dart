@@ -1,11 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/auth_api_service.dart';
 import 'package:flutter_3/utils/constants.dart';
 import 'package:flutter_3/utils/exceptions.dart';
-import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/models/mission.dart';
 
 class UserApiService {
@@ -122,7 +120,7 @@ class UserApiService {
         throw Exception('Failed to logout');
       }
     } catch (e) {
-      throw e;
+      rethrow;
     }
   }
 
@@ -252,7 +250,7 @@ class UserApiService {
   // _________________________________________________________
 
   static Future<List<Mission>> getUserCurrentMissions(String userId) async {
-    final String baseUrl = Constants.baseUrl;
+    const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse('$baseUrl/api/users/$userId/cur_missions');
 
     try {

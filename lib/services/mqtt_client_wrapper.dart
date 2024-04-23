@@ -22,14 +22,14 @@ class UserCredentials {
   }
 
   Future<void> clearUserCredentials() async {
-    this.username = '';
-    this.password = '';
+    username = '';
+    password = '';
   }
 }
 
 enum MqttCurrentConnectionState {
   IDLE,
-  CONNECTING, 
+  CONNECTING,
   CONNECTED,
   DISCONNECTED,
   ERROR_WHEN_CONNECTING,
@@ -38,7 +38,7 @@ enum MqttCurrentConnectionState {
 
 enum MqttSubscriptionState { IDLE, SUBSCRIBED }
 
-typedef void MqttDataCallback(Map<String, dynamic> data);
+typedef MqttDataCallback = void Function(Map<String, dynamic> data);
 
 class MQTTClientWrapper {
   late MqttServerClient client;
@@ -57,13 +57,26 @@ class MQTTClientWrapper {
   }
 
   Future<void> _connectClient(String username, String password) async {
+    try {
+      print('Connecting to MQTT broker...');
+      print('Hostname: ${client.server}');
+      print('Port: ${client.port}');
+      connectionState = MqttCurrentConnectionState.CONNECTING;
+      await client.connect(username, password);
+      print('Connected to MQTT broker');
+    } on Exception catch (e) {
+      print('Failed to connect to MQTT broker: $e');
+      connectionState = MqttCurrentConnectionState.ERROR_WHEN_CONNECTING;
+      client.disconnect();
+      return;
+    }
     // Check if already connected or connecting
     if (client.connectionStatus?.state == MqttConnectionState.connected ||
         connectionState == MqttCurrentConnectionState.CONNECTING) {
       print('Already connected or connecting, skipping connection attempt.');
       return;
     }
-  
+
     try {
       print('client connecting....');
       connectionState = MqttCurrentConnectionState.CONNECTING;
@@ -86,7 +99,6 @@ class MQTTClientWrapper {
     }
   }
 
-
   Future<void> disconnect() async {
     print('Disconnecting MQTT client...');
     client.autoReconnect = false; // Disable auto-reconnect
@@ -94,7 +106,6 @@ class MQTTClientWrapper {
     print('MQTT client disconnected');
     connectionState = MqttCurrentConnectionState.DISCONNECTED;
   }
-
 
   Future<void> logout() async {
     print('Logging out from the MQTT ...');
@@ -109,6 +120,7 @@ class MQTTClientWrapper {
         'df29475dfed14680a1a57a1c8e98b400.s2.eu.hivemq.cloud',
         'test-mobile-app',
         8883);
+    print('setup');
     client.secure = true;
     client.securityContext = SecurityContext.defaultContext;
     client.keepAlivePeriod = 20;
@@ -198,7 +210,6 @@ class MQTTClientWrapper {
           'User logged out or already reconnecting, skipping reconnection attempt.');
     }
   }
-
 
   void _onConnected() {
     connectionState = MqttCurrentConnectionState.CONNECTED;

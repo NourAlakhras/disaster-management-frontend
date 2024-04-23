@@ -5,11 +5,10 @@ import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_text_field.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
 import 'package:gap/gap.dart';
-import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 
 class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+  const SignupScreen({super.key});
 
   @override
   _SignupScreenState createState() => _SignupScreenState();
@@ -58,8 +57,8 @@ class _SignupScreenState extends State<SignupScreen> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Signup Successful'),
-            content: Text(
+            title: const Text('Signup Successful'),
+            content: const Text(
               'You have successfully signed up. Please wait for admin approval to log in.',
             ),
             actions: <Widget>[
@@ -70,11 +69,11 @@ class _SignupScreenState extends State<SignupScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          WelcomeScreen(), // Navigate to the welcome screen
+                          const WelcomeScreen(), // Navigate to the welcome screen
                     ),
                   );
                 },
-                child: Text('OK'),
+                child: const Text('OK'),
               ),
             ],
           );

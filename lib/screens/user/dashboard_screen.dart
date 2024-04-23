@@ -5,7 +5,7 @@ import 'package:flutter_3/widgets/custom_upper_bar.dart';
 class DashboardScreen extends StatelessWidget {
   final MQTTClientWrapper mqttClient; // Declare mqttClient as a member variable
 
-  const DashboardScreen({Key? key, required this.mqttClient}) : super(key: key); // Update constructor
+  const DashboardScreen({super.key, required this.mqttClient}); // Update constructor
 
   @override
   Widget build(BuildContext context) {

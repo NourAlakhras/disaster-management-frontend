@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class TabbedView extends StatelessWidget {
   const TabbedView({
-    Key? key,
+    super.key,
     required this.length,
     required this.tabs,
     required this.tabContents,
@@ -11,7 +11,7 @@ class TabbedView extends StatelessWidget {
     this.iconColor = Colors.white60, // Specify the default icon color
     this.selectedIconColor =
         Colors.white, // Specify the default selected icon color
-  }) : super(key: key);
+  });
 
   final int length;
   final List<Widget> tabs;

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_3/utils/constants.dart';
 import 'package:flutter_3/utils/exceptions.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/services/auth_api_service.dart';
@@ -260,4 +259,147 @@ class AdminApiService {
       throw Exception('Failed to retrieve user info: $e');
     }
   }
+    static Future<int> getUserCount({List<int>? status, List<int>? type}) async {
+    try {
+      String? token = await AuthApiService.getAuthToken();
+      const String baseUrl = Constants.baseUrl;
+      final Uri url = Uri.parse('$baseUrl/api/users/count');
+
+      // Construct query parameters based on provided filters
+      Map<String, dynamic> queryParameters = {};
+      if (status != null && status.isNotEmpty) {
+        queryParameters['status'] = status.join(',');
+      }
+      if (type != null && type.isNotEmpty) {
+        queryParameters['type'] = type.join(',');
+      }
+
+      final response = await http.get(
+        url.replace(
+            queryParameters:
+                queryParameters), // Use replace to include query parameters
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Parse the response body to get the count
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final int count = responseBody['count'];
+        return count;
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ForbiddenException();
+      } else if (response.statusCode == 500) {
+        throw InternalServerErrorException();
+      } else {
+        // Handle unexpected response
+        throw Exception(
+            'Unexpected response from server: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle errors
+      throw Exception('Failed to get user count: $e');
+    }
+  }
+  
+static Future<int> getDeviceCount(
+      {List<int>? status, List<int>? type}) async {
+    try {
+      String? token = await AuthApiService.getAuthToken();
+      const String baseUrl = Constants.baseUrl;
+      final Uri url = Uri.parse('$baseUrl/api/devices/count');
+
+      // Construct query parameters based on provided filters
+      Map<String, dynamic> queryParameters = {};
+      if (status != null && status.isNotEmpty) {
+        queryParameters['status'] = status.join(',');
+      }
+      if (type != null && type.isNotEmpty) {
+        queryParameters['type'] = type.join(',');
+      }
+
+      final response = await http.get(
+        url.replace(
+            queryParameters:
+                queryParameters), // Use replace to include query parameters
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Parse the response body to get the count
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final int count = responseBody['count'];
+        return count;
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ForbiddenException();
+      } else if (response.statusCode == 500) {
+        throw InternalServerErrorException();
+      } else {
+        // Handle unexpected response
+        throw Exception(
+            'Unexpected response from server: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle errors
+      throw Exception('Failed to get device count: $e');
+    }
+  }
+
+  static Future<int> getMissionCount({List<int>? status}) async {
+    try {
+      String? token = await AuthApiService.getAuthToken();
+      const String baseUrl = Constants.baseUrl;
+      final Uri url = Uri.parse('$baseUrl/api/missions/count');
+
+      // Construct query parameters based on provided filters
+      Map<String, dynamic> queryParameters = {};
+      if (status != null && status.isNotEmpty) {
+        queryParameters['status'] = status.join(',');
+      }
+
+      final response = await http.get(
+        url.replace(queryParameters: queryParameters),
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Parse the response body to get the count
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final int count = responseBody['count'];
+        return count;
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ForbiddenException();
+      } else if (response.statusCode == 500) {
+        throw InternalServerErrorException();
+      } else {
+        // Handle unexpected response
+        throw Exception(
+            'Unexpected response from server: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle errors
+      throw Exception('Failed to get mission count: $e');
+    }
+  }
+
 }

@@ -12,6 +12,8 @@ import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -66,7 +68,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Set user credentials globally
       final credentials = UserCredentials();
-      credentials.setUserCredentials(username, password);
+      // credentials.setUserCredentials(username, password);
+      credentials.setUserCredentials('test-mobile-app','Test-mobile12');
 
       // Connect to MQTT broker
       await _mqttClient.prepareMqttClient();
@@ -77,7 +80,8 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
           MaterialPageRoute(
             builder: (context) =>
-                AdminHomeScreen(), // Redirect to AdminHomeScreen
+                AdminHomeScreen(
+                mqttClient: _mqttClient), // Redirect to AdminHomeScreen
           ),
         );
       } else {

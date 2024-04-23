@@ -43,3 +43,23 @@ enum DeviceType {
   CHARGING_STATION,
   BROKER,
 }
+
+final DeviceTypeValues = {
+  DeviceType.UGV: 1,
+  DeviceType.UAV: 2,
+  DeviceType.DOG: 3,
+  DeviceType.CHARGING_STATION: 4,
+  DeviceType.BROKER: 5,
+};
+
+enum DeviceStatus {
+  AVAILABLE,
+  ASSIGNED,
+  INACTIVE,
+}
+
+final DeviceStatusValues = {
+  DeviceStatus.AVAILABLE: 1,
+  DeviceStatus.ASSIGNED: 2,
+  DeviceStatus.INACTIVE: 3,
+};

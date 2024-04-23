@@ -10,7 +10,7 @@ class RobotsMapView extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
   final List<Robot> robots;
 
-  const RobotsMapView({required this.mqttClient, required this.robots});
+  const RobotsMapView({super.key, required this.mqttClient, required this.robots});
 
   @override
   State<RobotsMapView> createState() => _RobotsMapViewState();
@@ -18,7 +18,7 @@ class RobotsMapView extends StatefulWidget {
 
 class _RobotsMapViewState extends State<RobotsMapView> {
   late GoogleMapController _mapController;
-  Set<Marker> _markers = {};
+  final Set<Marker> _markers = {};
   LatLngBounds _bounds = LatLngBounds(
     southwest: const LatLng(0, 0), // First corner (e.g., (0, 0))
     northeast: const LatLng(0, 0), // Second corner (e.g., (0, 0))
@@ -33,10 +33,10 @@ class _RobotsMapViewState extends State<RobotsMapView> {
   }
 
   void _subscribeToTopics() {
-    widget.robots.forEach((robot) {
+    for (var robot in widget.robots) {
       String mqttTopic = '${robot.id}/gps';
       widget.mqttClient.subscribeToTopic(mqttTopic);
-    });
+    }
 
     widget.mqttClient.subscribeToMultipleTopics([
       'test-ugv/sensor_data',
@@ -131,7 +131,7 @@ class _RobotsMapViewState extends State<RobotsMapView> {
   }
 
   void _fitBounds() {
-    if (_markers.isNotEmpty && _mapController != null) {
+    if (_markers.isNotEmpty) {
       LatLngBounds bounds = _bounds;
 
       // Calculate center point based on markers
@@ -238,7 +238,7 @@ class _RobotsMapViewState extends State<RobotsMapView> {
     return Expanded(
         child: Container(
       child: GoogleMap(
-        gestureRecognizers: Set()
+        gestureRecognizers: {}
           ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
           ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
           ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))

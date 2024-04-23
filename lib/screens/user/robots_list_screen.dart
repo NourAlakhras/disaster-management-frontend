@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/robots_list_view.dart';
@@ -7,17 +9,46 @@ import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/models/robot.dart';
 
-
-class RobotsListScreen extends StatelessWidget {
+class RobotsListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
+
+  const RobotsListScreen({super.key, required this.mqttClient});
+
+  @override
+  State<RobotsListScreen> createState() => _RobotsListScreenState();
+}
+
+
+class _RobotsListScreenState extends State<RobotsListScreen> {
+  List<Device> _devices = []; // List to store the fetched devices
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDevices(); // Call the method to fetch devices when the widget initializes
+  }
+
+  Future<void> _fetchDevices() async {
+    try {
+      // Call the getAllDevices method from the DeviceApiService
+      List<Device> devices = await DeviceApiService.getAllDevices(pageNumber: 1, pageSize: 7);
+      setState(() {
+        _devices = devices; // Update the state with the fetched devices
+      });
+    } catch (error) {
+      // Handle error if fetching devices fails
+      print('Failed to fetch devices: $error');
+    }
+  }
+  final TextEditingController _searchController = TextEditingController();
+  List<Device> _filteredRobots = [];
+  final List<Device> _allRobots = [];
+
   final List<Robot> robots = [
     Robot(id: "1", name: 'Robot 1'),
     Robot(id: "2", name: 'Robot 2'),
     Robot(id: "3", name: 'Robot 3'),
   ];
-
-
-  RobotsListScreen({Key? key, required this.mqttClient}) : super(key: key); 
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +56,13 @@ class RobotsListScreen extends StatelessWidget {
       backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: 'Robots',
+        leading: IconButton(
+          icon: const Icon(Icons.settings),
+          color: Colors.white,
+          onPressed: () {
+            // Handle settings icon tap
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -36,21 +74,16 @@ class RobotsListScreen extends StatelessWidget {
       body: SizedBox(
         height: MediaQuery.of(context).size.height,
         width: double.infinity,
-        child:  Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Row(
-                children: <Widget>[
-                  Expanded(
-                    child: SizedBox(
-                      height: 60,
-                      child: CustomSearchBar(),
-                    ),
-                  ),
-                  Icon(Icons.filter_alt, color: Colors.white),
-                ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 00),
+              child: CustomSearchBar(
+                controller: _searchController,
+                onChanged: _filterRobots,
+                onStatusFilterPressed: _showStatusFilterDialog,
+                onTypeFilterPressed: _showTypeFilterDialog,
               ),
             ),
             Expanded(
@@ -66,9 +99,9 @@ class RobotsListScreen extends StatelessWidget {
                 ],
                 tabContents: <Widget>[
                   // Content for Tab 1
-                  RobotsListView(mqttClient: mqttClient,robots:robots),
-                  // Content for Tab 2 
-                  RobotsMapView(mqttClient: mqttClient, robots:robots),
+                  RobotsListView(mqttClient: widget.mqttClient, robots: robots),
+                  // Content for Tab 2
+                  RobotsMapView(mqttClient: widget.mqttClient, robots: robots),
                 ],
               ),
             ),
@@ -77,4 +110,21 @@ class RobotsListScreen extends StatelessWidget {
       ),
     );
   }
+
+  void _filterRobots(String query) {
+    setState(() {
+      if (query.isNotEmpty) {
+        _filteredRobots = _allRobots
+            .where(
+                (user) => user.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      } else {
+        _filteredRobots = _allRobots;
+      }
+    });
+  }
+
+  _showStatusFilterDialog() {}
+
+  _showTypeFilterDialog() {}
 }

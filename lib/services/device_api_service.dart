@@ -7,24 +7,20 @@ import 'package:http/http.dart' as http;
 
 class DeviceApiService {
   static Future<List<Device>> getAllDevices({
-    int pageNumber = 1,
-    int pageSize = 5,
-    int? status,
-    int? type,
-    String? missionId,
+    required int pageNumber,
+    required int pageSize,
+    List<int>? status,
+    List<int>? type,
+    int? missionId,
   }) async {
-    final String baseUrl = Constants.baseUrl;
-    final String queryString = _buildQueryString(
-      pageNumber: pageNumber,
-      pageSize: pageSize,
-      status: status,
-      type: type,
-      missionId: missionId,
-    );
+    const String baseUrl = Constants.baseUrl;
+    final Uri url = Uri.parse(
+        '$baseUrl/api/devices/all?page-number=$pageNumber&page-size=$pageSize'
+        '${status != null ? '&status=${status.join(",")}' : ''}'
+        '${type != null ? '&type=${type.join(",")}' : ''}'
+        '${missionId != null ? '&mission=$missionId' : ''}');
 
-    final Uri url = Uri.parse('$baseUrl/api/devices/all?$queryString');
-
-    try {
+try {
       String? token = await AuthApiService.getAuthToken();
 
       final response = await http.get(
@@ -49,25 +45,10 @@ class DeviceApiService {
       } else if (response.statusCode == 500) {
         throw InternalServerErrorException();
       } else {
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Unexpected response from server: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Failed to get devices: $e');
     }
-  }
-
-  static String _buildQueryString({
-    int pageNumber = 1,
-    int pageSize = 5,
-    int? status,
-    int? type,
-    String? missionId,
-  }) {
-    String queryString = 'page-number=$pageNumber&page-size=$pageSize';
-    if (status != null) queryString += '&status=$status';
-    if (type != null) queryString += '&type=$type';
-    if (missionId != null) queryString += '&mission=$missionId';
-    return queryString;
   }
 }

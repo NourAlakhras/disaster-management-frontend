@@ -4,10 +4,11 @@ import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
-import 'package:flutter_3/utils/enums.dart';
 import 'package:multi_dropdown/multiselect_dropdown.dart';
 
 class CreateMissionScreen extends StatefulWidget {
+  const CreateMissionScreen({super.key});
+
   @override
   _CreateMissionScreenState createState() => _CreateMissionScreenState();
 }
@@ -35,22 +36,22 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Mission'),
+        title: const Text('Create Mission'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: 'Mission Name'),
+              decoration: const InputDecoration(labelText: 'Mission Name'),
             ),
-            SizedBox(height: 20),
-            Text('Select Devices:'),
-            SizedBox(height: 8),
+            const SizedBox(height: 20),
+            const Text('Select Devices:'),
+            const SizedBox(height: 8),
             _isLoading
-                ? Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : MultiSelectDropDown(
                     onOptionSelected: (List<ValueItem> selectedOptions) {
                       setState(() {
@@ -65,11 +66,11 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                     optionTextStyle: const TextStyle(fontSize: 16),
                     selectedOptionIcon: const Icon(Icons.check_circle),
                   ),
-            SizedBox(height: 20),
-            Text('Select Users:'),
-            SizedBox(height: 8),
+            const SizedBox(height: 20),
+            const Text('Select Users:'),
+            const SizedBox(height: 8),
             _isLoading
-                ? Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : MultiSelectDropDown(
                     onOptionSelected: (List<ValueItem> selectedOptions) {
                       setState(() {
@@ -84,12 +85,12 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                     optionTextStyle: const TextStyle(fontSize: 16),
                     selectedOptionIcon: const Icon(Icons.check_circle),
                   ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             _isLoading
-                ? Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator())
                 : ElevatedButton(
                     onPressed: _isLoading ? null : _createMission,
-                    child: Text('Create'),
+                    child: const Text('Create'),
                   ),
           ],
         ),
@@ -173,7 +174,7 @@ Future<void> _createMission() async {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Mission created successfully with ID: $missionId'),
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     } catch (e) {
@@ -186,7 +187,7 @@ Future<void> _createMission() async {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to create mission: $e'),
-          duration: Duration(seconds: 2),
+          duration: const Duration(seconds: 2),
         ),
       );
     }

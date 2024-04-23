@@ -8,15 +8,15 @@ class CustomTextField extends StatelessWidget {
   final String? errorText;
   final ValueChanged<String>? onChanged; // Define onChanged parameter
 
-  CustomTextField({
+  const CustomTextField({
     required this.hintText,
     required this.prefixIcon,
     this.controller,
     this.obscureText,
     this.errorText,
     this.onChanged, // Add onChanged parameter
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +45,7 @@ class CustomTextField extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               errorText!,
-              style: TextStyle(color: Colors.red),
+              style: const TextStyle(color: Colors.red),
             ),
           ),
       ],

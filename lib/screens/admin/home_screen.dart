@@ -3,22 +3,23 @@ import 'package:flutter_3/screens/admin/dashboard_screen.dart';
 import 'package:flutter_3/screens/admin/missions_list_screen.dart';
 import 'package:flutter_3/screens/admin/robots_list_screen.dart';
 import 'package:flutter_3/screens/admin/users_list_screen.dart';
-import 'package:flutter/material.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
+import 'package:flutter_3/screens/user/robots_list_screen.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 
 class AdminHomeScreen extends StatefulWidget {
+  final MQTTClientWrapper mqttClient;
+
+  const AdminHomeScreen({required this.mqttClient, super.key});
+
   @override
-  _AdminHomeScreenState createState() => _AdminHomeScreenState();
+  State<AdminHomeScreen> createState() => _AdminHomeScreenState();
 }
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
-  int _currentIndex = 0;
-
-
-  GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
-  PageController _pageController = PageController(initialPage: 0);
+  final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
+  final PageController _pageController = PageController(initialPage: 0);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,6 +27,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         key: _bottomNavigationKey,
         index: 0,
         items: const [
+          CurvedNavigationBarItem(
+              child: Icon(Icons.dashboard, color: Colors.white),
+              label: 'Dashboard',
+              labelStyle: TextStyle(color: Colors.white)),
           CurvedNavigationBarItem(
               child: Icon(Icons.account_circle, color: Colors.white),
               label: 'Users',
@@ -39,8 +44,8 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               label: 'Robots',
               labelStyle: TextStyle(color: Colors.white)),
         ],
-        color: Color(0xff293038),
-        buttonBackgroundColor: Color(0xff293038),
+        color: const Color(0xff293038),
+        buttonBackgroundColor: const Color(0xff293038),
         backgroundColor: const Color(0xff121417),
         animationCurve: Curves.easeInOut,
         animationDuration: const Duration(milliseconds: 600),
@@ -61,9 +66,11 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
         },
         children: [
           // Define the widgets for each screen here
-          Center(child: UsersListScreen()),
-          Center(child: MissionsListScreen()),
-          Center(child: AdminRobotsListScreen()),
+          const Center(child: DashboardScreen()),
+          const Center(child: UsersListScreen()),
+          const Center(child: MissionsListScreen()),
+          const Center(child: AdminRobotsListScreen()),
+          Center(child: RobotsListScreen(mqttClient: widget.mqttClient)),
         ],
       ),
     );

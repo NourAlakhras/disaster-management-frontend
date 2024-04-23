@@ -9,7 +9,7 @@ class RobotsListView extends StatefulWidget {
 
 
 
-  RobotsListView({required this.mqttClient, required this.robots,});
+  const RobotsListView({super.key, required this.mqttClient, required this.robots,});
 
   @override
   State<RobotsListView> createState() => _RobotsListViewState();
@@ -26,14 +26,14 @@ class _RobotsListViewState extends State<RobotsListView> {
   }
 
   void _subscribeToTopics() {
-    widget.robots.forEach((robot) {
+    for (var robot in widget.robots) {
       List<String> mqttTopics = [
         '${robot.id}/battery',
         '${robot.id}/connectivity',
       ];
 
           widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
-    });
+    }
   }
 
   @override
@@ -130,13 +130,13 @@ class _RobotsListViewState extends State<RobotsListView> {
   }
     @override
   void dispose() {
-        widget.robots.forEach((robot) {
+        for (var robot in widget.robots) {
       List<String> mqttTopics = [
         '${robot.id}/battery',
         '${robot.id}/connectivity',
       ];
       widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
-        });   
+        }   
 super.dispose();
   }
 }

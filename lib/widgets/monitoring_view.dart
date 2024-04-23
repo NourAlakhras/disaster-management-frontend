@@ -11,10 +11,10 @@ class MonitoringView extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
 
   const MonitoringView({
-    Key? key,
+    super.key,
     required this.robotId,
     required this.mqttClient,
-  }) : super(key: key);
+  });
 
   @override
   _MonitoringViewState createState() => _MonitoringViewState();
@@ -31,7 +31,7 @@ class _MonitoringViewState extends State<MonitoringView> {
   @override
   void initState() {
     super.initState();
-    _robotLocation = LatLng(0.0, 0.0);
+    _robotLocation = const LatLng(0.0, 0.0);
     _batteryLevel = 0.0;
     _wifiLevel = 0.0;
     _sensorData = {};
@@ -80,16 +80,14 @@ class _MonitoringViewState extends State<MonitoringView> {
   }
 
   void _updateCameraPosition(LatLng target) {
-    if (_controller != null) {
-      _controller.animateCamera(CameraUpdate.newLatLng(target));
+    _controller.animateCamera(CameraUpdate.newLatLng(target));
     }
-  }
 
   void _updateMarker(LatLng location) {
     _markers.clear();
     _markers.add(
       Marker(
-        markerId: MarkerId('robot_marker'),
+        markerId: const MarkerId('robot_marker'),
         position: location,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       ),
@@ -170,7 +168,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                 height: MediaQuery.of(context).size.height / 3,
                 width: double.infinity,
                 child: GoogleMap(
-                  gestureRecognizers: Set()
+                  gestureRecognizers: {}
                     ..add(Factory<PanGestureRecognizer>(
                         () => PanGestureRecognizer()))
                     ..add(Factory<ScaleGestureRecognizer>(

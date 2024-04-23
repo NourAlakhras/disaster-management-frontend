@@ -6,7 +6,7 @@ import 'package:flutter_3/services/user_api_service.dart';
 class SettingsScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
 
-  const SettingsScreen({Key? key, required this.mqttClient}) : super(key: key);
+  const SettingsScreen({super.key, required this.mqttClient});
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
@@ -31,7 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return await UserApiService.getUserInfo();
     } catch (e) {
       print('Failed to fetch user data: $e');
-      throw e;
+      rethrow;
     }
   }
 
@@ -42,7 +42,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       return missionData;
     } catch (e) {
       print('Failed to fetch current missions\' data: $e');
-      throw e;
+      rethrow;
     }
   }
 

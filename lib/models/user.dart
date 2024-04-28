@@ -5,7 +5,7 @@ class User {
   final String id;
   final String username;
   final UserType type;
-  final Status status; // Change type to Status enum
+  final Status status; 
   final int activeMissionCount;
 
   User({

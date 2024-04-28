@@ -34,7 +34,7 @@ final missionStatusValues = {
   MissionStatus.ONGOING: 2,
   MissionStatus.PAUSED: 3,
   MissionStatus.CANCELED: 4,
-  MissionStatus.FINISHED: 5,//end
+  MissionStatus.FINISHED: 5,
 };
 enum DeviceType {
   UGV,

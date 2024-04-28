@@ -78,8 +78,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
             CustomSearchBar(
               controller: _searchController,
               onChanged: _filterMissions,
-              onStatusFilterPressed: _showStatusFilterDialog,
-              onTypeFilterPressed: _showTypeFilterDialog,
             ),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())

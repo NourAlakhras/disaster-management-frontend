@@ -82,8 +82,6 @@ class _RobotsListScreenState extends State<RobotsListScreen> {
               child: CustomSearchBar(
                 controller: _searchController,
                 onChanged: _filterRobots,
-                onStatusFilterPressed: _showStatusFilterDialog,
-                onTypeFilterPressed: _showTypeFilterDialog,
               ),
             ),
             Expanded(

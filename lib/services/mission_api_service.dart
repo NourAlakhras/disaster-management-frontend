@@ -31,10 +31,29 @@ class MissionApiService {
         },
         body: jsonEncode(requestBody),
       );
+      if (response.statusCode == 308) {
+        // Handle redirection
+        String newUrl = response.headers['location']!;
+        // Send another request to the new URL
+        final redirectedResponse = await http.post(
+          Uri.parse(newUrl),
+          headers: <String, String>{
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(requestBody),
+        );
 
-      if (response.statusCode == 201) {
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        return responseBody['mission_id'] ?? '';
+        // Process redirected response
+        if (redirectedResponse.statusCode == 201) {
+          final Map<String, dynamic> responseBody =
+              jsonDecode(redirectedResponse.body);
+          // Extract relevant data from the response
+          String missionId = responseBody['mission_id'] ?? '';
+          // Print the mission ID
+          print('Mission created successfully with ID: $missionId');
+          return missionId;
+        }
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {
@@ -52,8 +71,11 @@ class MissionApiService {
             'Unexpected response from server: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Failed to create mission: $e');
+      print('Failed to create mission: $e');
+      throw Exception(
+          'Failed to create mission: $e'); // Throw an exception to ensure a non-null return value
     }
+        return '';
   }
 
   static Future<Mission> getMissionById(String missionId) async {

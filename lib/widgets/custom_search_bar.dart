@@ -57,15 +57,11 @@ import 'package:flutter/material.dart';
 class CustomSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final Function(String) onChanged;
-  final Function() onStatusFilterPressed;
-  final Function() onTypeFilterPressed;
 
   const CustomSearchBar({
     super.key,
     required this.controller,
     required this.onChanged,
-    required this.onStatusFilterPressed,
-    required this.onTypeFilterPressed,
 
   });
 
@@ -103,26 +99,12 @@ class CustomSearchBar extends StatelessWidget {
               style: const TextStyle(color: Colors.white),
             ),
           ),
-          PopupMenuButton<String>(
+          
+                    IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.white),
-            onSelected: (String value) {
-              if (value == 'status') {
-                onStatusFilterPressed();
-              } else if (value == 'type') {
-                onTypeFilterPressed();
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              const PopupMenuItem<String>(
-                value: 'status',
-                child: Text('Filter by Status'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'type',
-                child: Text('Filter by Type'),
-              ),
-            ],
-          )
+            onPressed: () {
+              // Open the drawer when filter icon is clicked
+              Scaffold.of(context).openEndDrawer();})
         ],
       ),
     );

@@ -8,6 +8,7 @@ import 'package:flutter_3/utils/helpers.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
+import 'package:flutter_3/widgets/filter_drawer.dart';
 
 class UsersListScreen extends StatefulWidget {
   const UsersListScreen({super.key});
@@ -21,24 +22,50 @@ class _UsersListScreenState extends State<UsersListScreen> {
   List<User> _filteredUsers = [];
   bool _isLoading = false;
   int _pageNumber = 1;
-  final int _pageSize = 7;
+  final int _pageSize = 6;
   final TextEditingController _searchController = TextEditingController();
   Status? _selectedStatus;
   UserType? _selectedType;
+
+  List<Status>? _filteredstatuses = [
+    Status.AVAILABLE,
+    Status.PENDING,
+    Status.ASSIGNED,
+    Status.REJECTED,
+  ];
+
+  List<UserType>? _filteredtypes = [
+    UserType.REGULAR,
+    UserType.ADMIN,
+  ];
   @override
   void initState() {
     super.initState();
     _fetchUsers();
   }
 
-  Future<void> _fetchUsers() async {
+  Future<void> _fetchUsers({
+    List<Status>? statuses,
+    List<UserType>? types,
+    int? pageNumber,
+    int? pageSize,
+  }) async {
+    // Assign default statuses if not provided
+    statuses ??= _filteredstatuses;
+    types ??= _filteredtypes;
+    pageNumber ??= _pageNumber;
+    pageSize ??= _pageSize;
+
     setState(() {
       _isLoading = true;
     });
     try {
+      print('from fetch: $statuses');
       final allUsersResponse = await AdminApiService.getAllUsers(
-        pageNumber: _pageNumber,
-        pageSize: _pageSize,
+        pageNumber: pageNumber,
+        pageSize: pageSize,
+        statuses: statuses,
+        types: types,
       );
       setState(() {
         _allUsers = allUsersResponse;
@@ -82,8 +109,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
             CustomSearchBar(
               controller: _searchController,
               onChanged: _filterUsers,
-              onStatusFilterPressed: _showStatusFilterDialog,
-              onTypeFilterPressed: _showTypeFilterDialog,
             ),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
@@ -225,35 +250,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildUserStatisticsCard({required String title, required int count}) {
-    return Expanded(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // Calculate responsive font size
-          final fontSize =
-              constraints.maxWidth * 0.12; // Adjust multiplier as needed
-
-          // Set a minimum height for the card
-          const minHeight = 100.0;
-
-          return Card(
-            child: SizedBox(
-              height: minHeight,
-              child: ListTile(
-                title: Text(
-                  title,
-                  style: TextStyle(fontSize: fontSize),
-                ),
-                subtitle: Text(
-                  'Count: $count',
-                  style: TextStyle(fontSize: fontSize),
-                ),
-              ),
-            ),
-          );
+      endDrawer: FilterDrawerWidget(
+        onFilterApplied: (selectedStatuses, selectedTypes) {
+          setState(() {
+            _filteredstatuses = selectedStatuses;
+            _filteredtypes = selectedTypes;
+          });
+          _fetchUsers();
         },
       ),
     );
@@ -545,70 +548,5 @@ class _UsersListScreenState extends State<UsersListScreen> {
     }
   }
 
-  void _showStatusFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Filter by Status'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: Status.values.map((status) {
-                return ListTile(
-                  title: Text(statusToString(status)),
-                  onTap: () {
-                    setState(() {
-                      _selectedStatus = status;
-                      _applyFilters();
-                    });
-                    Navigator.pop(context);
-                  },
-                );
-              }).toList(),
-            ),
-          ),
-        );
-      },
-    );
-  }
 
-  void _showTypeFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Filter by Type'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: UserType.values.map((type) {
-                return ListTile(
-                  title: Text(userTypeToString(type)),
-                  onTap: () {
-                    setState(() {
-                      _selectedType = type;
-                      _applyFilters();
-                    });
-                    Navigator.pop(context);
-                  },
-                );
-              }).toList(),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _applyFilters() {
-    setState(() {
-      _filteredUsers = _allUsers.where((user) {
-        bool statusFilter =
-            _selectedStatus == null || user.status == _selectedStatus;
-        bool typeFilter = _selectedType == null || user.type == _selectedType;
-        return statusFilter && typeFilter;
-      }).toList();
-    });
-  }
 }

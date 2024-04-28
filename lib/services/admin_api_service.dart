@@ -7,31 +7,83 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/services/auth_api_service.dart';
 
 class AdminApiService {
-  static Future<dynamic> getAllUsers({
-    String? userType,
-    required int pageNumber,
-    required int pageSize,
-    int? status,
-    int? type,
-    String? missionId,
+  static Future<List<User>> getAllUsers({
+    int? pageNumber,
+    int? pageSize,
+    List<Status>? statuses,
+    List<UserType>? types,
+    int? missionId,
   }) async {
-    const String baseUrl = Constants.baseUrl;
-    final String queryString = _buildQueryString(
-      pageNumber: pageNumber,
-      pageSize: pageSize,
-      status: status,
-      type: type,
-      missionId: missionId,
-    );
-
-    final Uri url = Uri.parse('$baseUrl/api/users/all?$queryString');
-
-    // Print out the generated URL
-    print('URL: $url');
-
     try {
-      String? token = await AuthApiService.getAuthToken();
-      print(token);
+      print('statuses from getAllUsers: $statuses');
+
+      print('types from getAllUsers: $types');
+
+      const String baseUrl = Constants.baseUrl;
+
+      // Convert enums to their corresponding integer values
+
+      final List<int>? _typeValues =
+          types?.map((t) => userTypeValues[t]!).toList();
+
+      final List<int>? _statusValues =
+          statuses?.map((s) => statusValues[s]!).toList();
+          
+      print('_statusValues from getAllUsers: $_statusValues');
+
+      print('_typeValues from getAllUsers: $_typeValues');
+
+      // Convert status values to strings
+      final List<String> statusStrings =
+          _statusValues?.map((s) => s.toString()).toList() ?? [];
+      // Convert status values to strings
+      final List<String> typeStrings =
+          _typeValues?.map((s) => s.toString()).toList() ?? [];
+
+      print('statusStrings from getAllUsers: $statusStrings');
+
+      print(
+          'typeStrings from getAllUsers: $typeStrings'); // Build query parameters
+// Build query parameters
+      Map<String, dynamic> queryParameters = {
+        'page-number': pageNumber ?? 1,
+        'page-size': pageSize ?? 5,
+      };
+
+// Add status query parameters
+      if (_statusValues != null && _statusValues.isNotEmpty) {
+        // Concatenate status values with the same key
+        queryParameters['status'] = _statusValues.join('&status=');
+      }
+
+// Add type query parameters
+      if (_typeValues != null && _typeValues.isNotEmpty) {
+        // Concatenate type values with the same key
+        queryParameters['type'] = _typeValues.join('&type=');
+      }
+
+      if (missionId != null) {
+        queryParameters['mission'] = missionId.toString();
+      }
+
+      print('queryParameters : $queryParameters');
+
+// Convert query parameters to a list of key-value pairs
+      final List<String> queryString =
+          queryParameters.entries.map((e) => '${e.key}=${e.value}').toList();
+
+// Join query parameters with '&' to form the final query string
+      final String queryStringJoined = queryString.join('&');
+
+      final Uri url = Uri.parse('$baseUrl/api/users/all?$queryStringJoined');
+
+// Print out the generated URL
+      print('URL: $url');
+
+      final String? token = await AuthApiService.getAuthToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
 
       final response = await http.get(
         url,
@@ -42,9 +94,7 @@ class AdminApiService {
       );
 
       final responseBody = jsonDecode(response.body);
-      print(token);
-      print("eee");
-      print(responseBody);
+      print('responseBody: $responseBody');
 
       if (response.statusCode == 200) {
         // Parse the response body into a list of User objects
@@ -70,35 +120,11 @@ class AdminApiService {
     } on FormatException catch (e) {
       // Handle unexpected response format (e.g., HTML instead of JSON)
       throw Exception('Unexpected response format: $e');
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Handle other errors
+      print('Unexpected error occurred: $e\n$stackTrace');
       throw Exception('Failed to fetch users: $e');
     }
-  }
-
-  static String _buildQueryString({
-    required int pageNumber,
-    required int pageSize,
-    int? status,
-    int? type,
-    String? missionId,
-  }) {
-    final Map<String, dynamic> queryParameters = {
-      'page-number': pageNumber.toString(),
-      'page-size': pageSize.toString(),
-    };
-
-    if (status != null) {
-      queryParameters['status'] = status.toString();
-    }
-    if (type != null) {
-      queryParameters['type'] = type.toString();
-    }
-    if (missionId != null) {
-      queryParameters['mission'] = missionId;
-    }
-
-    return Uri(queryParameters: queryParameters).query;
   }
 
   static Future<void> approveUser(String userId, bool isAdmin) async {
@@ -259,7 +285,8 @@ class AdminApiService {
       throw Exception('Failed to retrieve user info: $e');
     }
   }
-    static Future<int> getUserCount({List<int>? status, List<int>? type}) async {
+
+  static Future<int> getUserCount({List<int>? status, List<int>? type}) async {
     try {
       String? token = await AuthApiService.getAuthToken();
       const String baseUrl = Constants.baseUrl;
@@ -307,8 +334,8 @@ class AdminApiService {
       throw Exception('Failed to get user count: $e');
     }
   }
-  
-static Future<int> getDeviceCount(
+
+  static Future<int> getDeviceCount(
       {List<int>? status, List<int>? type}) async {
     try {
       String? token = await AuthApiService.getAuthToken();
@@ -401,5 +428,4 @@ static Future<int> getDeviceCount(
       throw Exception('Failed to get mission count: $e');
     }
   }
-
 }

@@ -3,122 +3,107 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/utils/helpers.dart';
 
 class FilterDrawerWidget extends StatefulWidget {
-  final Function(List<Status> selectedStatuses, List<UserType> selectedTypes)
-      onFilterApplied;
+  final Function(Map<String, List<dynamic>> selectedCriteria) onFilterApplied;
+  final List<FilterCriterion> criteriaList;
 
-  const FilterDrawerWidget({Key? key, required this.onFilterApplied})
-      : super(key: key);
+  const FilterDrawerWidget({
+    Key? key,
+    required this.onFilterApplied,
+    required this.criteriaList, required String title,
+  }) : super(key: key);
 
   @override
   State<FilterDrawerWidget> createState() => _FilterDrawerWidgetState();
 }
 
 class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
-  List<Status> selectedStatuses = [];
-  List<UserType> selectedTypes = [];
+  Map<String, List<dynamic>> selectedCriteria = {};
 
-  List<Status> statuses = Status.values.toList();
-  List<UserType> types = UserType.values.toList();
+  @override
+  void initState() {
+    super.initState();
+
+    // Initialize the selectedCriteria map with empty lists for each criterion
+    for (var criterion in widget.criteriaList) {
+      selectedCriteria[criterion.name] = [];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: Container(
-        color: Color.fromARGB(255, 178, 181, 195),
+        color: const Color.fromARGB(255, 178, 181, 195),
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 30, horizontal: 65),
-                height: 100,
-                child: const ListTile(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 65),
+              height: 50,
+              child: const ListTile(
+                title: Text(
+                  'Filter Options',
+                  style: TextStyle(
+                    color: Color(0xff121417),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: widget.criteriaList.length,
+              itemBuilder: (context, index) {
+                final criterion = widget.criteriaList[index];
+                return ExpansionTile(
                   title: Text(
-                    'Filter Options',
-                    style: TextStyle(
-                      color: const Color(0xff121417),
-                      fontSize: 18,
+                    criterion.name,
+                    style: const TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: Color(0xff121417),
                     ),
                   ),
-                )),
-            ExpansionTile(
-              title: const Text(
-                'User Status',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xff121417),
-                ),
-              ),
-              children: statuses
-                  .map(
-                    (status) => CheckboxListTile(
-                      title: Text(
-                        statusToString(status),
-                        style: const TextStyle(
-                          color: const Color(0xff121417),
-                          fontSize: 14,
+                  children: criterion.options
+                      .map(
+                        (option) => CheckboxListTile(
+                          title: Text(
+                            option.toString().split('.').last.toLowerCase(),
+                            style: const TextStyle(
+                              color: const Color(0xff121417),
+                              fontSize: 14,
+                            ),
+                          ),
+                          value: selectedCriteria[criterion.name]!
+                              .contains(option),
+                          onChanged: (value) {
+                            setState(() {
+                              if (value != null && value) {
+                                selectedCriteria[criterion.name]!.add(option);
+                              } else {
+                                selectedCriteria[criterion.name]!
+                                    .remove(option);
+                              }
+                            });
+                          },
                         ),
-                      ),
-                      value: selectedStatuses.contains(status),
-                      onChanged: (value) {
-                        setState(() {
-                          if (value != null && value) {
-                            selectedStatuses.add(status);
-                          } else {
-                            selectedStatuses.remove(status);
-                          }
-                        });
-                      },
-                    ),
-                  )
-                  .toList(),
+                      )
+                      .toList(),
+                );
+              },
             ),
-            ExpansionTile(
-              title: const Text(
-                'User Type',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: const Color(0xff121417),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              children: types
-                  .map(
-                    (type) => CheckboxListTile(
-                      title: Text(
-                        userTypeToString(type),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: const Color(0xff121417),
-                        ),
-                      ),
-                      value: selectedTypes.contains(type),
-                      onChanged: (value) {
-                        setState(() {
-                          if (value != null && value) {
-                            selectedTypes.add(type);
-                          } else {
-                            selectedTypes.remove(type);
-                          }
-                        });
-                      },
-                    ),
-                  )
-                  .toList(),
-            ),SizedBox(height: 30),
+            const SizedBox(height: 30),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    widget.onFilterApplied(selectedStatuses, selectedTypes);
-                    print(selectedStatuses);
+                    widget.onFilterApplied(selectedCriteria);
+                    print(selectedCriteria);
 
                     // Close the drawer
                     Navigator.pop(context);
@@ -128,11 +113,17 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                 const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
-                    widget.onFilterApplied([], []);
-                    print(selectedStatuses);
+                    setState(() {
+                      // Clear the selected options for each criterion
+                      for (var criterion in widget.criteriaList) {
+                        selectedCriteria[criterion.name] = [];
+                      }
+                       widget.onFilterApplied(selectedCriteria);
+                      print(selectedCriteria);
 
-                    // Close the drawer
-                    Navigator.pop(context);
+                      // Close the drawer
+                      Navigator.pop(context);
+                    });
                   },
                   child: const Row(
                     children: [
@@ -149,4 +140,11 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
       ),
     );
   }
+}
+
+class FilterCriterion {
+  final String name;
+  final List<dynamic> options;
+
+  FilterCriterion({required this.name, required this.options});
 }

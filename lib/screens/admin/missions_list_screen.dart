@@ -5,6 +5,9 @@ import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/utils/helpers.dart';
+import 'package:flutter_3/utils/exceptions.dart';
+import 'package:flutter_3/widgets/filter_drawer.dart';
 
 class MissionsListScreen extends StatefulWidget {
   const MissionsListScreen({super.key});
@@ -18,8 +21,12 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
   List<Mission> _filteredMissions = [];
   bool _isLoading = false;
   int _pageNumber = 1;
-  final int _pageSize = 7;
+  final int _pageSize = 6;
   final TextEditingController _searchController = TextEditingController();
+  List<MissionStatus>? _filteredstatuses = MissionStatus.values;
+  final criteriaList = [
+    FilterCriterion(name: 'Mission Status', options: MissionStatus.values.toList()),
+  ];
 
   @override
   void initState() {
@@ -27,7 +34,16 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     _fetchMissions();
   }
 
-  Future<void> _fetchMissions() async {
+  Future<void> _fetchMissions({
+    List<MissionStatus>? statuses,
+    int? pageNumber,
+    int? pageSize,
+  }) async {
+    // Assign default statuses if not provided
+    statuses ??= _filteredstatuses;
+    pageNumber ??= _pageNumber;
+    pageSize ??= _pageSize;
+
     setState(() {
       _isLoading = true;
     });
@@ -35,6 +51,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
       final missions = await MissionApiService.getAllMissions(
         pageNumber: _pageNumber,
         pageSize: _pageSize,
+        statuses: statuses,
       );
       setState(() {
         _allMissions = missions;
@@ -84,7 +101,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
             else if (_filteredMissions.isEmpty)
               const Center(
                 child: Text(
-                  'No users available',
+                  'No missions available',
                   style: TextStyle(color: Colors.white), // White text color
                 ),
               )
@@ -119,7 +136,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                                       color: Colors.white)),
                             ),
                             Expanded(
-                              flex: 2,
+                              flex: 3,
                               child: Text('Status',
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
@@ -157,7 +174,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: Text(
-                                      mission.status.toString().split('.').last,
+                                      mission.status.toString().split('.').last.toLowerCase(),
                                       style: const TextStyle(
                                           fontSize: 17,
                                           color: Colors
@@ -218,6 +235,28 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
           ],
         ),
       ),
+      endDrawer: FilterDrawerWidget(
+        onFilterApplied: (selectedCriteria) {
+          final List<MissionStatus> selectedStatuses =
+              (selectedCriteria['Mission Status'] as List<dynamic>)
+                  .cast<MissionStatus>();
+
+          if (selectedStatuses.isNotEmpty) {
+            setState(() {
+              _filteredstatuses = selectedStatuses;
+            });
+          } else {
+            _filteredstatuses = MissionStatus.values;
+          }
+
+          setState(() {
+            _pageNumber = 1;
+          });
+          _fetchMissions();
+        },
+        criteriaList: criteriaList,
+        title: 'Filter Options',
+      ),
     );
   }
 
@@ -263,14 +302,14 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
               ),
               const PopupMenuItem(
                 value: 2,
-                child: Text('Delete'),
+                child: Text('Cancel'),
               ),
             ],
             onSelected: (value) {
               if (value == 1) {
                 _startMission(mission);
               } else if (value == 2) {
-                _deleteMission(mission);
+                _cancelMission(mission);
               }
             },
           ),
@@ -288,18 +327,12 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 value: 2,
                 child: Text('End'),
               ),
-              const PopupMenuItem(
-                value: 3,
-                child: Text('Delete'),
-              ),
             ],
             onSelected: (value) {
               if (value == 1) {
                 _pauseMission(mission);
               } else if (value == 2) {
                 _endMission(mission);
-              } else if (value == 3) {
-                _deleteMission(mission);
               }
             },
           ),
@@ -317,39 +350,34 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 value: 2,
                 child: Text('End'),
               ),
-              const PopupMenuItem(
-                value: 3,
-                child: Text('Delete'),
-              ),
+
             ],
             onSelected: (value) {
               if (value == 1) {
                 _resumeMission(mission);
               } else if (value == 2) {
                 _endMission(mission);
-              } else if (value == 3) {
-                _deleteMission(mission);
               }
             },
           ),
         ];
-      case MissionStatus.FINISHED:
-        return [
-          PopupMenuButton<int>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 1,
-                child: Text('Delete'),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 1) {
-                _deleteMission(mission);
-              }
-            },
-          ),
-        ];
+      // case MissionStatus.FINISHED:
+      //   return [
+      //     PopupMenuButton<int>(
+      //       icon: const Icon(Icons.more_vert, color: Colors.white70),
+      //       itemBuilder: (context) => [
+      //         const PopupMenuItem(
+      //           value: 1,
+      //           child: Text('Delete'),
+      //         ),
+      //       ],
+      //       onSelected: (value) {
+      //         if (value == 1) {
+      //           _cancelMission(mission);
+      //         }
+      //       },
+      //     ),
+      //   ];
       default:
         return [];
     }
@@ -361,7 +389,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
 
   void _endMission(Mission mission) {}
 
-  void _deleteMission(Mission mission) {}
+  void _cancelMission(Mission mission) {}
 
   void _resumeMission(Mission mission) {}
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_3/utils/enums.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_3/utils/constants.dart';
 import 'package:flutter_3/utils/exceptions.dart';
@@ -75,7 +76,7 @@ class MissionApiService {
       throw Exception(
           'Failed to create mission: $e'); // Throw an exception to ensure a non-null return value
     }
-        return '';
+    return '';
   }
 
   static Future<Mission> getMissionById(String missionId) async {
@@ -160,16 +161,54 @@ class MissionApiService {
   }
 
   static Future<List<Mission>> getAllMissions({
-    required int pageNumber,
-    required int pageSize,
-    int? status,
+    int? pageNumber,
+    int? pageSize,
+    List<MissionStatus>? statuses,
   }) async {
     const String baseUrl = Constants.baseUrl;
-    final Uri url = Uri.parse(
-        '$baseUrl/api/missions/all?page-number=$pageNumber&page-size=$pageSize${status != null ? '&status=$status' : ''}');
+
+    // Convert enums to their corresponding integer values
+
+    final List<int>? _missionStatusValues =
+        statuses?.map((s) => missionStatusValues[s]!).toList();
+
+    print('_missionStatusValuesfrom getAllMissions: $_missionStatusValues');
+
+    // Convert status values to strings
+    final List<String> statusStrings =
+        _missionStatusValues?.map((s) => s.toString()).toList() ?? [];
+
+    print('statusStrings from getAllUsers: $statusStrings');
+// Build query parameters
+    Map<String, dynamic> queryParameters = {
+      'page-number': pageNumber ?? 1,
+      'page-size': pageSize ?? 6,
+    };
+// Add status query parameters
+    if (_missionStatusValues != null && _missionStatusValues.isNotEmpty) {
+      // Concatenate status values with the same key
+      queryParameters['status'] = _missionStatusValues.join('&status=');
+    }
+
+    print('queryParameters : $queryParameters');
+
+// Convert query parameters to a list of key-value pairs
+    final List<String> queryString =
+        queryParameters.entries.map((e) => '${e.key}=${e.value}').toList();
+
+// Join query parameters with '&' to form the final query string
+    final String queryStringJoined = queryString.join('&');
+
+    final Uri url = Uri.parse('$baseUrl/api/missions/all?$queryStringJoined');
+
+// Print out the generated URL
+    print('URL: $url');
 
     try {
-      String? token = await AuthApiService.getAuthToken();
+      final String? token = await AuthApiService.getAuthToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
 
       final response = await http.get(
         url,
@@ -179,9 +218,14 @@ class MissionApiService {
         },
       );
 
+      final responseBody = jsonDecode(response.body);
+      print('mission responseBody: $responseBody');
       if (response.statusCode == 200) {
-        final List<dynamic> responseBody = jsonDecode(response.body);
-        return responseBody.map((json) => Mission.fromJson(json)).toList();
+                // Parse the response body into a list of User objects
+        final List<dynamic> missionsJson = responseBody;
+        final List<Mission> missions =
+            missionsJson.map((json) => Mission.fromJson(json)).toList();
+        return missions;
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {

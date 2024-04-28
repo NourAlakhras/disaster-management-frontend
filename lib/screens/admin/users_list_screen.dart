@@ -4,7 +4,6 @@ import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/utils/helpers.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
@@ -24,8 +23,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
   int _pageNumber = 1;
   final int _pageSize = 6;
   final TextEditingController _searchController = TextEditingController();
-  Status? _selectedStatus;
-  UserType? _selectedType;
 
   List<Status>? _filteredstatuses = [
     Status.AVAILABLE,
@@ -38,6 +35,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
     UserType.REGULAR,
     UserType.ADMIN,
   ];
+
+  final criteriaList = [
+    FilterCriterion(name: 'User Status', options: Status.values.toList()),
+    FilterCriterion(name: 'User Type', options: UserType.values.toList()),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -153,7 +156,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
                                       color:
-                                          Colors.white)), // Light text color),
+                                          Colors.white)), 
                             ),
                             Expanded(
                               flex: 3,
@@ -162,12 +165,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
                                       color:
-                                          Colors.white)), // Light text color),
+                                          Colors.white)), 
                             ),
                             Expanded(
                               flex: 2,
                               child:
-                                  SizedBox(), // Placeholder for actions column
+                                  SizedBox(), 
                             ),
                           ],
                         ),
@@ -197,7 +200,11 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: Text(
-                                    statusToString(user.status),
+                                    user.status
+                                        .toString()
+                                        .split('.')
+                                        .last
+                                        .toLowerCase(),
                                     style: const TextStyle(
                                       fontSize: 17,
                                       color: Colors.white70,
@@ -207,7 +214,11 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: Text(
-                                    userTypeToString(user.type),
+                                    user.type
+                                        .toString()
+                                        .split('.')
+                                        .last
+                                        .toLowerCase(),
                                     style: const TextStyle(
                                       fontSize: 17,
                                       color: Colors.white70,
@@ -251,16 +262,43 @@ class _UsersListScreenState extends State<UsersListScreen> {
         ),
       ),
       endDrawer: FilterDrawerWidget(
-        onFilterApplied: (selectedStatuses, selectedTypes) {
+        onFilterApplied: (selectedCriteria) {
+          final List<Status> selectedStatuses =
+              (selectedCriteria['User Status'] as List<dynamic>).cast<Status>();
+          final List<UserType> selectedTypes =
+              (selectedCriteria['User Type'] as List<dynamic>).cast<UserType>();
+
           if (selectedStatuses.isNotEmpty) {
             setState(() {
               _filteredstatuses = selectedStatuses;
               _filteredtypes = selectedTypes;
-              _pageNumber = 1;
             });
-            _fetchUsers();
+          } else if (selectedTypes.isNotEmpty) {
+            print('hi no status');
+            setState(() {
+              _filteredtypes = selectedTypes;
+            });
+          } else {
+            _filteredstatuses = [
+              Status.AVAILABLE,
+              Status.PENDING,
+              Status.ASSIGNED,
+              Status.REJECTED,
+            ];
+
+            _filteredtypes = [
+              UserType.REGULAR,
+              UserType.ADMIN,
+            ];
           }
+
+          setState(() {
+            _pageNumber = 1;
+          });
+          _fetchUsers();
         },
+        criteriaList: criteriaList,
+        title: 'Filter Options',
       ),
     );
   }
@@ -353,8 +391,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
               children: [
                 Text('Username: ${userDetails['username']}'),
                 Text('Email: ${userDetails['email']}'),
-                Text('Type: ${userTypeToString(user.type)}'),
-                Text('Status: ${statusToString(user.status)}'),
+                Text('Type: ${user.type.toString().split('.').last.toLowerCase()}'),
+                Text('Status: ${user.status.toString().split('.').last.toLowerCase()}'),
                 const SizedBox(
                     height: 16), // Add space between details and buttons
                 const Text('Current Missions:'),

@@ -28,7 +28,7 @@ class AdminApiService {
 
       final List<int>? _statusValues =
           statuses?.map((s) => statusValues[s]!).toList();
-          
+
       print('_statusValues from getAllUsers: $_statusValues');
 
       print('_typeValues from getAllUsers: $_typeValues');
@@ -47,7 +47,7 @@ class AdminApiService {
 // Build query parameters
       Map<String, dynamic> queryParameters = {
         'page-number': pageNumber ?? 1,
-        'page-size': pageSize ?? 5,
+        'page-size': pageSize ?? 6,
       };
 
 // Add status query parameters

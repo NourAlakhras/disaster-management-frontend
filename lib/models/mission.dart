@@ -13,7 +13,7 @@ class Mission {
 
   factory Mission.fromJson(Map<String, dynamic> json) {
     return Mission(
-      id: json['_id'] ?? '',
+      id: json['id'] ?? '',
       name: json['name'] ?? '',
       status: _getStatus(json['status']) ,
     );

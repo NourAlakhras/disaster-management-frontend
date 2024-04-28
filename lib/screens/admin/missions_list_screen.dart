@@ -25,7 +25,8 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<MissionStatus>? _filteredstatuses = MissionStatus.values;
   final criteriaList = [
-    FilterCriterion(name: 'Mission Status', options: MissionStatus.values.toList()),
+    FilterCriterion(
+        name: 'Mission Status', options: MissionStatus.values.toList()),
   ];
 
   @override
@@ -174,7 +175,11 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                                 Expanded(
                                   flex: 3,
                                   child: Text(
-                                      mission.status.toString().split('.').last.toLowerCase(),
+                                      mission.status
+                                          .toString()
+                                          .split('.')
+                                          .last
+                                          .toLowerCase(),
                                       style: const TextStyle(
                                           fontSize: 17,
                                           color: Colors
@@ -292,6 +297,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
   List<Widget> _buildMissionActions(Mission mission) {
     switch (mission.status) {
       case MissionStatus.CREATED:
+        print('mission.id ${mission.id}');
         return [
           PopupMenuButton<int>(
             icon: const Icon(Icons.more_vert, color: Colors.white70),
@@ -307,9 +313,9 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
             ],
             onSelected: (value) {
               if (value == 1) {
-                _startMission(mission);
+                _startMission(mission.id);
               } else if (value == 2) {
-                _cancelMission(mission);
+                _cancelMission(mission.id);
               }
             },
           ),
@@ -330,9 +336,9 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
             ],
             onSelected: (value) {
               if (value == 1) {
-                _pauseMission(mission);
+                _pauseMission(mission.id);
               } else if (value == 2) {
-                _endMission(mission);
+                _endMission(mission.id);
               }
             },
           ),
@@ -350,13 +356,12 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 value: 2,
                 child: Text('End'),
               ),
-
             ],
             onSelected: (value) {
               if (value == 1) {
-                _resumeMission(mission);
+                _resumeMission(mission.id);
               } else if (value == 2) {
-                _endMission(mission);
+                _endMission(mission.id);
               }
             },
           ),
@@ -383,19 +388,60 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     }
   }
 
-  void _startMission(Mission mission) {}
+  Future<void> _startMission(String missionId) async {
+    try {
+      print('missionId $missionId');
+      String command = "start";
+      await MissionApiService.updateMissionStatus(missionId, command);
+      await _fetchMissions();
+    } catch (error) {
+      print('Failed to start mission: $error');
+    }
+  }
 
-  void _pauseMission(Mission mission) {}
+  void _pauseMission(String missionId) async {
+    try {
+      print('missionId $missionId');
+      String command = "pause";
+      await MissionApiService.updateMissionStatus(missionId, command);
+      await _fetchMissions();
+    } catch (error) {
+      print('Failed to pause mission: $error');
+    }
+  }
 
-  void _endMission(Mission mission) {}
+  void _endMission(String missionId) async {
+    try {
+      print('missionId $missionId');
+      String command = "end";
+      await MissionApiService.updateMissionStatus(missionId, command);
+      await _fetchMissions();
+    } catch (error) {
+      print('Failed to end mission: $error');
+    }
+  }
 
-  void _cancelMission(Mission mission) {}
+  void _cancelMission(String missionId) async {
+    try {
+      print('missionId $missionId');
+      String command = "cancel";
+      await MissionApiService.updateMissionStatus(missionId, command);
+      await _fetchMissions();
+    } catch (error) {
+      print('Failed to cancel mission: $error');
+    }
+  }
 
-  void _resumeMission(Mission mission) {}
+  void _resumeMission(String missionId) async {
+    try {
+      print('missionId $missionId');
+      String command = "continue";
+      await MissionApiService.updateMissionStatus(missionId, command);
+      await _fetchMissions();
+    } catch (error) {
+      print('Failed to continue mission: $error');
+    }
+  }
 
   _showMissionDetailsDialog(Mission mission) {}
-
-  _showStatusFilterDialog() {}
-
-  _showTypeFilterDialog() {}
 }

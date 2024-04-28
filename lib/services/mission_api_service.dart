@@ -221,11 +221,14 @@ class MissionApiService {
       final responseBody = jsonDecode(response.body);
       print('mission responseBody: $responseBody');
       if (response.statusCode == 200) {
-                // Parse the response body into a list of User objects
+        // Parse the response body into a list of User objects
         final List<dynamic> missionsJson = responseBody;
         final List<Mission> missions =
             missionsJson.map((json) => Mission.fromJson(json)).toList();
         return missions;
+
+
+        
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {
@@ -242,6 +245,48 @@ class MissionApiService {
       }
     } catch (e) {
       throw Exception('Failed to get missions: $e');
+    }
+  }
+
+  static Future<void> updateMissionStatus(
+      String missionId, String command) async {
+    try {
+      String? token = await AuthApiService.getAuthToken();
+      const String baseUrl = Constants.baseUrl;
+      final Uri url = Uri.parse('$baseUrl/api/missions/$missionId/$command');
+      print('url $url'); 
+
+      final response = await http.put(
+        url,
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        // Mission status updated successfully
+        print('Mission status is updated successfully.');
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ForbiddenException();
+      } else if (response.statusCode == 404) {
+        throw NotFoundException();
+      } else if (response.statusCode == 409) {
+        throw ConflictException();
+      } else if (response.statusCode == 500) {
+        throw InternalServerErrorException();
+      } else {
+        // Handle unexpected response
+        throw Exception(
+            'Unexpected response from server: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle errors
+      throw Exception('Failed to update mission status: $e');
     }
   }
 }

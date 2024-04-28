@@ -252,11 +252,14 @@ class _UsersListScreenState extends State<UsersListScreen> {
       ),
       endDrawer: FilterDrawerWidget(
         onFilterApplied: (selectedStatuses, selectedTypes) {
-          setState(() {
-            _filteredstatuses = selectedStatuses;
-            _filteredtypes = selectedTypes;
-          });
-          _fetchUsers();
+          if (selectedStatuses.isNotEmpty) {
+            setState(() {
+              _filteredstatuses = selectedStatuses;
+              _filteredtypes = selectedTypes;
+              _pageNumber = 1;
+            });
+            _fetchUsers();
+          }
         },
       ),
     );
@@ -547,6 +550,4 @@ class _UsersListScreenState extends State<UsersListScreen> {
       await _fetchUsers();
     }
   }
-
-
 }

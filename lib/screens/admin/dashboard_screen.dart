@@ -65,7 +65,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       for (var status in DeviceStatus.values) {
         if (status != DeviceStatus.INACTIVE) {
           deviceCountByStatus[status] = await AdminApiService.getDeviceCount(
-              status: [DeviceStatusValues[status]!]);
+              status: [deviceStatusValues[status]!]);
         }
       }
     } catch (e) {

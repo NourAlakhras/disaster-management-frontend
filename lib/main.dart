@@ -22,9 +22,5 @@ void main() => runApp(MaterialApp(
         '/': (context) => const WelcomeScreen(),
         '/login': (context) =>  const LoginScreen(),
         '/signup': (context) =>  const SignupScreen(),
-        // '/mainNavigator': (context) => HomeScreen(),
-        // '/dashboard': (context) => DashboardScreen(),
-        // // '/robots': (context) => RobotsListScreen(),
-        // '/settings': (context) => SettingsScreen(),
       },
     ));

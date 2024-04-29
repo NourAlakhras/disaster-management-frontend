@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/screens/user/dashboard_screen.dart';
-import 'package:flutter_3/screens/user/robots_list_screen.dart';
+import 'package:flutter_3/screens/user/devices_list_screen.dart';
 import 'package:flutter_3/screens/user/settings_screen.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Define the widgets for each screen here
           Center(child: DashboardScreen(mqttClient: widget.mqttClient)),
-          Center(child: RobotsListScreen(mqttClient: widget.mqttClient)),
+          Center(child: DevicesListScreen(mqttClient: widget.mqttClient)),
           Center(child: SettingsScreen(mqttClient: widget.mqttClient)),
         ],
       ),

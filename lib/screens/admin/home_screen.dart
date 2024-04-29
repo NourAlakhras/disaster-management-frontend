@@ -5,7 +5,7 @@ import 'package:flutter_3/screens/admin/robots_list_screen.dart';
 import 'package:flutter_3/screens/admin/users_list_screen.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
-import 'package:flutter_3/screens/user/robots_list_screen.dart';
+import 'package:flutter_3/screens/user/devices_list_screen.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 
 class AdminHomeScreen extends StatefulWidget {
@@ -70,7 +70,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           const Center(child: UsersListScreen()),
           const Center(child: MissionsListScreen()),
           const Center(child: AdminRobotsListScreen()),
-          Center(child: RobotsListScreen(mqttClient: widget.mqttClient)),
+          Center(child: DevicesListScreen(mqttClient: widget.mqttClient)),
         ],
       ),
     );

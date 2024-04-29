@@ -64,8 +64,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       await UserApiService.updateUserInfo('', newEmail);
       setState(() {
-        // Update UI with new email
-        _userDataFuture = _fetchUserData(); // Refresh user data after update
+        _userDataFuture = _fetchUserData(); 
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

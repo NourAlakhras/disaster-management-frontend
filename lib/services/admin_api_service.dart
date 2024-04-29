@@ -12,7 +12,7 @@ class AdminApiService {
     int? pageSize,
     List<Status>? statuses,
     List<UserType>? types,
-    int? missionId,
+    String? missionId,
   }) async {
     try {
       print('statuses from getAllUsers: $statuses');
@@ -42,28 +42,28 @@ class AdminApiService {
 
       print('statusStrings from getAllUsers: $statusStrings');
 
-      print(
-          'typeStrings from getAllUsers: $typeStrings'); // Build query parameters
-// Build query parameters
+      print('typeStrings from getAllUsers: $typeStrings');
+
+      // Build query parameters
       Map<String, dynamic> queryParameters = {
         'page-number': pageNumber ?? 1,
         'page-size': pageSize ?? 6,
       };
 
-// Add status query parameters
+      // Add status query parameters
       if (_statusValues != null && _statusValues.isNotEmpty) {
         // Concatenate status values with the same key
         queryParameters['status'] = _statusValues.join('&status=');
       }
 
-// Add type query parameters
+      // Add type query parameters
       if (_typeValues != null && _typeValues.isNotEmpty) {
         // Concatenate type values with the same key
         queryParameters['type'] = _typeValues.join('&type=');
       }
 
       if (missionId != null) {
-        queryParameters['mission'] = missionId.toString();
+        queryParameters['mission'] = missionId;
       }
 
       print('queryParameters : $queryParameters');

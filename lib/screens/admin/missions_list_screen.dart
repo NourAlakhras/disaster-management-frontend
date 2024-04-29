@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/screens/admin/create_mission_screen.dart';
+import 'package:flutter_3/screens/admin/misssion_profile.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
@@ -154,8 +155,15 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                       ),
                       // Mission Rows
                       ..._filteredMissions.map((mission) {
+                        print(mission.id);
+
                         return InkWell(
-                          onTap: () => _showMissionDetailsDialog(mission),
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    MissionProfileScreen(missionId: mission.id),
+                              )),
                           child: Container(
                             decoration: const BoxDecoration(
                               border: Border(
@@ -443,5 +451,8 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     }
   }
 
-  _showMissionDetailsDialog(Mission mission) {}
+
+  _buildMissionActionsForDetails(Mission mission) {}
+
+  _getMissionCurrentUsers(String id) {}
 }

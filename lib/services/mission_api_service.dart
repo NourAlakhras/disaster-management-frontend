@@ -79,37 +79,6 @@ class MissionApiService {
     return '';
   }
 
-  static Future<Mission> getMissionById(String missionId) async {
-    const String baseUrl = Constants.baseUrl;
-    final Uri url = Uri.parse('$baseUrl/api/missions/$missionId');
-
-    try {
-      String? token = await AuthApiService.getAuthToken();
-
-      final response = await http.get(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        return Mission.fromJson(responseBody);
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
-      } else {
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Failed to get mission: $e');
-    }
-  }
-
   static Future<void> updateMission(
     String missionId, {
     required String name,
@@ -178,7 +147,7 @@ class MissionApiService {
     final List<String> statusStrings =
         _missionStatusValues?.map((s) => s.toString()).toList() ?? [];
 
-    print('statusStrings from getAllUsers: $statusStrings');
+    print('statusStrings from getAllMissions: $statusStrings');
 // Build query parameters
     Map<String, dynamic> queryParameters = {
       'page-number': pageNumber ?? 1,
@@ -226,9 +195,6 @@ class MissionApiService {
         final List<Mission> missions =
             missionsJson.map((json) => Mission.fromJson(json)).toList();
         return missions;
-
-
-        
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {
@@ -254,7 +220,7 @@ class MissionApiService {
       String? token = await AuthApiService.getAuthToken();
       const String baseUrl = Constants.baseUrl;
       final Uri url = Uri.parse('$baseUrl/api/missions/$missionId/$command');
-      print('url $url'); 
+      print('url $url');
 
       final response = await http.put(
         url,
@@ -287,6 +253,44 @@ class MissionApiService {
     } catch (e) {
       // Handle errors
       throw Exception('Failed to update mission status: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getMissionDetails(
+      String missionId) async {
+    try {
+      String? token = await AuthApiService.getAuthToken();
+      const String baseUrl = Constants.baseUrl;
+      final Uri url = Uri.parse('$baseUrl/api/missions/$missionId');
+
+      final response = await http.get(
+        url,
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      );
+      print(url);
+      print(token);
+      if (response.statusCode == 200) {
+        print('getMissionDetails ${response.body}');
+        return json.decode(response.body);
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 404) {
+        throw NotFoundException();
+      } else if (response.statusCode == 500) {
+        throw InternalServerErrorException();
+      } else {
+        // Handle unexpected response
+        throw Exception(
+            'Unexpected response from server: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Handle errors
+      throw Exception('Failed to retrieve user info: $e');
     }
   }
 }

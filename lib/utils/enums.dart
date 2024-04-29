@@ -44,7 +44,7 @@ enum DeviceType {
   BROKER,
 }
 
-final DeviceTypeValues = {
+final deviceTypeValues = {
   DeviceType.UGV: 1,
   DeviceType.UAV: 2,
   DeviceType.DOG: 3,
@@ -58,7 +58,7 @@ enum DeviceStatus {
   INACTIVE,
 }
 
-final DeviceStatusValues = {
+final deviceStatusValues = {
   DeviceStatus.AVAILABLE: 1,
   DeviceStatus.ASSIGNED: 2,
   DeviceStatus.INACTIVE: 3,

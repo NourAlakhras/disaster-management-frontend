@@ -9,17 +9,17 @@ import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/models/robot.dart';
 
-class RobotsListScreen extends StatefulWidget {
+class DevicesListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
 
-  const RobotsListScreen({super.key, required this.mqttClient});
+  const DevicesListScreen({super.key, required this.mqttClient});
 
   @override
-  State<RobotsListScreen> createState() => _RobotsListScreenState();
+  State<DevicesListScreen> createState() => _DevicesListScreenState();
 }
 
 
-class _RobotsListScreenState extends State<RobotsListScreen> {
+class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> _devices = []; // List to store the fetched devices
 
   @override

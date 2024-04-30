@@ -173,7 +173,9 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                           child: Container(
                             decoration: const BoxDecoration(
                               border: Border(
-                                  bottom: BorderSide(color: Colors.grey)),
+                                  bottom: BorderSide(
+                                color: Color(0xff293038),
+                              )),
                             ),
                             height: 70,
                             child: Row(

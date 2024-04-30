@@ -143,7 +143,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
                       Container(
                         decoration: const BoxDecoration(
                           border:
-                              Border(bottom: BorderSide(color: Colors.grey)),
+                              Border(bottom: BorderSide(
+                                  color:   Colors.grey),)
                         ),
                         height: 60,
                         child: const Row(
@@ -189,7 +190,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
                           child: Container(
                             decoration: const BoxDecoration(
                               border: Border(
-                                  bottom: BorderSide(color: Colors.grey)),
+                                  bottom: BorderSide(
+                                color:  Color(0xff293038),
+                              )),
                             ),
                             height: 70,
                             child: Row(

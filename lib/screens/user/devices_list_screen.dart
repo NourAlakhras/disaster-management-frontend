@@ -7,12 +7,11 @@ import 'package:flutter_3/widgets/devices_list_view.dart';
 import 'package:flutter_3/widgets/devices_map_view.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
-import 'package:flutter_3/models/robot.dart';
-
 class DevicesListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
 
-  const DevicesListScreen({super.key, required this.mqttClient});
+  const DevicesListScreen({required this.mqttClient, Key? key})
+      : super(key: key);
 
   @override
   State<DevicesListScreen> createState() => _DevicesListScreenState();
@@ -20,9 +19,7 @@ class DevicesListScreen extends StatefulWidget {
 
 class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> _devices = [];
-  
-  var devices; // List to store the fetched devices
-
+  final TextEditingController _searchController = TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -43,16 +40,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       print('Failed to fetch devices: $error');
     }
   }
-
-  final TextEditingController _searchController = TextEditingController();
-  List<Device> _filteredDevices = [];
-  final List<Device> _allDevices = [];
-
-  // final List<Robot> robots = [
-  //   Robot(id: "1", name: 'Robot 1'),
-  //   Robot(id: "2", name: 'Robot 2'),
-  //   Robot(id: "3", name: 'Robot 3'),
-  // ];
 
   @override
   Widget build(BuildContext context) {
@@ -101,11 +88,25 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 ],
                 tabContents: <Widget>[
                   // Content for Tab 1
-                  DevicesListView(
-                      mqttClient: widget.mqttClient, devices: devices),
+                  if (_devices.isNotEmpty)
+                    DevicesListView(
+                      mqttClient: widget.mqttClient,
+                      devices: _devices,
+                    )
+                  else
+                    const Center(
+                        child:
+                            CircularProgressIndicator()), // Show a loading indicator while fetching devices
                   // Content for Tab 2
-                  DevicesMapView(
-                      mqttClient: widget.mqttClient, devices: devices),
+                  if (_devices.isNotEmpty)
+                    DevicesMapView(
+                      mqttClient: widget.mqttClient,
+                      devices: _devices,
+                    )
+                  else
+                    const Center(
+                        child:
+                            CircularProgressIndicator()), // Show a loading indicator while fetching devices
                 ],
               ),
             ),
@@ -116,19 +117,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
 
   void _filterDevices(String query) {
-    setState(() {
-      if (query.isNotEmpty) {
-        _filteredDevices = _allDevices
-            .where((device) =>
-                device.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      } else {
-        _filteredDevices = _allDevices;
-      }
-    });
+    // Implement device filtering logic here
   }
-
-  _showStatusFilterDialog() {}
-
-  _showTypeFilterDialog() {}
 }

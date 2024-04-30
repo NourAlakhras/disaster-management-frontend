@@ -7,9 +7,11 @@ class DevicesListView extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
   final List<Device> devices;
 
-
-
-  const DevicesListView({super.key, required this.mqttClient, required this.devices,});
+  const DevicesListView({
+    super.key,
+    required this.mqttClient,
+    required this.devices,
+  });
 
   @override
   State<DevicesListView> createState() => _DevicesListViewState();
@@ -32,7 +34,7 @@ class _DevicesListViewState extends State<DevicesListView> {
         '${device.id}/connectivity',
       ];
 
-          widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
+      widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
     }
   }
 
@@ -45,29 +47,32 @@ class _DevicesListViewState extends State<DevicesListView> {
         itemBuilder: (context, index) {
           Device device = widget.devices[index];
           List<String> mqttTopics = [
-                    '${device.id}/battery',
-                    '${device.id}/connectivity',
-                  ];
+            '${device.id}/battery',
+            '${device.id}/connectivity',
+          ];
           widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
           return GestureDetector(
             onTap: () {
-              
-              
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => DeviceDetailedScreen(
                     mqttClient: widget.mqttClient,
-                    deviceId: device.id,                 
+                    device: device,
                   ),
                 ),
               );
             },
             child: Container(
               margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-              child: Card(
-                color: const Color(0xff121417),
-                elevation: 2,
+              decoration: const BoxDecoration(
+                border: Border(
+                    bottom: BorderSide(
+                  color: Color(0xff293038),
+                )),
+              ),
+              child: Container(
+                color: Colors.transparent,
                 margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -81,40 +86,47 @@ class _DevicesListViewState extends State<DevicesListView> {
                             Text(
                               device.name,
                               style: const TextStyle(
-                                color: Colors.white, 
-                                fontSize: 18, 
-                                fontWeight: FontWeight.bold, 
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 8),
-
+                            Text(
+                              'Type: ${device.type.toString().split('.').last.toLowerCase()}',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
                             Text(
                               'Battery: ${batteryLevels[device.id] ?? 'Unknown'}%',
                               style: const TextStyle(
-                                color: Colors.white60,
-                                fontSize: 16,
+                                color: Colors.white38,
+                                fontSize: 14,
                               ),
                             ),
                             Text(
                               'WI-FI: ${wifiLevels[device.id] ?? 'Unknown'}%',
                               style: const TextStyle(
-                                color: Colors.white60,
-                                fontSize: 16,
+                                color: Colors.white38,
+                                fontSize: 14,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16), 
+                      const SizedBox(width: 16),
                       Container(
                         width: 175,
-                        height: 175, 
-                        color: Colors.grey[300], 
+                        height: 175,
+                        color: Colors.grey[300],
                         child: Center(
                           child: Icon(
                             Icons.video_library,
                             size: 100,
-                            color: Colors.grey[600], 
+                            color: Colors.grey[600],
                           ),
                         ),
                       ),
@@ -128,15 +140,16 @@ class _DevicesListViewState extends State<DevicesListView> {
       ),
     );
   }
-    @override
+
+  @override
   void dispose() {
-        for (var device in widget.devices) {
+    for (var device in widget.devices) {
       List<String> mqttTopics = [
         '${device.id}/battery',
         '${device.id}/connectivity',
       ];
       widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
-        }   
-super.dispose();
+    }
+    super.dispose();
   }
 }

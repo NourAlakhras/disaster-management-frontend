@@ -7,12 +7,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 
 class MonitoringView extends StatefulWidget {
-  final String robotId;
+  final String deviceId;
   final MQTTClientWrapper mqttClient;
 
   const MonitoringView({
     super.key,
-    required this.robotId,
+    required this.deviceId,
     required this.mqttClient,
   });
 
@@ -22,27 +22,23 @@ class MonitoringView extends StatefulWidget {
 
 class _MonitoringViewState extends State<MonitoringView> {
   late GoogleMapController _controller;
-  late LatLng _robotLocation;
+  late LatLng _deviceLocation;
   final Set<Marker> _markers = {};
-  late double _batteryLevel;
-  late double _wifiLevel;
   late Map<String, dynamic> _sensorData;
 
   @override
   void initState() {
     super.initState();
-    _robotLocation = const LatLng(0.0, 0.0);
-    _batteryLevel = 0.0;
-    _wifiLevel = 0.0;
+    _deviceLocation = const LatLng(0.0, 0.0);
     _sensorData = {};
 
     widget.mqttClient.onDataReceived = _onDataReceived;
     widget.mqttClient.subscribeToMultipleTopics([
       'test-ugv/sensor_data',
-      '${widget.robotId}/gps',
-      '${widget.robotId}/sensor_data',
-      '${widget.robotId}/connectivity',
-      '${widget.robotId}/battery',
+      '${widget.deviceId}/gps',
+      '${widget.deviceId}/sensor_data',
+      '${widget.deviceId}/connectivity',
+      '${widget.deviceId}/battery',
     ]);
     widget.mqttClient.setupMessageListener();
   }
@@ -51,23 +47,20 @@ class _MonitoringViewState extends State<MonitoringView> {
     if (data.containsKey('lat') && data.containsKey('long')) {
       final latitude = data['lat'] ?? 0.0;
       final longitude = data['long'] ?? 0.0;
-      // Update robot's location
+      // Update device's location
       setState(() {
-        _robotLocation = LatLng(latitude, longitude);
-        // Update camera position to center on the robot's location
-        _updateCameraPosition(_robotLocation);
+        _deviceLocation = LatLng(latitude, longitude);
+        // Update camera position to center on the device's location
+        _updateCameraPosition(_deviceLocation);
         // Update marker position
-        _updateMarker(_robotLocation);
+        _updateMarker(_deviceLocation);
       });
     } else if (data.containsKey('wifi')) {
-      final wifiLevel = data['wifi'] ?? 0.0;
       setState(() {
-        _wifiLevel = wifiLevel;
       });
     } else if (data.containsKey('battery')) {
       final batteryLevel = data['battery'] ?? 0.0;
       setState(() {
-        _batteryLevel = batteryLevel;
       });
     } else {
       // Handle other sensor data here
@@ -87,7 +80,7 @@ class _MonitoringViewState extends State<MonitoringView> {
     _markers.clear();
     _markers.add(
       Marker(
-        markerId: const MarkerId('robot_marker'),
+        markerId: const MarkerId('device_marker'),
         position: location,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       ),
@@ -193,7 +186,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                   zoomGesturesEnabled: true, // Respond to zoom gestures
                   initialCameraPosition: CameraPosition(
                     target:
-                        _robotLocation, // Set initial camera position to robot's location
+                        _deviceLocation, // Set initial camera position to device's location
                     zoom: 15.0,
                   ),
                   markers: _markers,
@@ -244,12 +237,11 @@ class _MonitoringViewState extends State<MonitoringView> {
   void dispose() {
     widget.mqttClient.unsubscribeFromMultipleTopics([
       'test-ugv/sensor_data',
-      '${widget.robotId}/gps',
-      '${widget.robotId}/sensor_data',
-      '${widget.robotId}/connectivity',
-      '${widget.robotId}/battery',
+      '${widget.deviceId}/gps',
+      '${widget.deviceId}/sensor_data',
+      '${widget.deviceId}/connectivity',
+      '${widget.deviceId}/battery',
     ]);
     super.dispose();
   }
 }
-// AIzaSyDDFulgNdbHHrR3cR2EbSJ4ZiNEnKaoHUg

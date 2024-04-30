@@ -244,34 +244,32 @@ String _getDeviceName(String deviceId) {
   @override
   Widget build(BuildContext context) {
     return Expanded(
-        child: Container(
-      child: GoogleMap(
-        gestureRecognizers: {}
-          ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
-          ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
-          ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))
-          ..add(Factory<VerticalDragGestureRecognizer>(
-              () => VerticalDragGestureRecognizer()))
-          ..add(Factory<HorizontalDragGestureRecognizer>(
-              () => HorizontalDragGestureRecognizer()))
-          ..add(Factory<LongPressGestureRecognizer>(
-              () => LongPressGestureRecognizer())),
-
-        compassEnabled: true,
-        rotateGesturesEnabled: true, // Respond to rotate gestures
-        tiltGesturesEnabled: true, // Respond to tilt gestures
-        zoomControlsEnabled: true, // Show zoom controls
-        zoomGesturesEnabled: true, // Respond to zoom gestures
-        onMapCreated: (controller) {
-          _mapController = controller;
-        },
-        initialCameraPosition: const CameraPosition(
-          target: LatLng(0.0, 0.0),
-          zoom: 50,
-        ),
-        markers: _markers,
-      ),
-    ));
+        child: GoogleMap(
+          gestureRecognizers: {}
+            ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
+            ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
+            ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))
+            ..add(Factory<VerticalDragGestureRecognizer>(
+                () => VerticalDragGestureRecognizer()))
+            ..add(Factory<HorizontalDragGestureRecognizer>(
+                () => HorizontalDragGestureRecognizer()))
+            ..add(Factory<LongPressGestureRecognizer>(
+                () => LongPressGestureRecognizer())),
+        
+          compassEnabled: true,
+          rotateGesturesEnabled: true, // Respond to rotate gestures
+          tiltGesturesEnabled: true, // Respond to tilt gestures
+          zoomControlsEnabled: true, // Show zoom controls
+          zoomGesturesEnabled: true, // Respond to zoom gestures
+          onMapCreated: (controller) {
+            _mapController = controller;
+          },
+          initialCameraPosition: const CameraPosition(
+            target: LatLng(0.0, 0.0),
+            zoom: 50,
+          ),
+          markers: _markers,
+        ));
   }
 
 

@@ -4,6 +4,7 @@ import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
+import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:multi_dropdown/multiselect_dropdown.dart';
 
 class CreateMissionScreen extends StatefulWidget {
@@ -35,8 +36,23 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create Mission'),
+      backgroundColor: const Color(0xff121417),
+      appBar: CustomUpperBar(
+        title: 'Create Mission',
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          color: const Color.fromARGB(255, 255, 255, 255),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            color: const Color.fromARGB(255, 255, 255, 255),
+            onPressed: () {},
+          )
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20.0),

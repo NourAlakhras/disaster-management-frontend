@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/screens/shared/settings_screen.dart';
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+    final MQTTClientWrapper mqttClient;
 
+  const DashboardScreen({super.key,required this.mqttClient});
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -87,10 +90,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         leading: IconButton(
           icon: const Icon(Icons.settings),
           color: Colors.white,
-          onPressed: () {
-            // Handle settings icon tap
-          },
-        ),
+          onPressed:  () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                                SettingsScreen(mqttClient: widget.mqttClient)),
+
+                              )),
+  
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),

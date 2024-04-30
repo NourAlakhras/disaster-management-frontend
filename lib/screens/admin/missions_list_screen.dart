@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/screens/admin/create_mission_screen.dart';
 import 'package:flutter_3/screens/admin/misssion_profile.dart';
+import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -11,7 +13,9 @@ import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
 
 class MissionsListScreen extends StatefulWidget {
-  const MissionsListScreen({super.key});
+  final MQTTClientWrapper mqttClient;
+
+  MissionsListScreen({super.key, required this.mqttClient});
 
   @override
   _MissionsListScreenState createState() => _MissionsListScreenState();
@@ -75,12 +79,14 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
       appBar: CustomUpperBar(
         title: "Missions' List",
         leading: IconButton(
-          icon: const Icon(Icons.settings),
-          color: Colors.white,
-          onPressed: () {
-            // Handle settings icon tap
-          },
-        ),
+            icon: const Icon(Icons.settings),
+            color: Colors.white,
+            onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          SettingsScreen(mqttClient: widget.mqttClient)),
+                )),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -450,7 +456,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
       print('Failed to continue mission: $error');
     }
   }
-
 
   _buildMissionActionsForDetails(Mission mission) {}
 

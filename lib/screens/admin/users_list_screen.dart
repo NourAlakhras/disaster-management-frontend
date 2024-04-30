@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user.dart';
+import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -10,7 +12,9 @@ import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
 
 class UsersListScreen extends StatefulWidget {
-  const UsersListScreen({super.key});
+   final MQTTClientWrapper mqttClient;
+
+  const UsersListScreen({super.key,required this.mqttClient});
 
   @override
   _UsersListScreenState createState() => _UsersListScreenState();
@@ -92,10 +96,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
         leading: IconButton(
           icon: const Icon(Icons.settings),
           color: Colors.white,
-          onPressed: () {
-            // Handle settings icon tap
-          },
-        ),
+                   onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          SettingsScreen(mqttClient: widget.mqttClient)),
+                )),
+  
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),

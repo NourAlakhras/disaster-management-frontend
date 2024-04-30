@@ -94,7 +94,7 @@ class DeviceApiService {
       );
 
       final responseBody = jsonDecode(response.body);
-      print('responseBody: $responseBody');
+      print('getAllDevices responseBody: $responseBody');
 
       if (response.statusCode == 200) {
         // Parse the response body into a list of User objects
@@ -127,3 +127,8 @@ class DeviceApiService {
     }
   }
 }
+// missionStatusValues.entries
+//         .firstWhere((entry) => entry.value == statusValue)
+//         .key
+//         .toString()
+//         .split('.')[1];

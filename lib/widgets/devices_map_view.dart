@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_3/models/robot.dart';
+import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/utils/enums.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:math' show atan2, cos, pi, sin, sqrt, log;
 
-class RobotsMapView extends StatefulWidget {
+class DevicesMapView extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
-  final List<Robot> robots;
+  final List<Device> devices;
 
-  const RobotsMapView({super.key, required this.mqttClient, required this.robots});
+  const DevicesMapView({super.key, required this.mqttClient, required this.devices});
 
   @override
-  State<RobotsMapView> createState() => _RobotsMapViewState();
+  State<DevicesMapView> createState() => _DevicesMapViewState();
 }
 
-class _RobotsMapViewState extends State<RobotsMapView> {
+class _DevicesMapViewState extends State<DevicesMapView> {
   late GoogleMapController _mapController;
   final Set<Marker> _markers = {};
   LatLngBounds _bounds = LatLngBounds(
@@ -33,8 +34,8 @@ class _RobotsMapViewState extends State<RobotsMapView> {
   }
 
   void _subscribeToTopics() {
-    for (var robot in widget.robots) {
-      String mqttTopic = '${robot.id}/gps';
+    for (var device in widget.devices) {
+      String mqttTopic = '${device.id}/gps';
       widget.mqttClient.subscribeToTopic(mqttTopic);
     }
 
@@ -47,31 +48,31 @@ class _RobotsMapViewState extends State<RobotsMapView> {
   }
 
   void _onDataReceived(Map<String, dynamic> message) {
-    String robotId = message['topic'].substring(0, message['topic'].length - 4);
-    print('from map this is my topic $robotId');
-    _updateMarkers(robotId, message);
+    String deviceId = message['topic'].substring(0, message['topic'].length - 4);
+    print('from map this is my topic $deviceId');
+    _updateMarkers(deviceId, message);
   }
 
-  void _updateMarkers(String robotId, Map<String, dynamic> gpsData) {
+  void _updateMarkers(String deviceId, Map<String, dynamic> gpsData) {
     if (gpsData.containsKey('lat') && gpsData.containsKey('long')) {
       double lat = gpsData['lat'];
       double long = gpsData['long'];
       LatLng position = LatLng(lat, long);
-      _markers.removeWhere((marker) => marker.markerId.value == robotId);
+      _markers.removeWhere((marker) => marker.markerId.value == deviceId);
 
-      // Get marker color based on the robot's ID
-      Color color = _getMarkerColor(robotId);
-      String robotName = _getRobotName(robotId); // Get the robot's name
+      // Get marker color based on the device's ID
+      Color color = _getMarkerColor(deviceId);
+      String deviceName = _getDeviceName(deviceId); // Get the device's name
 
       // Add marker with custom color
       _markers.add(
         Marker(
-          markerId: MarkerId(robotId),
+          markerId: MarkerId(deviceId),
           position: position,
           icon: BitmapDescriptor.defaultMarkerWithHue(
             _getColorHue(color),
           ),
-          infoWindow: InfoWindow(title: robotId), // Set the info window
+          infoWindow: InfoWindow(title: deviceId), // Set the info window
         ),
       );
 
@@ -94,9 +95,9 @@ class _RobotsMapViewState extends State<RobotsMapView> {
     // Add more colors as needed
   ];
 
-  Color _getMarkerColor(String robotId) {
-    // Choose a color based on the modified robot's ID
-    int index = robotId.hashCode % _markerColors.length;
+  Color _getMarkerColor(String deviceId) {
+    // Choose a color based on the modified device's ID
+    int index = deviceId.hashCode % _markerColors.length;
     return _markerColors[index];
   }
 
@@ -106,12 +107,19 @@ class _RobotsMapViewState extends State<RobotsMapView> {
     return hsvColor.hue;
   }
 
-  String _getRobotName(String robotId) {
-    // Find the robot object by its ID and return its name
-    Robot? robot = widget.robots.firstWhere((robot) => robot.id == robotId,
-        orElse: () => Robot(id: robotId, name: 'Unknown'));
-    return robot.name;
+String _getDeviceName(String deviceId) {
+    // Find the device object by its ID and return its name
+    Device device = widget.devices.firstWhere(
+      (device) => device.id == deviceId,
+      orElse: () => Device(
+          id: deviceId,
+          name: 'Unknown',
+          type: DeviceType.UGV,
+          status: Status.AVAILABLE),
+    );
+    return device.name;
   }
+
 
   void _adjustBounds(LatLng position) {
     double minLat = _bounds.southwest.latitude;

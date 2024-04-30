@@ -4,6 +4,7 @@ import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/widgets/custom_upper_bar.dart';
 
 class MissionProfileScreen extends StatefulWidget {
   final String missionId;
@@ -105,10 +106,26 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mission Profile'),
+        return Scaffold(
+      backgroundColor: const Color(0xff121417),
+      appBar: CustomUpperBar(
+        title: 'Mission Profile',
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          color: const Color.fromARGB(255, 255, 255, 255),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            color: const Color.fromARGB(255, 255, 255, 255),
+            onPressed: () {},
+          )
+        ],
       ),
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : missionDetails != null // Check if missionDetails is not null

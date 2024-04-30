@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_3/models/robot.dart';
-import 'package:flutter_3/screens/user/robot_detailed_screen.dart';
+import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/screens/user/device_detailed_screen.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 
-class RobotsListView extends StatefulWidget {
+class DevicesListView extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
-  final List<Robot> robots;
+  final List<Device> devices;
 
 
 
-  const RobotsListView({super.key, required this.mqttClient, required this.robots,});
+  const DevicesListView({super.key, required this.mqttClient, required this.devices,});
 
   @override
-  State<RobotsListView> createState() => _RobotsListViewState();
+  State<DevicesListView> createState() => _DevicesListViewState();
 }
 
-class _RobotsListViewState extends State<RobotsListView> {
-  Map<String, int> batteryLevels = {}; // Store battery levels for each robot
-  Map<String, int> wifiLevels = {}; // Store Wi-Fi levels for each robot
+class _DevicesListViewState extends State<DevicesListView> {
+  Map<String, int> batteryLevels = {}; // Store battery levels for each device
+  Map<String, int> wifiLevels = {}; // Store Wi-Fi levels for each device
 
   @override
   void initState() {
@@ -26,10 +26,10 @@ class _RobotsListViewState extends State<RobotsListView> {
   }
 
   void _subscribeToTopics() {
-    for (var robot in widget.robots) {
+    for (var device in widget.devices) {
       List<String> mqttTopics = [
-        '${robot.id}/battery',
-        '${robot.id}/connectivity',
+        '${device.id}/battery',
+        '${device.id}/connectivity',
       ];
 
           widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
@@ -41,12 +41,12 @@ class _RobotsListViewState extends State<RobotsListView> {
     return Container(
       color: const Color(0xff121417),
       child: ListView.builder(
-        itemCount: widget.robots.length,
+        itemCount: widget.devices.length,
         itemBuilder: (context, index) {
-          Robot robot = widget.robots[index];
+          Device device = widget.devices[index];
           List<String> mqttTopics = [
-                    '${robot.id}/battery',
-                    '${robot.id}/connectivity',
+                    '${device.id}/battery',
+                    '${device.id}/connectivity',
                   ];
           widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
           return GestureDetector(
@@ -56,9 +56,9 @@ class _RobotsListViewState extends State<RobotsListView> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => RobotDetailedScreen(
+                  builder: (context) => DeviceDetailedScreen(
                     mqttClient: widget.mqttClient,
-                    robotId: robot.id,                 
+                    deviceId: device.id,                 
                   ),
                 ),
               );
@@ -79,7 +79,7 @@ class _RobotsListViewState extends State<RobotsListView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              robot.name,
+                              device.name,
                               style: const TextStyle(
                                 color: Colors.white, 
                                 fontSize: 18, 
@@ -89,14 +89,14 @@ class _RobotsListViewState extends State<RobotsListView> {
                             const SizedBox(height: 8),
 
                             Text(
-                              'Battery: ${batteryLevels[robot.id] ?? 'Unknown'}%',
+                              'Battery: ${batteryLevels[device.id] ?? 'Unknown'}%',
                               style: const TextStyle(
                                 color: Colors.white60,
                                 fontSize: 16,
                               ),
                             ),
                             Text(
-                              'WI-FI: ${wifiLevels[robot.id] ?? 'Unknown'}%',
+                              'WI-FI: ${wifiLevels[device.id] ?? 'Unknown'}%',
                               style: const TextStyle(
                                 color: Colors.white60,
                                 fontSize: 16,
@@ -130,10 +130,10 @@ class _RobotsListViewState extends State<RobotsListView> {
   }
     @override
   void dispose() {
-        for (var robot in widget.robots) {
+        for (var device in widget.devices) {
       List<String> mqttTopics = [
-        '${robot.id}/battery',
-        '${robot.id}/connectivity',
+        '${device.id}/battery',
+        '${device.id}/connectivity',
       ];
       widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
         }   

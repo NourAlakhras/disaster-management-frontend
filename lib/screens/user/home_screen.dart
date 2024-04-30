@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/screens/user/dashboard_screen.dart';
 import 'package:flutter_3/screens/user/devices_list_screen.dart';
-import 'package:flutter_3/screens/user/settings_screen.dart';
+import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
@@ -21,7 +21,9 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController(initialPage: 0);
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+        canPop: false,
+        child: Scaffold(
       bottomNavigationBar: CurvedNavigationBar(
         key: _bottomNavigationKey,
         index: 0,
@@ -61,12 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {});
         },
         children: [
-          // Define the widgets for each screen here
           Center(child: DashboardScreen(mqttClient: widget.mqttClient)),
           Center(child: DevicesListScreen(mqttClient: widget.mqttClient)),
           Center(child: SettingsScreen(mqttClient: widget.mqttClient)),
         ],
       ),
-    );
+    ),);
   }
 }

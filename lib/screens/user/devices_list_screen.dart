@@ -3,8 +3,8 @@ import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
-import 'package:flutter_3/widgets/robots_list_view.dart';
-import 'package:flutter_3/widgets/robots_map_view.dart';
+import 'package:flutter_3/widgets/devices_list_view.dart';
+import 'package:flutter_3/widgets/devices_map_view.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/models/robot.dart';
@@ -18,9 +18,10 @@ class DevicesListScreen extends StatefulWidget {
   State<DevicesListScreen> createState() => _DevicesListScreenState();
 }
 
-
 class _DevicesListScreenState extends State<DevicesListScreen> {
-  List<Device> _devices = []; // List to store the fetched devices
+  List<Device> _devices = [];
+  
+  var devices; // List to store the fetched devices
 
   @override
   void initState() {
@@ -31,31 +32,34 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   Future<void> _fetchDevices() async {
     try {
       // Call the getAllDevices method from the DeviceApiService
-      List<Device> devices = await DeviceApiService.getAllDevices(pageNumber: 1, pageSize: 7);
+      List<Device> devices =
+          await DeviceApiService.getAllDevices(pageNumber: 1, pageSize: 7);
       setState(() {
         _devices = devices; // Update the state with the fetched devices
+        print('devices $devices');
       });
     } catch (error) {
       // Handle error if fetching devices fails
       print('Failed to fetch devices: $error');
     }
   }
-  final TextEditingController _searchController = TextEditingController();
-  List<Device> _filteredRobots = [];
-  final List<Device> _allRobots = [];
 
-  final List<Robot> robots = [
-    Robot(id: "1", name: 'Robot 1'),
-    Robot(id: "2", name: 'Robot 2'),
-    Robot(id: "3", name: 'Robot 3'),
-  ];
+  final TextEditingController _searchController = TextEditingController();
+  List<Device> _filteredDevices = [];
+  final List<Device> _allDevices = [];
+
+  // final List<Robot> robots = [
+  //   Robot(id: "1", name: 'Robot 1'),
+  //   Robot(id: "2", name: 'Robot 2'),
+  //   Robot(id: "3", name: 'Robot 3'),
+  // ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
-        title: 'Robots',
+        title: 'Devices',
         leading: IconButton(
           icon: const Icon(Icons.settings),
           color: Colors.white,
@@ -81,7 +85,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 00),
               child: CustomSearchBar(
                 controller: _searchController,
-                onChanged: _filterRobots,
+                onChanged: _filterDevices,
               ),
             ),
             Expanded(
@@ -97,9 +101,11 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 ],
                 tabContents: <Widget>[
                   // Content for Tab 1
-                  RobotsListView(mqttClient: widget.mqttClient, robots: robots),
+                  DevicesListView(
+                      mqttClient: widget.mqttClient, devices: devices),
                   // Content for Tab 2
-                  RobotsMapView(mqttClient: widget.mqttClient, robots: robots),
+                  DevicesMapView(
+                      mqttClient: widget.mqttClient, devices: devices),
                 ],
               ),
             ),
@@ -109,15 +115,15 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     );
   }
 
-  void _filterRobots(String query) {
+  void _filterDevices(String query) {
     setState(() {
       if (query.isNotEmpty) {
-        _filteredRobots = _allRobots
-            .where(
-                (user) => user.name.toLowerCase().contains(query.toLowerCase()))
+        _filteredDevices = _allDevices
+            .where((device) =>
+                device.name.toLowerCase().contains(query.toLowerCase()))
             .toList();
       } else {
-        _filteredRobots = _allRobots;
+        _filteredDevices = _allDevices;
       }
     });
   }

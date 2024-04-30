@@ -4,13 +4,13 @@ import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 
-class RobotDetailedScreen extends StatelessWidget {
-  final String robotId;
+class DeviceDetailedScreen extends StatelessWidget {
+  final String deviceId;
   final MQTTClientWrapper mqttClient;
 
-  const RobotDetailedScreen({
+  const DeviceDetailedScreen({
     super.key,
-    required this.robotId,
+    required this.deviceId,
     required this.mqttClient,
   });
 
@@ -26,7 +26,7 @@ class RobotDetailedScreen extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        title: 'Robot Details - $robotId',
+        title: 'Robot Details - $deviceId',
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -68,7 +68,7 @@ class RobotDetailedScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.only(top: 10),
                   child: MonitoringView(
-                    robotId: robotId,
+                    robotId: deviceId,
                     mqttClient: mqttClient,
                   ),
                 ),

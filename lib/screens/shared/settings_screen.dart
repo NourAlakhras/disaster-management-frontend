@@ -168,6 +168,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: 'Settings',
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          color: const Color.fromARGB(255, 255, 255, 255),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),

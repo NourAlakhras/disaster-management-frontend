@@ -4,27 +4,30 @@ import 'package:flutter_3/utils/enums.dart';
 class User {
   final String id;
   final String username;
-  final UserType type;
-  final Status status; 
-  final int activeMissionCount;
+  final UserType? type;
+  final Status? status; 
+  final int? activeMissionCount;
 
   User({
     required this.id,
     required this.username,
-    required this.type,
-    required this.status,
-    required this.activeMissionCount,
+    this.type,
+    this.status,
+    this.activeMissionCount,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) {
+factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
-      username: json['username'],
-      type: _getUserType(json['type']),
-      status: _getStatus(json['status']),
-      activeMissionCount: json['active_mission_count'],
+      id: json['id'] ,
+      username: json['username'] ,
+      type: json.containsKey('type') ? _getUserType(json['type']) : null,
+      status: json.containsKey('status') ? _getStatus(json['status']) : null,
+      activeMissionCount: json.containsKey('active_mission_count')
+          ? json['active_mission_count']
+          : null,
     );
   }
+
 
   static UserType _getUserType(int typeValue) {
     return userTypeValues.entries

@@ -80,7 +80,8 @@ class MissionApiService {
   }
 
   static Future<void> updateMission(
-    String missionId, {
+    {
+    required String missionId, 
     required String name,
     required List<String> deviceIds,
     required List<String> userIds,
@@ -256,8 +257,7 @@ class MissionApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getMissionDetails(
-      String missionId) async {
+  static Future<Mission> getMissionDetails(String missionId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
       const String baseUrl = Constants.baseUrl;
@@ -270,11 +270,12 @@ class MissionApiService {
           'Content-Type': 'application/json; charset=UTF-8',
         },
       );
-      print(url);
-      print(token);
+
       if (response.statusCode == 200) {
-        print('getMissionDetails ${response.body}');
-        return json.decode(response.body);
+        print('getMissionDetails response.body ${response.body}');
+        final Map<String, dynamic> missionDetails = jsonDecode(response.body);
+        return Mission.fromJson(
+            missionDetails); // Convert JSON to Mission object
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {
@@ -290,7 +291,7 @@ class MissionApiService {
       }
     } catch (e) {
       // Handle errors
-      throw Exception('Failed to retrieve user info: $e');
+      throw Exception('Failed to retrieve mission details: $e');
     }
   }
 }

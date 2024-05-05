@@ -8,8 +8,6 @@ import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/utils/helpers.dart';
-import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
 
 class MissionsListScreen extends StatefulWidget {
@@ -167,8 +165,9 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                           onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) =>
-                                    MissionProfileScreen(missionId: mission.id),
+                                builder: (context) => MissionProfileScreen(
+                                    mission: mission,
+                                    mqttClient: widget.mqttClient),
                               )),
                           child: Container(
                             decoration: const BoxDecoration(
@@ -326,12 +325,18 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 value: 2,
                 child: Text('Cancel'),
               ),
+              const PopupMenuItem(
+                value: 3,
+                child: Text('Edit'),
+              ),
             ],
             onSelected: (value) {
               if (value == 1) {
                 _startMission(mission.id);
               } else if (value == 2) {
                 _cancelMission(mission.id);
+              } else if (value == 3) {
+                _editMission(mission.id);
               }
             },
           ),
@@ -349,12 +354,18 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 value: 2,
                 child: Text('End'),
               ),
+              const PopupMenuItem(
+                value: 3,
+                child: Text('Edit'),
+              ),
             ],
             onSelected: (value) {
               if (value == 1) {
                 _pauseMission(mission.id);
               } else if (value == 2) {
                 _endMission(mission.id);
+              } else if (value == 3) {
+                _editMission(mission.id);
               }
             },
           ),
@@ -382,23 +393,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
             },
           ),
         ];
-      // case MissionStatus.FINISHED:
-      //   return [
-      //     PopupMenuButton<int>(
-      //       icon: const Icon(Icons.more_vert, color: Colors.white70),
-      //       itemBuilder: (context) => [
-      //         const PopupMenuItem(
-      //           value: 1,
-      //           child: Text('Delete'),
-      //         ),
-      //       ],
-      //       onSelected: (value) {
-      //         if (value == 1) {
-      //           _cancelMission(mission);
-      //         }
-      //       },
-      //     ),
-      //   ];
       default:
         return [];
     }
@@ -459,7 +453,5 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     }
   }
 
-  _buildMissionActionsForDetails(Mission mission) {}
-
-  _getMissionCurrentUsers(String id) {}
+  void _editMission(String id) {}
 }

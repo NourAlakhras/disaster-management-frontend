@@ -4,8 +4,9 @@ import 'package:flutter_3/widgets/monitoring_view.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_vlc_player/flutter_vlc_player.dart';
 
-class DeviceDetailedScreen extends StatelessWidget {
+class DeviceDetailedScreen extends StatefulWidget {
   final Device device;
   final MQTTClientWrapper mqttClient;
 
@@ -16,7 +17,43 @@ class DeviceDetailedScreen extends StatelessWidget {
   });
 
   @override
+  State<DeviceDetailedScreen> createState() => _DeviceDetailedScreenState();
+}
+
+class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
+  late VlcPlayerController _videoPlayerController;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePlayer();
+  }
+
+  @override
+  void dispose() async {
+    super.dispose();
+    await _videoPlayerController.stopRendererScanning();
+    await _videoPlayerController.dispose();
+  }
+
+  Future<void> _initializePlayer() async {
+    _videoPlayerController = VlcPlayerController.network(
+      'rtmp://[ip_address]/live/test',
+      hwAcc: HwAcc.auto,
+      autoPlay: false,
+      options: VlcPlayerOptions(),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Get the screen width
+    double _aspectRatio = 16 / 10; // Adjust as needed
+    double screenWidth = MediaQuery.of(context).size.width;
+    double videoHeight = screenWidth / _aspectRatio;
+
+    // Calculate the height based on the aspect ratio
+
     return Scaffold(
       backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
@@ -27,7 +64,7 @@ class DeviceDetailedScreen extends StatelessWidget {
             Navigator.pop(context);
           },
         ),
-        title: device.name,
+        title: 'Device: ${widget.device.name}',
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -38,21 +75,10 @@ class DeviceDetailedScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          SizedBox(
-            height: MediaQuery.of(context).size.height / 3,
-            width: double.infinity,
-            child: Container(
-              width: 175,
-              height: 175,
-              color: Colors.grey[300],
-              child: Center(
-                child: Icon(
-                  Icons.video_library,
-                  size: 100,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ),
+          VlcPlayer(
+            controller: _videoPlayerController,
+            aspectRatio: _aspectRatio,
+            placeholder: Center(child: CircularProgressIndicator()),
           ),
           Expanded(
             child: TabbedView(
@@ -69,8 +95,8 @@ class DeviceDetailedScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.only(top: 10),
                   child: MonitoringView(
-                    deviceId: device.id,
-                    mqttClient: mqttClient,
+                    deviceId: widget.device.id,
+                    mqttClient: widget.mqttClient,
                   ),
                 ),
                 Container(

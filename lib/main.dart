@@ -24,3 +24,13 @@ void main() => runApp(MaterialApp(
         '/signup': (context) =>  const SignupScreen(),
       },
     ));
+
+
+// #06141b
+
+// #11212d
+
+// #253745
+
+// #ccd0cf
+// #4A5c6a

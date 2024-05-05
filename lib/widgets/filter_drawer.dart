@@ -11,7 +11,8 @@ class FilterDrawerWidget extends StatefulWidget {
   const FilterDrawerWidget({
     Key? key,
     required this.onFilterApplied,
-    required this.criteriaList, required String title,
+    required this.criteriaList,
+    required String title,
   }) : super(key: key);
 
   @override
@@ -35,7 +36,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
   Widget build(BuildContext context) {
     return Drawer(
       child: Container(
-        color: const Color.fromARGB(255, 178, 181, 195),
+        color: Color.fromARGB(255, 39, 44, 50),
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -46,7 +47,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                 title: Text(
                   'Filter Options',
                   style: TextStyle(
-                    color: Color(0xff121417),
+                    color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -65,7 +66,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xff121417),
+                      color: Colors.white,
                     ),
                   ),
                   children: criterion.options
@@ -74,7 +75,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                           title: Text(
                             option.toString().split('.').last.toLowerCase(),
                             style: const TextStyle(
-                              color: const Color(0xff121417),
+                              color: Colors.white70,
                               fontSize: 14,
                             ),
                           ),
@@ -118,7 +119,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                       for (var criterion in widget.criteriaList) {
                         selectedCriteria[criterion.name] = [];
                       }
-                       widget.onFilterApplied(selectedCriteria);
+                      widget.onFilterApplied(selectedCriteria);
                       print(selectedCriteria);
 
                       // Close the drawer

@@ -40,6 +40,14 @@ class _DevicesListViewState extends State<DevicesListView> {
 
   @override
   Widget build(BuildContext context) {
+    // Get half of the screen width
+    double screenWidth = (MediaQuery.of(context).size.width)/2 ;
+    print('screenWidth $screenWidth');
+
+    double aspectRatio = 16 /9; 
+
+    // Calculate the height based on the aspect ratio
+    double videoHeight = screenWidth / aspectRatio;
     return Container(
       color: const Color(0xff121417),
       child: ListView.builder(
@@ -75,7 +83,7 @@ class _DevicesListViewState extends State<DevicesListView> {
                 color: Colors.transparent,
                 margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(8.0),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -119,8 +127,8 @@ class _DevicesListViewState extends State<DevicesListView> {
                       ),
                       const SizedBox(width: 16),
                       Container(
-                        width: 175,
-                        height: 175,
+                        width: screenWidth,
+                        height: videoHeight,
                         color: Colors.grey[300],
                         child: Center(
                           child: Icon(

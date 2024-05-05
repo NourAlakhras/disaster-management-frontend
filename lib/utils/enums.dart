@@ -36,6 +36,7 @@ final missionStatusValues = {
   MissionStatus.CANCELED: 4,
   MissionStatus.FINISHED: 5,
 };
+
 enum DeviceType {
   UGV,
   UAV,

@@ -3,14 +3,14 @@ import 'package:flutter_3/utils/enums.dart'; // Import enums file
 class Device {
   final String id;
   final String name;
-  final DeviceType type;
-  final Status status;
+  final DeviceType? type;
+  final Status? status;
 
   Device({
     required this.id,
     required this.name,
-    this.type = DeviceType.UGV, // Provide default value for type
-    this.status = Status.AVAILABLE, // Provide default value for status
+    this.type,
+    this.status,
   });
 
   factory Device.fromJson(Map<String, dynamic> json) {

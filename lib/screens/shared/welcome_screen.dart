@@ -7,7 +7,7 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
+      backgroundColor:  Color(0xff11212d),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -24,7 +24,7 @@ class WelcomeScreen extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xffffffff)),
+                      color: Color(0xffccd0cf)),
                   textAlign: TextAlign.center,
                 ),
                 Gap(30),

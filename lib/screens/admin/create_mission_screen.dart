@@ -4,6 +4,7 @@ import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
+import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:multi_dropdown/multiselect_dropdown.dart';
 
@@ -36,7 +37,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
+      backgroundColor: Color.fromARGB(144, 41, 48, 56),
       appBar: CustomUpperBar(
         title: 'Create Mission',
         leading: IconButton(
@@ -61,29 +62,57 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Mission Name'),
+              style: const TextStyle(color: Colors.white), // Change text color
+              decoration: const InputDecoration(
+                labelText: 'Mission Name',
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Color.fromARGB(
+                        255, 255, 255, 254), // Change border color when focused
+                  ),
+                ),
+                labelStyle: TextStyle(
+                  color: Colors.white, // Change label text color
+                ),
+              ),
             ),
             const SizedBox(height: 20),
-            const Text('Select Devices:'),
+            const Text(
+              'Select Devices:',
+              style: TextStyle(
+                color: Color.fromARGB(255, 255, 255, 255),
+              ),
+            ),
             const SizedBox(height: 8),
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : MultiSelectDropDown(
-                    onOptionSelected: (List<ValueItem> selectedOptions) {
-                      setState(() {
-                        _selectedDevices = selectedOptions
-                            .map((option) => option.value as Device)
-                            .toList();
-                      });
-                    },
-                    options: _deviceOptions,
-                    selectionType: SelectionType.multi,
-                    chipConfig: const ChipConfig(wrapType: WrapType.scroll),
-                    optionTextStyle: const TextStyle(fontSize: 16),
-                    selectedOptionIcon: const Icon(Icons.check_circle),
+                : Theme(
+                    data: ThemeData(
+                      canvasColor:
+                          Colors.amber, 
+                    ),
+                    child: MultiSelectDropDown(
+                      onOptionSelected: (List<ValueItem> selectedOptions) {
+                        setState(() {
+                          _selectedDevices = selectedOptions
+                              .map((option) => option.value as Device)
+                              .toList();
+                        });
+                      },
+                      options: _deviceOptions,
+                      selectionType: SelectionType.multi,
+                      chipConfig: const ChipConfig(wrapType: WrapType.scroll),
+                      optionTextStyle: const TextStyle(fontSize: 16),
+                      selectedOptionIcon: const Icon(Icons.check_circle),
+                    ),
                   ),
             const SizedBox(height: 20),
-            const Text('Select Users:'),
+            const Text(
+              'Select Users:',
+              style: TextStyle(
+                color: Color.fromARGB(255, 255, 255, 255),
+              ),
+            ),
             const SizedBox(height: 8),
             _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -122,6 +151,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       final List<Device> devices = await DeviceApiService.getAllDevices(
         pageNumber: 1,
         pageSize: 100,
+        statuses: [DeviceStatus.AVAILABLE],
       );
       print(devices);
       setState(() {
@@ -149,6 +179,10 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       final List<User> users = await AdminApiService.getAllUsers(
         pageNumber: 1,
         pageSize: 100,
+        statuses: [
+            Status.AVAILABLE,
+            Status.ASSIGNED,
+          ]
       );
       setState(() {
         _userOptions = users
@@ -164,7 +198,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
     }
   }
 
-Future<void> _createMission() async {
+  Future<void> _createMission() async {
     setState(() {
       _isLoading = true;
     });
@@ -208,7 +242,6 @@ Future<void> _createMission() async {
       );
     }
   }
-
 
   @override
   void dispose() {

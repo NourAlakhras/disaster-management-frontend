@@ -17,35 +17,35 @@ final ThemeData myTheme = ThemeData(
   scaffoldBackgroundColor: lightColor,
 
   // Define text theme
-  textTheme: TextTheme(
+  textTheme: const TextTheme(
     // Define headline1 color
-    headline1: TextStyle(color: darkColor),
+    displayLarge: TextStyle(color: darkColor),
 
     // Define headline2 color
-    headline2: TextStyle(color: darkColor),
+    displayMedium: TextStyle(color: darkColor),
 
     // Define headline3 color
-    headline3: TextStyle(color: darkColor),
+    displaySmall: TextStyle(color: darkColor),
 
     // Define headline4 color
-    headline4: TextStyle(color: darkColor),
+    headlineMedium: TextStyle(color: darkColor),
 
     // Define headline5 color
-    headline5: TextStyle(color: darkColor),
+    headlineSmall: TextStyle(color: darkColor),
 
     // Define headline6 color
-    headline6: TextStyle(color: darkColor),
+    titleLarge: TextStyle(color: darkColor),
 
     // Define bodyText1 color
-    bodyText1: TextStyle(color: darkColor),
+    bodyLarge: TextStyle(color: darkColor),
 
     // Define bodyText2 color
-    bodyText2: TextStyle(color: darkColor),
+    bodyMedium: TextStyle(color: darkColor),
 
     // Define subtitle1 color
-    subtitle1: TextStyle(color: darkColor),
+    titleMedium: TextStyle(color: darkColor),
 
     // Define subtitle2 color
-    subtitle2: TextStyle(color: darkColor),
+    titleSmall: TextStyle(color: darkColor),
   ),
 );

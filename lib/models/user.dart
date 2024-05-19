@@ -5,7 +5,7 @@ class User {
   final String id;
   final String username;
   final UserType? type;
-  final Status? status; 
+  final UserStatus? status;
   final int? activeMissionCount;
 
   User({
@@ -16,10 +16,10 @@ class User {
     this.activeMissionCount,
   });
 
-factory User.fromJson(Map<String, dynamic> json) {
+  factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] ,
-      username: json['username'] ,
+      id: json['id'],
+      username: json['username'],
       type: json.containsKey('type') ? _getUserType(json['type']) : null,
       status: json.containsKey('status') ? _getStatus(json['status']) : null,
       activeMissionCount: json.containsKey('active_mission_count')
@@ -27,7 +27,6 @@ factory User.fromJson(Map<String, dynamic> json) {
           : null,
     );
   }
-
 
   static UserType _getUserType(int typeValue) {
     return userTypeValues.entries
@@ -37,11 +36,16 @@ factory User.fromJson(Map<String, dynamic> json) {
         .key;
   }
 
-  static Status _getStatus(int statusValue) {
-    return statusValues.entries
+  static UserStatus _getStatus(int statusValue) {
+    return userStatusValues.entries
         .firstWhere((entry) => entry.value == statusValue,
             orElse: () =>
-                MapEntry(Status.AVAILABLE, statusValues[Status.AVAILABLE]!))
+                MapEntry(UserStatus.AVAILABLE, userStatusValues[UserStatus.AVAILABLE]!))
         .key;
+  }
+
+  @override
+  String toString() {
+    return 'User {id: $id, username: $username, type: $type, status: $status, activeMissionCount: $activeMissionCount}';
   }
 }

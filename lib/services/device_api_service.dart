@@ -23,22 +23,22 @@ class DeviceApiService {
 
       // Convert enums to their corresponding integer values
 
-      final List<int>? _typeValues =
+      final List<int>? typeValues =
           types?.map((t) => deviceTypeValues[t]!).toList();
 
-      final List<int>? _statusValues =
+      final List<int>? statusValues =
           statuses?.map((s) => deviceStatusValues[s]!).toList();
 
-      print('_statusValues from getAllDevices: $_statusValues');
+      print('_statusValues from getAllDevices: $statusValues');
 
-      print('_typeValues from getAllDevices: $_typeValues');
+      print('_typeValues from getAllDevices: $typeValues');
 
       // Convert status values to strings
       final List<String> statusStrings =
-          _statusValues?.map((s) => s.toString()).toList() ?? [];
+          statusValues?.map((s) => s.toString()).toList() ?? [];
       // Convert status values to strings
       final List<String> typeStrings =
-          _typeValues?.map((s) => s.toString()).toList() ?? [];
+          typeValues?.map((s) => s.toString()).toList() ?? [];
 
       print('statusStrings from getAllDevices: $statusStrings');
 
@@ -51,15 +51,15 @@ class DeviceApiService {
       };
 
       // Add status query parameters
-      if (_statusValues != null && _statusValues.isNotEmpty) {
+      if (statusValues != null && statusValues.isNotEmpty) {
         // Concatenate status values with the same key
-        queryParameters['status'] = _statusValues.join('&status=');
+        queryParameters['status'] = statusValues.join('&status=');
       }
 
       // Add type query parameters
-      if (_typeValues != null && _typeValues.isNotEmpty) {
+      if (typeValues != null && typeValues.isNotEmpty) {
         // Concatenate type values with the same key
-        queryParameters['type'] = _typeValues.join('&type=');
+        queryParameters['type'] = typeValues.join('&type=');
       }
 
       if (missionId != null) {

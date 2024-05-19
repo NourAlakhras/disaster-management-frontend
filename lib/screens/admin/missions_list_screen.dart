@@ -13,7 +13,7 @@ import 'package:flutter_3/widgets/filter_drawer.dart';
 class MissionsListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
 
-  MissionsListScreen({super.key, required this.mqttClient});
+  const MissionsListScreen({super.key, required this.mqttClient});
 
   @override
   _MissionsListScreenState createState() => _MissionsListScreenState();
@@ -27,6 +27,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
   final int _pageSize = 6;
   final TextEditingController _searchController = TextEditingController();
   List<MissionStatus>? _filteredstatuses = MissionStatus.values;
+  String? _name;
   final criteriaList = [
     FilterCriterion(
         name: 'Mission Status', options: MissionStatus.values.toList()),
@@ -42,12 +43,13 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     List<MissionStatus>? statuses,
     int? pageNumber,
     int? pageSize,
+    String? name,
   }) async {
     // Assign default statuses if not provided
     statuses ??= _filteredstatuses;
     pageNumber ??= _pageNumber;
     pageSize ??= _pageSize;
-
+    name ??= _name;
     setState(() {
       _isLoading = true;
     });
@@ -56,6 +58,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
         pageNumber: _pageNumber,
         pageSize: _pageSize,
         statuses: statuses,
+        name: name,
       );
       setState(() {
         _allMissions = missions;
@@ -101,6 +104,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
             CustomSearchBar(
               controller: _searchController,
               onChanged: _filterMissions,
+              onClear: _clearSearch,
             ),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
@@ -224,16 +228,18 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 children: [
                   ElevatedButton(
                     onPressed: _pageNumber > 1 ? _previousPage : null,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+
+                      elevation: 0, // No shadow
+                      shape: const CircleBorder(), // Circular button shape
+                    ),
                     child: const Text('<'),
                   ),
                   ElevatedButton(
-                    onPressed:
-                        _allMissions.length >= _pageSize ? _nextPage : null,
-                    child: const Text('>'),
-                  ),
-                  FloatingActionButton(
                     onPressed: () {
-                      // Navigate to the CreateMissionScreen when the FAB is pressed
+                      // Navigate to the CreateMissionScreen when the button is pressed
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -245,9 +251,26 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                         }
                       });
                     },
-                    backgroundColor: Colors.white70, // White background color
-                    foregroundColor: Colors.black,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+
+                      elevation: 0, // No shadow
+                      shape: const CircleBorder(),
+                      padding: const EdgeInsets.all(20),
+                    ),
                     child: const Icon(Icons.add), // Black icon color
+                  ),
+                  ElevatedButton(
+                    onPressed:
+                        _allMissions.length >= _pageSize ? _nextPage : null,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      elevation: 0, // No shadow
+                      shape: const CircleBorder(), // Circular button shape
+                    ),
+                    child: const Text('>'),
                   ),
                 ],
               ),
@@ -280,17 +303,21 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     );
   }
 
-  void _filterMissions(String query) {
+  void _filterMissions(String name) {
+    if (name.isNotEmpty) {
+      // Call fetch missions with the search query
+      setState(() {
+        _name = name;
+      });
+    } else {
+      // If query is empty, fetch all missions
+      _fetchMissions();
+    }
+
     setState(() {
-      if (query.isNotEmpty) {
-        _filteredMissions = _allMissions
-            .where((mission) =>
-                mission.name.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      } else {
-        _filteredMissions = _allMissions;
-      }
+      _pageNumber = 1;
     });
+    _fetchMissions();
   }
 
   Future<void> _previousPage() async {
@@ -325,18 +352,12 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 value: 2,
                 child: Text('Cancel'),
               ),
-              const PopupMenuItem(
-                value: 3,
-                child: Text('Edit'),
-              ),
             ],
             onSelected: (value) {
               if (value == 1) {
                 _startMission(mission.id);
               } else if (value == 2) {
                 _cancelMission(mission.id);
-              } else if (value == 3) {
-                _editMission(mission.id);
               }
             },
           ),
@@ -354,18 +375,12 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 value: 2,
                 child: Text('End'),
               ),
-              const PopupMenuItem(
-                value: 3,
-                child: Text('Edit'),
-              ),
             ],
             onSelected: (value) {
               if (value == 1) {
                 _pauseMission(mission.id);
               } else if (value == 2) {
                 _endMission(mission.id);
-              } else if (value == 3) {
-                _editMission(mission.id);
               }
             },
           ),
@@ -453,5 +468,17 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     }
   }
 
-  void _editMission(String id) {}
+
+  void _clearSearch() {
+    // Clear the search query
+    _searchController.clear();
+    setState(() {
+      _name = '';
+      _pageNumber = 1;
+    });
+    _fetchMissions();
+
+    // Call filterMissions with an empty string to reset the filtered list
+    _filterMissions('');
+  }
 }

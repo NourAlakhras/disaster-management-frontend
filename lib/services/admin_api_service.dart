@@ -10,7 +10,7 @@ class AdminApiService {
   static Future<List<User>> getAllUsers({
     int? pageNumber,
     int? pageSize,
-    List<Status>? statuses,
+    List<UserStatus>? statuses,
     List<UserType>? types,
     String? missionId,
   }) async {
@@ -27,7 +27,7 @@ class AdminApiService {
           types?.map((t) => userTypeValues[t]!).toList();
 
       final List<int>? _statusValues =
-          statuses?.map((s) => statusValues[s]!).toList();
+          statuses?.map((s) => userStatusValues[s]!).toList();
 
       print('_statusValues from getAllUsers: $_statusValues');
 

@@ -115,7 +115,7 @@ String _getDeviceName(String deviceId) {
           id: deviceId,
           name: 'Unknown',
           type: DeviceType.UGV,
-          status: Status.AVAILABLE),
+          status: DeviceStatus.AVAILABLE),
     );
     return device.name;
   }

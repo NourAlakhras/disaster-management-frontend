@@ -4,7 +4,7 @@ class Device {
   final String id;
   final String name;
   final DeviceType? type;
-  final Status? status;
+  final DeviceStatus? status;
 
   Device({
     required this.id,
@@ -33,14 +33,19 @@ class Device {
     );
   }
 
-  static Status _getStatus(int? statusValue) {
+  static DeviceStatus _getStatus(int? statusValue) {
     if (statusValue == null) {
-      return Status.AVAILABLE; // Default to AVAILABLE if status is null
+      return DeviceStatus.AVAILABLE; // Default to AVAILABLE if status is null
     }
-    return Status.values.firstWhere(
+    return DeviceStatus.values.firstWhere(
       (status) => status.index + 1 == statusValue,
       orElse: () =>
-          Status.AVAILABLE, // Default to AVAILABLE if status not found
+          DeviceStatus.AVAILABLE, // Default to AVAILABLE if status not found
     );
   }
+  @override
+  String toString() {
+    return 'Device {id: $id, name: $name, type: $type, status: $status}';
+  }
+
 }

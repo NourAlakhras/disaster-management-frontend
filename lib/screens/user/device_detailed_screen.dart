@@ -29,28 +29,34 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
     _initializePlayer();
   }
 
-  @override
-  void dispose() async {
-    super.dispose();
-    await _videoPlayerController.stopRendererScanning();
-    await _videoPlayerController.dispose();
-  }
-
   Future<void> _initializePlayer() async {
     _videoPlayerController = VlcPlayerController.network(
-      'rtmp://[ip_address]/live/test',
-      hwAcc: HwAcc.auto,
-      autoPlay: false,
-      options: VlcPlayerOptions(),
+      'rtmp://192.168.68.126/live/test',
+      autoPlay: true,
+      
+      onRendererHandler: (eventType, id, event) {
+        switch (eventType) {
+          case VlcRendererEventType.attached:
+            print('Renderer attached: $event');
+            break;
+          case VlcRendererEventType.detached:
+            print('Renderer detached: $event');
+            break;
+          case VlcRendererEventType.unknown:
+            print('Unknown renderer event: $event');
+            break;
+        }
+      },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
     // Get the screen width
-    double _aspectRatio = 16 / 10; // Adjust as needed
+    double aspectRatio = 16 / 10; // Adjust as needed
     double screenWidth = MediaQuery.of(context).size.width;
-    double videoHeight = screenWidth / _aspectRatio;
+    double videoHeight = screenWidth / aspectRatio;
 
     // Calculate the height based on the aspect ratio
 
@@ -77,8 +83,8 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
         children: [
           VlcPlayer(
             controller: _videoPlayerController,
-            aspectRatio: _aspectRatio,
-            placeholder: Center(child: CircularProgressIndicator()),
+            aspectRatio: aspectRatio,
+            placeholder: const Center(child: CircularProgressIndicator()),
           ),
           Expanded(
             child: TabbedView(

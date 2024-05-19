@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
-import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/devices_list_view.dart';
@@ -11,12 +10,9 @@ import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 class MissionDevicesListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
   final Mission mission;
-  final List<Device> devices; // Add devices parameter
+
   const MissionDevicesListScreen(
-      {required this.mqttClient,
-      super.key,
-      required this.mission,
-      required this.devices});
+      {required this.mqttClient, super.key, required this.mission});
 
   @override
   State<MissionDevicesListScreen> createState() =>
@@ -24,12 +20,12 @@ class MissionDevicesListScreen extends StatefulWidget {
 }
 
 class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
-  // Remove the _devices list
   final TextEditingController _searchController = TextEditingController();
   @override
   void initState() {
     super.initState();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +59,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
               child: CustomSearchBar(
                 controller: _searchController,
                 onChanged: _filterDevices,
+                onClear: _clearSearch,
               ),
             ),
             Expanded(
@@ -78,25 +75,31 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                 ],
                 tabContents: <Widget>[
                   // Content for Tab 1
-                  if (widget.devices.isNotEmpty)
+                  if (widget.mission.devices != null &&
+                      widget.mission.devices!.isNotEmpty)
                     DevicesListView(
                       mqttClient: widget.mqttClient,
-                      devices: widget.devices, // Pass the devices list
+                      devices:
+                          widget.mission.devices!, // Use devices from mission
                     )
-                  else
+                    else
                     const Center(
-                        child:
-                            CircularProgressIndicator()), // Show a loading indicator while fetching devices
+                      child: Text('No devices available',
+                          style: TextStyle(color: Colors.white)),
+                    ),
                   // Content for Tab 2
-                  if (widget.devices.isNotEmpty)
+                  if (widget.mission.devices != null &&
+                      widget.mission.devices!.isNotEmpty)
                     DevicesMapView(
                       mqttClient: widget.mqttClient,
-                      devices: widget.devices, // Pass the devices list
+                      devices:
+                          widget.mission.devices!, // Use devices from mission
                     )
                   else
                     const Center(
-                        child:
-                            CircularProgressIndicator()), // Show a loading indicator while fetching devices
+                      child: Text('No devices available',
+                          style: TextStyle(color: Colors.white)),
+                    ),
                 ],
               ),
             ),
@@ -108,5 +111,13 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
 
   void _filterDevices(String query) {
     // Implement device filtering logic here
+  }
+
+
+void _clearSearch() {
+    // Clear the search query
+    _searchController.clear();
+    // Call filterMissions with an empty string to reset the filtered list
+    _filterDevices('');
   }
 }

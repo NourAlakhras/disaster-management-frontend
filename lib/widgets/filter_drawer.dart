@@ -1,19 +1,16 @@
-import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class FilterDrawerWidget extends StatefulWidget {
   final Function(Map<String, List<dynamic>> selectedCriteria) onFilterApplied;
   final List<FilterCriterion> criteriaList;
 
   const FilterDrawerWidget({
-    Key? key,
+    super.key,
     required this.onFilterApplied,
     required this.criteriaList,
     required String title,
-  }) : super(key: key);
+  });
 
   @override
   State<FilterDrawerWidget> createState() => _FilterDrawerWidgetState();
@@ -36,7 +33,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
   Widget build(BuildContext context) {
     return Drawer(
       child: Container(
-        color: Color.fromARGB(255, 39, 44, 50),
+        color: const Color.fromARGB(255, 39, 44, 50),
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -129,7 +126,6 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                   child: const Row(
                     children: [
                       Icon(Icons.delete),
-                      SizedBox(width: 8),
                       Text('Clear Filters'),
                     ],
                   ),

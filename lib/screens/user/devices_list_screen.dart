@@ -10,8 +10,7 @@ import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 class DevicesListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
 
-  const DevicesListScreen({required this.mqttClient, Key? key})
-      : super(key: key);
+  const DevicesListScreen({required this.mqttClient, super.key});
 
   @override
   State<DevicesListScreen> createState() => _DevicesListScreenState();
@@ -73,6 +72,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               child: CustomSearchBar(
                 controller: _searchController,
                 onChanged: _filterDevices,
+                onClear: _clearSearch,
               ),
             ),
             Expanded(
@@ -116,6 +116,12 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     );
   }
 
+void _clearSearch() {
+    // Clear the search query
+    _searchController.clear();
+    // Call filterMissions with an empty string to reset the filtered list
+    _filterDevices('');
+  }
   void _filterDevices(String query) {
     // Implement device filtering logic here
   }

@@ -1,68 +1,15 @@
-// import 'package:flutter/material.dart';
-
-// /// Flutter code sample for [SearchBar].
-
-// void main() => runApp(const SearchBar());
-
-// class CustomSearchBar extends StatefulWidget {
-//   const CustomSearchBar({super.key});
-
-//   @override
-//   State<CustomSearchBar> createState() => _CustomSearchBarState();
-// }
-
-// class _CustomSearchBarState extends State<CustomSearchBar> {
-//   bool isDark = false;
-
-//   @override
-//   Widget build(BuildContext context) {
-
-//     return Padding(
-//       padding: const EdgeInsets.all(8.0),
-//       child: SearchAnchor(
-//           builder: (BuildContext context, SearchController controller) {
-//         return SearchBar(
-//           controller: controller,
-//           padding: const MaterialStatePropertyAll<EdgeInsets>(
-//               EdgeInsets.symmetric(horizontal: 16.0)),
-//           onTap: () {
-//             controller.openView();
-//           },
-//           onChanged: (_) {
-//             controller.openView();
-//           },
-//           leading: const Icon(Icons.search),
-
-//         );
-//       }, suggestionsBuilder:
-//               (BuildContext context, SearchController controller) {
-//         return List<ListTile>.generate(5, (int index) {
-//           final String item = 'Robot $index';
-//           return ListTile(
-//             title: Text(item),
-//             onTap: () {
-//               setState(() {
-//                 controller.closeView(item);
-//               });
-//             },
-//           );
-//         });
-//       }),
-//     );
-//   }
-// }
-//
 import 'package:flutter/material.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final Function(String) onChanged;
+  final Function() onClear;
 
   const CustomSearchBar({
     super.key,
     required this.controller,
     required this.onChanged,
-
+    required this.onClear,
   });
 
   @override
@@ -99,21 +46,19 @@ class CustomSearchBar extends StatelessWidget {
               style: const TextStyle(color: Colors.white),
             ),
           ),
-          
-                    IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
-            onPressed: () {
-              // Open the drawer when filter icon is clicked
-              Scaffold.of(context).openEndDrawer();})
+          if (controller.text.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.clear, color: Colors.white),
+              onPressed: onClear,
+            ),
+          IconButton(
+              icon: const Icon(Icons.filter_list, color: Colors.white),
+              onPressed: () {
+                // Open the drawer when filter icon is clicked
+                Scaffold.of(context).openEndDrawer();
+              })
         ],
       ),
     );
   }
 }
-
-// CustomSearchBar(
-//   controller: _searchController,
-//   onChanged: _filterUsers,
-//   onStatusFilterPressed: _showStatusFilterDialog,
-//   onTypeFilterPressed: _showTypeFilterDialog,
-// )

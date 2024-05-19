@@ -41,10 +41,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       allMissionsCount = await AdminApiService.getMissionCount();
 
       // Fetch user counts by status
-      for (var status in Status.values) {
-        if (status != Status.REJECTED) {
+      for (var status in UserStatus.values) {
+        if (status != UserStatus.REJECTED) {
           final count = await AdminApiService.getUserCount(
-              status: [statusValues[status]!]);
+              status: [userStatusValues[status]!]);
           combinedUserCounts[getStatusTitle(status)] = count;
         }
       }
@@ -200,17 +200,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  String getStatusTitle(Status status) {
+  String getStatusTitle(UserStatus status) {
     switch (status) {
-      case Status.AVAILABLE:
+      case UserStatus.AVAILABLE:
         return 'Available Users';
-      case Status.PENDING:
+      case UserStatus.PENDING:
         return 'Pending Users';
-      case Status.ASSIGNED:
+      case UserStatus.ASSIGNED:
         return 'Assigned Users';
-      case Status.INACTIVE:
+      case UserStatus.INACTIVE:
         return 'Inactive Users';
-      case Status.REJECTED:
+      case UserStatus.REJECTED:
         return 'Rejected Users';
       default:
         return '';
@@ -272,7 +272,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String getTitleFromEnum(dynamic enumValue) {
-    if (enumValue is Status) {
+    if (enumValue is UserStatus) {
       return getStatusTitle(enumValue);
     } else if (enumValue is UserType) {
       return getUserTypeTitle(enumValue);

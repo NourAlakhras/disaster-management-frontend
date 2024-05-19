@@ -289,7 +289,7 @@ packages:
     source: hosted
     version: "4.0.2"
   intl:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: intl
       sha256: "3bc132a9dbce73a7e4a21a17d06e1878839ffbf975568bc875c60537824b0c4d"
@@ -520,6 +520,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  rtmp_player:
+    dependency: "direct main"
+    description:
+      name: rtmp_player
+      sha256: "4df82a944647ec3ef0660ffb1ff587d8a19225f62e308a36112ffe0136619d78"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.6"
   sanitize_html:
     dependency: transitive
     description:

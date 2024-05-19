@@ -28,11 +28,11 @@ class _UsersListScreenState extends State<UsersListScreen> {
   final int _pageSize = 6;
   final TextEditingController _searchController = TextEditingController();
 
-  List<Status>? _filteredstatuses = [
-    Status.AVAILABLE,
-    Status.PENDING,
-    Status.ASSIGNED,
-    Status.REJECTED,
+  List<UserStatus>? _filteredstatuses = [
+    UserStatus.AVAILABLE,
+    UserStatus.PENDING,
+    UserStatus.ASSIGNED,
+    UserStatus.REJECTED,
   ];
 
   List<UserType>? _filteredtypes = [
@@ -41,7 +41,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   ];
 
   final criteriaList = [
-    FilterCriterion(name: 'User Status', options: Status.values.toList()),
+    FilterCriterion(name: 'User Status', options: UserStatus.values.toList()),
     FilterCriterion(name: 'User Type', options: UserType.values.toList()),
   ];
 
@@ -52,7 +52,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   }
 
   Future<void> _fetchUsers({
-    List<Status>? statuses,
+    List<UserStatus>? statuses,
     List<UserType>? types,
     int? pageNumber,
     int? pageSize,
@@ -119,6 +119,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
             CustomSearchBar(
               controller: _searchController,
               onChanged: _filterUsers,
+              onClear: _clearSearch,
             ),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
@@ -260,21 +261,34 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   ElevatedButton(
                     onPressed: _pageNumber > 1 ? _previousPage : null,
                     child: const Text('<'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      elevation: 0, // No shadow
+                      shape: const CircleBorder(), // Circular button shape
+                    ),
                   ),
                   ElevatedButton(
                     onPressed: _allUsers.length >= _pageSize ? _nextPage : null,
                     child: const Text('>'),
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      elevation: 0, // No shadow
+                      shape: const CircleBorder(), // Circular button shape
+                    ),
                   ),
                 ],
               ),
             ),
+            
           ],
         ),
       ),
       endDrawer: FilterDrawerWidget(
         onFilterApplied: (selectedCriteria) {
-          final List<Status> selectedStatuses =
-              (selectedCriteria['User Status'] as List<dynamic>).cast<Status>();
+          final List<UserStatus> selectedStatuses =
+              (selectedCriteria['User Status'] as List<dynamic>).cast<UserStatus>();
           final List<UserType> selectedTypes =
               (selectedCriteria['User Type'] as List<dynamic>).cast<UserType>();
 
@@ -290,10 +304,10 @@ class _UsersListScreenState extends State<UsersListScreen> {
             });
           } else {
             _filteredstatuses = [
-              Status.AVAILABLE,
-              Status.PENDING,
-              Status.ASSIGNED,
-              Status.REJECTED,
+              UserStatus.AVAILABLE,
+              UserStatus.PENDING,
+              UserStatus.ASSIGNED,
+              UserStatus.REJECTED,
             ];
 
             _filteredtypes = [
@@ -316,7 +330,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   int _getActiveUsersCount() {
     return _allUsers
         .where((user) =>
-            user.status != Status.INACTIVE && user.status != Status.REJECTED)
+            user.status != UserStatus.INACTIVE && user.status != UserStatus.REJECTED)
         .length;
   }
 
@@ -432,7 +446,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   }
 
   List<Widget> _buildUserActionsForDetails(User user) {
-    if (user.status == Status.PENDING) {
+    if (user.status == UserStatus.PENDING) {
       return [
         ElevatedButton(
           onPressed: () {
@@ -453,7 +467,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
           child: const Text('Delete'),
         ),
       ];
-    } else if (user.status == Status.REJECTED) {
+    } else if (user.status == UserStatus.REJECTED) {
       return [
         ElevatedButton(
           onPressed: () {
@@ -516,7 +530,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   }
 
   List<Widget> _buildUserActions(User user) {
-    if (user.status == Status.PENDING) {
+    if (user.status == UserStatus.PENDING) {
       return [
         PopupMenuButton<int>(
           icon: const Icon(Icons.more_vert, color: Colors.white70),
@@ -545,7 +559,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
           },
         ),
       ];
-    } else if (user.status == Status.REJECTED) {
+    } else if (user.status == UserStatus.REJECTED) {
       return [
         PopupMenuButton<int>(
           icon: const Icon(Icons.more_vert, color: Colors.white70),
@@ -562,7 +576,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
           },
         ),
       ];
-    } else if (user.status == Status.INACTIVE) {
+    } else if (user.status == UserStatus.INACTIVE) {
       return [];
     } else {
       return [
@@ -597,5 +611,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
       });
       await _fetchUsers();
     }
+  }
+
+  void _clearSearch() {
+    // Clear the search query
+    _searchController.clear();
+    // Call filterMissions with an empty string to reset the filtered list
+    _filterUsers('');
   }
 }

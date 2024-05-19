@@ -1,42 +1,16 @@
-// lib\utils\enums.dart
-// Define the Status enum with specific numbers assigned to each enum value
-enum Status {
-  AVAILABLE,
-  PENDING,
-  ASSIGNED,
-  INACTIVE,
-  REJECTED,
+// Define the UserType enum with specific numbers assigned to each enum value
+enum UserType {
+  REGULAR,
+  ADMIN,
 }
 
 // Map each enum value to its corresponding number
-final statusValues = {
-  Status.AVAILABLE: 1,
-  Status.PENDING: 2,
-  Status.ASSIGNED: 3,
-  Status.INACTIVE: 4,
-  Status.REJECTED: 5,
+final userTypeValues = {
+  UserType.REGULAR: 1,
+  UserType.ADMIN: 2,
 };
 
-enum UserType { REGULAR, ADMIN }
-
-final userTypeValues = {UserType.REGULAR: 1, UserType.ADMIN: 2};
-
-enum MissionStatus {
-  CREATED,
-  ONGOING,
-  PAUSED,
-  CANCELED,
-  FINISHED,
-}
-
-final missionStatusValues = {
-  MissionStatus.CREATED: 1,
-  MissionStatus.ONGOING: 2,
-  MissionStatus.PAUSED: 3,
-  MissionStatus.CANCELED: 4,
-  MissionStatus.FINISHED: 5,
-};
-
+// Define the DeviceType enum with specific numbers assigned to each enum value
 enum DeviceType {
   UGV,
   UAV,
@@ -45,6 +19,7 @@ enum DeviceType {
   BROKER,
 }
 
+// Map each enum value to its corresponding number
 final deviceTypeValues = {
   DeviceType.UGV: 1,
   DeviceType.UAV: 2,
@@ -53,14 +28,54 @@ final deviceTypeValues = {
   DeviceType.BROKER: 5,
 };
 
+// Define the UserStatus enum with specific numbers assigned to each enum value
+enum UserStatus {
+  PENDING,
+  ACCEPTED,
+  AVAILABLE,
+  ASSIGNED,
+  REJECTED,
+  INACTIVE,
+}
+
+// Map each enum value to its corresponding number
+final userStatusValues = {
+  UserStatus.PENDING: 1,
+  UserStatus.ACCEPTED: 2,
+  UserStatus.AVAILABLE: 3,
+  UserStatus.ASSIGNED: 4,
+  UserStatus.REJECTED: 5,
+  UserStatus.INACTIVE: 6,
+};
+
+// Define the DeviceStatus enum with specific numbers assigned to each enum value
 enum DeviceStatus {
   AVAILABLE,
   ASSIGNED,
   INACTIVE,
 }
 
+// Map each enum value to its corresponding number
 final deviceStatusValues = {
   DeviceStatus.AVAILABLE: 1,
   DeviceStatus.ASSIGNED: 2,
   DeviceStatus.INACTIVE: 3,
+};
+
+// Define the MissionStatus enum with specific numbers assigned to each enum value
+enum MissionStatus {
+  CREATED,
+  ONGOING,
+  PAUSED,
+  CANCELED,
+  FINISHED,
+}
+
+// Map each enum value to its corresponding number
+final missionStatusValues = {
+  MissionStatus.CREATED: 1,
+  MissionStatus.ONGOING: 2,
+  MissionStatus.PAUSED: 3,
+  MissionStatus.CANCELED: 4,
+  MissionStatus.FINISHED: 5,
 };

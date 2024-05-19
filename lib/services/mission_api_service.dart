@@ -79,9 +79,8 @@ class MissionApiService {
     return '';
   }
 
-  static Future<void> updateMission(
-    {
-    required String missionId, 
+  static Future<void> updateMission({
+    required String missionId,
     required String name,
     required List<String> deviceIds,
     required List<String> userIds,
@@ -94,7 +93,8 @@ class MissionApiService {
       'device_ids': deviceIds,
       'user_ids': userIds,
     };
-
+    print('updateMission url $url');
+    print('updateMission requestBody $requestBody');
     try {
       String? token = await AuthApiService.getAuthToken();
 
@@ -134,17 +134,18 @@ class MissionApiService {
     int? pageNumber,
     int? pageSize,
     List<MissionStatus>? statuses,
+    String? name,
   }) async {
     const String baseUrl = Constants.baseUrl;
 
     // Convert enums to their corresponding integer values
-
     final List<int>? _missionStatusValues =
         statuses?.map((s) => missionStatusValues[s]!).toList();
 
-    print('_missionStatusValuesfrom getAllMissions: $_missionStatusValues');
+    print('statuses from getAllMissions: $statuses');
+    print('_missionStatusValues from getAllMissions: $_missionStatusValues');
 
-    // Convert status values to strings
+// Convert status values to strings
     final List<String> statusStrings =
         _missionStatusValues?.map((s) => s.toString()).toList() ?? [];
 
@@ -158,6 +159,10 @@ class MissionApiService {
     if (_missionStatusValues != null && _missionStatusValues.isNotEmpty) {
       // Concatenate status values with the same key
       queryParameters['status'] = _missionStatusValues.join('&status=');
+    }
+
+    if (name != "" && name != null && name.isNotEmpty) {
+      queryParameters['name'] = name;
     }
 
     print('queryParameters : $queryParameters');
@@ -274,8 +279,7 @@ class MissionApiService {
       if (response.statusCode == 200) {
         print('getMissionDetails response.body ${response.body}');
         final Map<String, dynamic> missionDetails = jsonDecode(response.body);
-        return Mission.fromJson(
-            missionDetails); // Convert JSON to Mission object
+        return Mission.fromJson(missionDetails);
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {

@@ -7,12 +7,12 @@ class CustomUpperBar extends StatelessWidget implements PreferredSizeWidget {
   final Color backgroundColor;
 
   const CustomUpperBar({
-    Key? key,
+    super.key,
     required this.title,
     this.leading = const SizedBox(),
     this.actions = const [],
     this.backgroundColor = const Color(0xff121417), // Assign default value
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

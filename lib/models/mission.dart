@@ -5,12 +5,14 @@ import 'package:intl/intl.dart'; // Import the intl package
 
 class Mission {
   final String id;
-  final String name;
-  final MissionStatus? status;
-  final DateTime? startDate;
-  final DateTime? endDate;
-  final List<Device>? devices;
-  final List<User>? users;
+  String name;
+  MissionStatus? status;
+  DateTime? startDate;
+  DateTime? endDate;
+  List<Device>? devices;
+  List<User>? users;  
+  Device? broker;
+
 
   Mission({
     required this.id,
@@ -20,13 +22,23 @@ class Mission {
     this.endDate,
     this.devices,
     this.users,
+    this.broker,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) {
     List<Device> devices = [];
+    Device? brokerDevice; // Define a variable to hold the broker device
+
     if (json['devices'] != null) {
       devices = List<Device>.from(
           json['devices'].map((deviceJson) => Device.fromJson(deviceJson)));
+    // Find the broker device and assign it to the mission's broker attribute
+      for (Device device in devices) {
+        if (device.type == DeviceType.BROKER) {
+          brokerDevice = device;
+          break; // Exit the loop once the broker device is found
+        }
+      }
     }
 
     List<User> users = [];
@@ -59,6 +71,7 @@ class Mission {
       status: status,
       devices: devices,
       users: users,
+      broker: brokerDevice,
     );
   }
 
@@ -70,11 +83,16 @@ class Mission {
           .firstWhere(
             (entry) => entry.value == statusValue,
             orElse: () => MapEntry(
-                MissionStatus.CREATED, statusValues[MissionStatus.CREATED]!),
+                MissionStatus.CREATED, missionStatusValues[MissionStatus.CREATED]!),
           )
           .key;
     } else {
       throw Exception('Invalid status value in API response: $statusValue');
     }
+  }
+
+  @override
+  String toString() {
+    return 'Mission(id: $id, name: $name, status: $status, startDate: $startDate, endDate: $endDate, devices: $devices, broker: $broker, users: $users)';
   }
 }

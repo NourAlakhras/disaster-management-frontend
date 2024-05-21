@@ -28,6 +28,19 @@ final deviceTypeValues = {
   DeviceType.BROKER: 5,
 };
 
+// Define the DeviceStatus enum with specific numbers assigned to each enum value
+enum DeviceStatus {
+  AVAILABLE,
+  ASSIGNED,
+  INACTIVE,
+}
+
+// Map each enum value to its corresponding number
+final deviceStatusValues = {
+  DeviceStatus.AVAILABLE: 1,
+  DeviceStatus.ASSIGNED: 2,
+  DeviceStatus.INACTIVE: 3,
+};
 // Define the UserStatus enum with specific numbers assigned to each enum value
 enum UserStatus {
   PENDING,
@@ -48,19 +61,6 @@ final userStatusValues = {
   UserStatus.INACTIVE: 6,
 };
 
-// Define the DeviceStatus enum with specific numbers assigned to each enum value
-enum DeviceStatus {
-  AVAILABLE,
-  ASSIGNED,
-  INACTIVE,
-}
-
-// Map each enum value to its corresponding number
-final deviceStatusValues = {
-  DeviceStatus.AVAILABLE: 1,
-  DeviceStatus.ASSIGNED: 2,
-  DeviceStatus.INACTIVE: 3,
-};
 
 // Define the MissionStatus enum with specific numbers assigned to each enum value
 enum MissionStatus {

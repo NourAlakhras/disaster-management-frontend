@@ -116,8 +116,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 ),
               )
             else
-
-              // Add statistics cards here if needed
               Expanded(
                 child: SingleChildScrollView(
                   scrollDirection: Axis.vertical,
@@ -263,7 +261,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                   ),
                   ElevatedButton(
                     onPressed:
-                        _allMissions.length >= _pageSize ? _nextPage : null,
+                        _allMissions.length > _pageSize ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,
@@ -467,7 +465,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
       print('Failed to continue mission: $error');
     }
   }
-
 
   void _clearSearch() {
     // Clear the search query

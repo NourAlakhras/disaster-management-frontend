@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_3/models/mission.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_3/utils/constants.dart';
 import 'package:flutter_3/utils/exceptions.dart';
@@ -13,6 +14,7 @@ class AdminApiService {
     List<UserStatus>? statuses,
     List<UserType>? types,
     String? missionId,
+    String? username,
   }) async {
     try {
       print('statuses from getAllUsers: $statuses');
@@ -65,7 +67,9 @@ class AdminApiService {
       if (missionId != null) {
         queryParameters['mission'] = missionId;
       }
-
+      if (username != "" && username != null && username.isNotEmpty) {
+        queryParameters['username'] = username;
+      }
       print('queryParameters : $queryParameters');
 
 // Convert query parameters to a list of key-value pairs
@@ -250,7 +254,7 @@ class AdminApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getUserDetails(String userId) async {
+  static Future<User> getUserDetails(String userId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
       const String baseUrl = Constants.baseUrl;
@@ -266,7 +270,10 @@ class AdminApiService {
       print(url);
       print(token);
       if (response.statusCode == 200) {
-        return json.decode(response.body);
+        print('getUserDetails response.body ${response.body}');
+
+        final Map<String, dynamic> userDetails = jsonDecode(response.body);
+        return User.fromJson(userDetails);
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {
@@ -426,6 +433,57 @@ class AdminApiService {
     } catch (e) {
       // Handle errors
       throw Exception('Failed to get mission count: $e');
+    }
+  }
+  
+  static Future<void> updateUser({
+    required String user_id,
+    required String username,
+    required String email,
+    required List<String> missionIds,
+  }) async {
+    const String baseUrl = Constants.baseUrl;
+    final Uri url = Uri.parse('$baseUrl/api/users/$user_id');
+
+    final Map<String, dynamic> requestBody = {
+      'email': email,
+      'username': username,
+      'missionIds': missionIds,
+    };
+    print('updateUser url $url');
+    print('updateUser requestBody $requestBody');
+    try {
+      String? token = await AuthApiService.getAuthToken();
+
+      final response = await http.put(
+        url,
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        // Mission updated successfully, no need to return anything
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ForbiddenException();
+      } else if (response.statusCode == 404) {
+        throw NotFoundException();
+      } else if (response.statusCode == 409) {
+        throw ConflictException();
+      } else if (response.statusCode == 500) {
+        throw InternalServerErrorException();
+      } else {
+        throw Exception(
+            'Unexpected response from server: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to update mission: $e');
     }
   }
 }

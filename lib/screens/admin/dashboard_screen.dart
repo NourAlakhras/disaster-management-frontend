@@ -6,9 +6,9 @@ import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 
 class DashboardScreen extends StatefulWidget {
-    final MQTTClientWrapper mqttClient;
+  final MQTTClientWrapper mqttClient;
 
-  const DashboardScreen({super.key,required this.mqttClient});
+  const DashboardScreen({super.key, required this.mqttClient});
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -88,16 +88,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: CustomUpperBar(
         title: "Dashboard",
         leading: IconButton(
-          icon: const Icon(Icons.settings),
-          color: Colors.white,
-          onPressed:  () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                                SettingsScreen(mqttClient: widget.mqttClient)),
-
-                              )),
-  
+            icon: const Icon(Icons.settings),
+            color: Colors.white,
+            onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          SettingsScreen(mqttClient: widget.mqttClient)),
+                )),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -202,6 +200,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String getStatusTitle(UserStatus status) {
     switch (status) {
+      case UserStatus.ACCEPTED:
+        return 'Accepted Users';
       case UserStatus.AVAILABLE:
         return 'Available Users';
       case UserStatus.PENDING:

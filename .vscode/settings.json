@@ -3,6 +3,7 @@
         "ARGB",
         "filteredstatuses",
         "latlong",
+        "LTRB",
         "mqtt"
     ]
 }

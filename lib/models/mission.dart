@@ -4,7 +4,7 @@ import 'package:flutter_3/models/user.dart';
 import 'package:intl/intl.dart'; // Import the intl package
 
 class Mission {
-  final String id;
+  String id;
   String name;
   MissionStatus? status;
   DateTime? startDate;
@@ -58,17 +58,14 @@ class Mission {
       endDate = DateFormat('E, dd MMM yyyy HH:mm:ss').parse(json['end_date']);
     }
 
-    MissionStatus? status;
-    if (json['status'] != null) {
-      status = _getStatus(json['status']);
-    }
+  
 
     return Mission(
-      id: json['id'],
+      id: json['id'] as String? ?? '',
       name: json['name'],
       startDate: startDate,
       endDate: endDate,
-      status: status,
+      status: json.containsKey('status') ? _getStatus(json['status']) : null,
       devices: devices,
       users: users,
       broker: brokerDevice,

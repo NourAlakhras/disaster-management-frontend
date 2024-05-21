@@ -259,7 +259,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       // Extract mission details
       final String missionName = _missionNameController.text;
       final List<String> userIds =
-          _selectedUsers.map((user) => user.id).toList();
+          _selectedUsers.map((user) => user.user_id).toList();
       final List<String> deviceIds =
           _selectedDevices.map((device) => device.id).toList();
 

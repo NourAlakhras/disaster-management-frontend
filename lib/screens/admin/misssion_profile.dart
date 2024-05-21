@@ -689,7 +689,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
       final String missionId = widget.mission.id;
       final String missionName = _missionNameController.text;
       final List<String> userIds =
-          _selectedUsers.map((user) => user.id).toList();
+          _selectedUsers.map((user) => user.user_id).toList();
 
       // Combine selected devices and brokers
       List<Device> allSelectedDevices = List.from(_selectedDevices);

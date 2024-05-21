@@ -9,7 +9,7 @@ class EditUsersScreen extends StatefulWidget {
   final String? missionId; // Add missionId parameter
 
   EditUsersScreen(
-      {this.preselectedUsers,  this.missionId}); // Modify constructor
+      {this.preselectedUsers, this.missionId}); // Modify constructor
 
   @override
   _EditUsersScreenState createState() => _EditUsersScreenState();
@@ -36,7 +36,11 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
       final List<User> users = await AdminApiService.getAllUsers(
         pageNumber: 1,
         pageSize: 100,
-        statuses: [UserStatus.AVAILABLE, UserStatus.ASSIGNED],
+        statuses: [
+          UserStatus.AVAILABLE,
+          UserStatus.ASSIGNED,
+          UserStatus.ACCEPTED
+        ],
       );
       setState(() {
         _userOptions = users;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart'; // Import User model
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/utils/enums.dart'; // Import Device model
@@ -55,17 +56,26 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
     bool isSelected = selectedItems.any((selectedItem) {
       // Check if the IDs of the selected item and the current item match
       if (selectedItem is User && item is User) {
-        return (selectedItem as User).id == (item as User).id;
+        return (selectedItem as User).user_id == (item as User).user_id;
       } else if (selectedItem is Device && item is Device) {
         return (selectedItem as Device).id == (item as Device).id;
+      } else if (selectedItem is Mission && item is Mission) {
+        return (selectedItem as Mission).id == (item as Mission).id;
       }
       return false;
     });
-    bool isBroker = item is Device && (item as Device).type == DeviceType.BROKER;
+    bool isBroker =
+        item is Device && (item as Device).type == DeviceType.BROKER;
 
     return ListTile(
       title: Text(
-        item is User ? (item as User).username : (item as Device).name,
+        item is User
+            ? (item as User).username
+            : item is Device
+                ? (item as Device).name
+                : item is Mission
+                    ? (item as Mission).name
+                    : '',
       ),
       onTap: () {
         setState(() {
@@ -76,7 +86,7 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
           if (isSelected) {
             final indexToRemove = selectedItems.indexWhere((selectedItem) {
               if (selectedItem is User && item is User) {
-                return (selectedItem as User).id == (item as User).id;
+                return (selectedItem as User).user_id == (item as User).user_id;
               } else if (selectedItem is Device && item is Device) {
                 return (selectedItem as Device).id == (item as Device).id;
               }

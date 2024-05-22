@@ -92,4 +92,5 @@ class Mission {
   String toString() {
     return 'Mission(id: $id, name: $name, status: $status, startDate: $startDate, endDate: $endDate, devices: $devices, broker: $broker, users: $users)';
   }
+
 }

@@ -463,6 +463,8 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                     builder: (context) => EditBrokersScreen(
                       preselectedBrokers: _selectedBrokers,
                       missionId: widget.mission.id,
+                      singleSelection: true,
+
                     ),
                   ),
                 );
@@ -695,7 +697,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
       List<Device> allSelectedDevices = List.from(_selectedDevices);
       allSelectedDevices.addAll(_selectedBrokers);
       final List<String> deviceIds =
-          allSelectedDevices.map((device) => device.id).toList();
+          allSelectedDevices.map((device) => device.device_id).toList();
 
       print('save devices : $deviceIds');
       // Call updateMission API

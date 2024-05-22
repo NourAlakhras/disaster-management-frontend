@@ -4,6 +4,8 @@ import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/devices_list_view.dart';
 import 'package:flutter_3/widgets/devices_map_view.dart';
+import 'package:flutter_3/widgets/mission_devices_map_tab.dart';
+import 'package:flutter_3/widgets/mission_devices_thumbnails_tab.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 class MissionDevicesListScreen extends StatefulWidget {
@@ -76,7 +78,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                   // Content for Tab 1
                   if (widget.mission.devices != null &&
                       widget.mission.devices!.isNotEmpty)
-                    DevicesListView(
+                    MissionDevicesThumbnailsTab(
                       mqttClient: widget.mqttClient,
                       devices:
                           widget.mission.devices!, // Use devices from mission
@@ -89,7 +91,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                   // Content for Tab 2
                   if (widget.mission.devices != null &&
                       widget.mission.devices!.isNotEmpty)
-                    DevicesMapView(
+                    MissionDevicesMapTab(
                       mqttClient: widget.mqttClient,
                       devices:
                           widget.mission.devices!, // Use devices from mission

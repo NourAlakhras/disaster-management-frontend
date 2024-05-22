@@ -1,37 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/screens/admin/edit_missions_screen.dart';
 import 'package:flutter_3/screens/admin/mission_devices_list_screen.dart';
-import 'package:flutter_3/services/admin_api_service.dart';
+import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
+import 'package:flutter_3/screens/user/device_detailed_screen.dart';
 
-class UserProfileScreen extends StatefulWidget {
-  final User user;
+class DeviceProfileScreen extends StatefulWidget {
+  final Device device;
   final MQTTClientWrapper mqttClient;
 
-  const UserProfileScreen(
-      {super.key, required this.mqttClient, required this.user});
+  const DeviceProfileScreen(
+      {super.key, required this.mqttClient, required this.device});
 
   @override
-  _UserProfileScreenState createState() => _UserProfileScreenState();
+  _DeviceProfileScreenState createState() => _DeviceProfileScreenState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> {
-  final TextEditingController _userNameController = TextEditingController();
-  final TextEditingController _userEmailController = TextEditingController();
-
-  List<Mission> _selectedMissions = [];
+class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
+  final TextEditingController _deviceNameController = TextEditingController();
 
   bool _isLoading = false;
   bool _isEditing = false;
+  List<Mission> _selectedMissions = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchUserDetails();
+    fetchDeviceDetails();
   }
 
   @override
@@ -39,7 +40,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(144, 41, 48, 56),
       appBar: CustomUpperBar(
-        title: 'user Profile',
+        title: 'Device Profile',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           color: const Color.fromARGB(255, 255, 255, 255),
@@ -64,16 +65,30 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildEditableField(
-                    label: 'Username',
-                    controller: _userNameController,
+                    label: 'Device Name',
+                    controller: _deviceNameController,
                     isEditing: _isEditing,
                   ),
-                  const SizedBox(height: 8),
-                  _buildEditableField(
-                    label: 'Email',
-                    controller: _userEmailController,
-                    isEditing: _isEditing,
-                  ),
+                  const SizedBox(height: 20),
+                  if (widget.device.mac != null)
+                    Row(
+                      children: [
+                        const Text(
+                          'MAC Address: ',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color.fromARGB(255, 255, 255, 255),
+                          ),
+                        ),
+                        Text(
+                          '${widget.device.mac}',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -89,7 +104,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                           ),
                           Text(
-                            widget.user.status
+                            widget.device.status
                                 .toString()
                                 .split('.')
                                 .last
@@ -101,37 +116,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ],
                       ),
                       Row(
-                        children: _buildUserActions(widget.user),
-                      )
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            'Type: ',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 255, 255, 255),
-                            ),
-                          ),
-                          Text(
-                            widget.user.type
-                                .toString()
-                                .split('.')
-                                .last
-                                .toLowerCase(),
-                            style: const TextStyle(
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: _buildTypeSwitchActions(widget.user),
+                        children: _buildDeviceActions(widget.device),
                       )
                     ],
                   ),
@@ -141,41 +126,45 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       : _buildNonEditableMissionSelection(),
                   const SizedBox(height: 20),
                   _buildEditButton(),
+                  _buildMonitorButton(),
                 ],
               ),
             ),
     );
   }
 
-  Future<void> _fetchUserDetails() async {
+  Future<void> fetchDeviceDetails() async {
     if (!mounted) return; // Check if the widget is mounted before proceeding
     setState(() {
       _isLoading = true;
     });
     try {
-      final userDetails =
-          await AdminApiService.getUserDetails(widget.user.user_id);
-
+      final deviceDetails =
+          await DeviceApiService.getDeviceDetails(widget.device.device_id);
+      print('deviceDetails $deviceDetails');
+      print('device object ${widget.device}');
       if (!mounted) {
         return;
       }
       setState(() {
-        // Update user details directly on the widget.user object
-        widget.user.username = userDetails.username;
-        widget.user.email = userDetails.email;
-        widget.user.status = userDetails.status;
-        widget.user.type = userDetails.type;
-        widget.user.activeMissionCount = userDetails.activeMissionCount;
-        widget.user.missions = userDetails.missions;
+        // Update device details directly on the widget.device object
+        widget.device.name = deviceDetails.name;
+        widget.device.status = deviceDetails.status;
 
-        _userNameController.text = userDetails.username;
-        _userEmailController.text = userDetails.email!;
+        _deviceNameController.text = deviceDetails.name;
+        _selectedMissions = [deviceDetails.mission!];
+        
 
-        _selectedMissions = userDetails.missions!;
-        print('user object ${widget.user}');
+        print('device object ${widget.device}');
+        print('DeviceProfileScreen _selectedUsers');
+        print('mybroker : ${widget.device.mission}');
+
+        for (var i in _selectedMissions) {
+          print(i.toString());
+        }
       });
     } catch (e) {
-      print('Error fetching user info: $e');
+      print('Error fetching device info: $e');
     } finally {
       if (!mounted) {
         return;
@@ -191,7 +180,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Missions:',
+          'Mission:',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
@@ -205,7 +194,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 mission.name,
                 style: const TextStyle(color: Colors.white70),
               ),
-              trailing: (widget.user.status == UserStatus.ASSIGNED)
+              trailing: (mission.status == MissionStatus.ONGOING)
                   ? ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -228,136 +217,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Future<void> _showApprovalDialog(String userId) async {
-    return showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Approve User'),
-          content: const Text('Approve as admin or regular user?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _approveUser(userId, isAdmin: true);
-              },
-              child: const Text('Admin'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _approveUser(userId, isAdmin: false);
-              },
-              child: const Text('Regular User'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _approveUser(String userId, {required bool isAdmin}) async {
-    try {
-      // Call the API to approve the user account
-      await AdminApiService.approveUser(userId, isAdmin);
-      // After successful approval, refresh the user list
-      await _fetchUserDetails();
-    } catch (error) {
-      print('Failed to approve user: $error');
-    }
-  }
-
-  Future<void> _rejectUser(String userId) async {
-    try {
-      await AdminApiService.rejectUser(userId);
-      await _fetchUserDetails();
-    } catch (error) {
-      print('Failed to reject user: $error');
-    }
-  }
-
-  Future<void> _deleteUser(String userId) async {
-    try {
-      await AdminApiService.deleteUser(userId);
-      await _fetchUserDetails();
-    } catch (error) {
-      print('Failed to delete user: $error');
-    }
-  }
-
-  List<Widget> _buildUserActions(User user) {
-    switch (user.status) {
-      case UserStatus.PENDING:
-        return [
-          PopupMenuButton<int>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 1,
-                child: Text('Approve'),
-              ),
-              const PopupMenuItem(
-                value: 2,
-                child: Text('Reject'),
-              ),
-              const PopupMenuItem(
-                value: 3,
-                child: Text('Delete'),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 1) {
-                _showApprovalDialog(user.user_id);
-              } else if (value == 2) {
-                _rejectUser(user.user_id);
-              } else if (value == 3) {
-                _deleteUser(user.user_id);
-              }
-            },
-          ),
-        ];
-      //   ElevatedButton(
-      //     onPressed: () {
-      //       _showApprovalDialog(user.user_id);
-      //     },
-      //     child: const Text('Approve'),
-      //   ),
-      //   const SizedBox(width: 5),
-      //   ElevatedButton(
-      //     onPressed: () {
-      //       _rejectUser(user.user_id);
-      //     },
-      //     child: const Text('Reject'),
-      //   ),
-      //   ElevatedButton(
-      //     onPressed: () {
-      //       _deleteUser(user.user_id);
-      //     },
-      //     child: const Text('Delete'),
-      //   ),
-      // ];
-      case UserStatus.REJECTED:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              _showApprovalDialog(user.user_id);
-            },
-            child: const Text('Approve'),
-          ),
-          const SizedBox(width: 5),
-        ];
-      default:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              _deleteUser(user.user_id);
-            },
-            child: const Text('Delete'),
-          ),
-        ];
-    }
-  }
-
   Widget _buildEditableMissionSelection() {
     return Column(
       children: [
@@ -365,7 +224,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Missions:',
+              'Mission:',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -379,7 +238,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   MaterialPageRoute(
                     builder: (context) => EditMissionsScreen(
                       preselectedMissions: _selectedMissions,
-                      
+                      singleSelection: true,
                     ),
                   ),
                 );
@@ -442,9 +301,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildEditButton() {
-    if (widget.user.status == MissionStatus.FINISHED ||
-        widget.user.status == MissionStatus.CANCELED) {
-      // If user status is FINISHED or CANCELED, return an empty container
+    if (widget.device.status == DeviceStatus.INACTIVE ) {
       return const SizedBox();
     } else {
       // Otherwise, return the edit button
@@ -465,34 +322,68 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
+  Widget _buildMonitorButton() {
+    if (!_isEditing && widget.device.status == DeviceStatus.ASSIGNED && widget.device.mission?.status==MissionStatus.ONGOING ) {
+      return ElevatedButton(
+        onPressed: () {
+          // Navigate to the device monitoring screen
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DeviceDetailedScreen(
+                  device: widget.device,
+                  mqttClient: widget.mqttClient,
+                ),
+              ));
+        },
+        child: const Text('Monitor Device'),
+      );
+    } else {
+      return const SizedBox();
+    }
+  }
+
+  List<Widget> _buildDeviceActions(Device device) {
+    return (device.status != DeviceStatus.INACTIVE)
+        ? [
+            ElevatedButton(
+              onPressed: () {
+                _deleteDevice(device.device_id);
+              },
+              child: const Text('Delete'),
+            ),
+            const SizedBox(width: 5)
+          ]
+        : [];
+  }
+
+  void _deleteDevice(String id) {}
+
   void _saveChanges() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Extract user details
-      final String userId = widget.user.user_id;
-      final String username = _userNameController.text;
-      final String email = _userNameController.text;
+      // Extract device details
+      final String deviceId = widget.device.device_id;
+      final String deviceName = _deviceNameController.text;
       final List<String> missionIds =
           _selectedMissions.map((mission) => mission.id).toList();
 
       print('save missions : $missionIds');
-
-      // Call updateuser API
-      await AdminApiService.updateUser(
-        user_id: userId,
-        username: username,
-        email: email,
+      // Call updateDevice API
+      await DeviceApiService.updateDevice(
+        deviceId: deviceId,
+        name: deviceName,
         missionIds: missionIds,
       );
-      await _fetchUserDetails();
+      await fetchDeviceDetails();
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('user updated successfully'),
+          content: Text('Device updated successfully'),
           backgroundColor: Colors.green,
         ),
       );
@@ -500,7 +391,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       // Show error message if update fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update user: $e'),
+          content: Text('Failed to update device: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -508,29 +399,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       setState(() {
         _isLoading = false;
       });
-    }
-  }
-
-  _buildTypeSwitchActions(User user) {
-    switch (user.type) {
-      case UserType.ADMIN:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              
-            },
-            child: const Text('Switch to Regular'),
-          ),
-          const SizedBox(width: 5),
-        ];
-      default:
-        return [
-          ElevatedButton(
-            onPressed: () {
-            },
-            child: const Text('Switch to Admin'),
-          ),
-        ];
     }
   }
 }

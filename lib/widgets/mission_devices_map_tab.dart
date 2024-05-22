@@ -1,93 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
-import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/widgets/custom_search_bar.dart';
-import 'package:flutter_3/widgets/filter_drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:math' show atan2, cos, pi, sin, sqrt, log;
 
-class DevicesMapView extends StatefulWidget {
+class MissionDevicesMapTab extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
+  final List<Device> devices;
 
-  const DevicesMapView({super.key, required this.mqttClient});
+  const MissionDevicesMapTab(
+      {super.key, required this.mqttClient, required this.devices});
 
   @override
-  State<DevicesMapView> createState() => _DevicesMapViewState();
+  State<MissionDevicesMapTab> createState() => _MissionDevicesMapTabState();
 }
 
-class _DevicesMapViewState extends State<DevicesMapView> {
+class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
   late GoogleMapController _mapController;
   final Set<Marker> _markers = {};
   LatLngBounds _bounds = LatLngBounds(
     southwest: const LatLng(0, 0), // First corner (e.g., (0, 0))
     northeast: const LatLng(0, 0), // Second corner (e.g., (0, 0))
   );
-  List<Device> _allDevices = [];
-  List<Device> _filteredDevices = [];
-  bool _isLoading = false;
-  int _pageNumber = 1;
-  final int _pageSize = 6;
-  final TextEditingController _searchController = TextEditingController();
-  final List<DeviceStatus> _filteredStatuses = [
-    DeviceStatus.ASSIGNED,
-  ];
-  List<DeviceType>? _filteredTypes = DeviceType.values;
-  String? _name;
-  final criteriaList = [
-    FilterCriterion(name: 'Device Type', options: DeviceType.values.toList()),
-  ];
+
   @override
   void initState() {
     super.initState();
-    _fetchDevices();
     widget.mqttClient.onDataReceived = _onDataReceived;
     _subscribeToTopics();
     widget.mqttClient.setupMessageListener();
   }
 
-  Future<void> _fetchDevices({
-    List<DeviceStatus>? statuses,
-    List<DeviceType>? types,
-    int? pageNumber,
-    int? pageSize,
-    String? name,
-  }) async {
-    // Assign default statuses if not provided
-    statuses ??= _filteredStatuses;
-    types ??= _filteredTypes;
-    pageNumber ??= _pageNumber;
-    pageSize ??= _pageSize;
-    name ??= _name;
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      final devices = await DeviceApiService.getAllDevices(
-        pageNumber: _pageNumber,
-        pageSize: _pageSize,
-        types: types,
-        statuses: statuses,
-        name: name,
-      );
-      setState(() {
-        _allDevices = devices;
-        _filteredDevices = _allDevices;
-      });
-    } catch (error) {
-      print('Failed to fetch devices: $error');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
   void _subscribeToTopics() {
-    for (var device in _filteredDevices) {
+    for (var device in widget.devices) {
       String mqttTopic = '${device.device_id}/gps';
       widget.mqttClient.subscribeToTopic(mqttTopic);
     }
@@ -163,7 +111,7 @@ class _DevicesMapViewState extends State<DevicesMapView> {
 
   String _getDeviceName(String deviceId) {
     // Find the device object by its ID and return its name
-    Device device = _filteredDevices.firstWhere(
+    Device device = widget.devices.firstWhere(
       (device) => device.device_id == deviceId,
       orElse: () => Device(
           device_id: deviceId,
@@ -296,86 +244,33 @@ class _DevicesMapViewState extends State<DevicesMapView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xff121417),
-      body: Padding(
-          padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 00),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 15, 0, 0),
-                child: CustomSearchBar(
-                  controller: _searchController,
-                  onChanged: _filterDevices,
-                  onClear: _clearSearch,
-                ),
-              ),
-              if (_isLoading)
-                const Center(child: CircularProgressIndicator())
-              else if (_filteredDevices.isEmpty)
-                const Center(
-                  child: Text(
-                    'No devices available',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                )
-              else
-                Expanded(
-                    child: GoogleMap(
-                  gestureRecognizers: {}
-                    ..add(Factory<PanGestureRecognizer>(
-                        () => PanGestureRecognizer()))
-                    ..add(Factory<ScaleGestureRecognizer>(
-                        () => ScaleGestureRecognizer()))
-                    ..add(Factory<TapGestureRecognizer>(
-                        () => TapGestureRecognizer()))
-                    ..add(Factory<VerticalDragGestureRecognizer>(
-                        () => VerticalDragGestureRecognizer()))
-                    ..add(Factory<HorizontalDragGestureRecognizer>(
-                        () => HorizontalDragGestureRecognizer()))
-                    ..add(Factory<LongPressGestureRecognizer>(
-                        () => LongPressGestureRecognizer())),
+    return Expanded(
+        child: GoogleMap(
+      gestureRecognizers: {}
+        ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
+        ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
+        ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))
+        ..add(Factory<VerticalDragGestureRecognizer>(
+            () => VerticalDragGestureRecognizer()))
+        ..add(Factory<HorizontalDragGestureRecognizer>(
+            () => HorizontalDragGestureRecognizer()))
+        ..add(Factory<LongPressGestureRecognizer>(
+            () => LongPressGestureRecognizer())),
 
-                  compassEnabled: true,
-                  rotateGesturesEnabled: true, // Respond to rotate gestures
-                  tiltGesturesEnabled: true, // Respond to tilt gestures
-                  zoomControlsEnabled: true, // Show zoom controls
-                  zoomGesturesEnabled: true, // Respond to zoom gestures
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                  },
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(0.0, 0.0),
-                    zoom: 50,
-                  ),
-                  markers: _markers,
-                )),
-            ],
-          )),
-      endDrawer: FilterDrawerWidget(
-        onFilterApplied: (selectedCriteria) {
-          final List<DeviceType> selectedTypes =
-              (selectedCriteria['Device Type'] as List<dynamic>)
-                  .cast<DeviceType>();
-
-          if (selectedTypes.isNotEmpty) {
-            setState(() {
-              _filteredTypes = selectedTypes;
-            });
-          } else {
-            _filteredTypes = DeviceType.values;
-          }
-
-          setState(() {
-            _pageNumber = 1;
-          });
-          _fetchDevices();
-        },
-        criteriaList: criteriaList,
-        title: 'Filter Options',
+      compassEnabled: true,
+      rotateGesturesEnabled: true, // Respond to rotate gestures
+      tiltGesturesEnabled: true, // Respond to tilt gestures
+      zoomControlsEnabled: true, // Show zoom controls
+      zoomGesturesEnabled: true, // Respond to zoom gestures
+      onMapCreated: (controller) {
+        _mapController = controller;
+      },
+      initialCameraPosition: const CameraPosition(
+        target: LatLng(0.0, 0.0),
+        zoom: 50,
       ),
-    );
+      markers: _markers,
+    ));
   }
 
   @override
@@ -387,35 +282,5 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       "test-ugv2/gps"
     ]);
     super.dispose();
-  }
-
-  void _filterDevices(String name) {
-    if (name.isNotEmpty) {
-      // Call fetch devices with the search query
-      setState(() {
-        _name = name;
-      });
-    } else {
-      // If query is empty, fetch all devices
-      _fetchDevices();
-    }
-
-    setState(() {
-      _pageNumber = 1;
-    });
-    _fetchDevices();
-  }
-
-  void _clearSearch() {
-    // Clear the search query
-    _searchController.clear();
-    setState(() {
-      _name = '';
-      _pageNumber = 1;
-    });
-    _fetchDevices();
-
-    // Call filterDevices with an empty string to reset the filtered list
-    _filterDevices('');
   }
 }

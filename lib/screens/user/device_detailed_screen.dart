@@ -101,7 +101,7 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
                 Container(
                   padding: const EdgeInsets.only(top: 10),
                   child: MonitoringView(
-                    deviceId: widget.device.id,
+                    deviceId: widget.device.device_id,
                     mqttClient: widget.mqttClient,
                   ),
                 ),

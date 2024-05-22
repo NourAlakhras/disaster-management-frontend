@@ -1,25 +1,32 @@
+import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/utils/enums.dart'; // Import enums file
 
 class Device {
-  final String id;
-  final String name;
-  final DeviceType? type;
-  final DeviceStatus? status;
+  final String device_id;
+  String name;
+  String? mac;
+  DeviceType? type;
+  DeviceStatus? status;
+  Mission? mission;
 
-  Device({
-    required this.id,
-    required this.name,
-    this.type,
-    this.status,
-  });
+  Device(
+      {required this.device_id,
+      required this.name,
+      this.mac,
+      this.type,
+      this.status,
+      this.mission});
 
   factory Device.fromJson(Map<String, dynamic> json) {
     return Device(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      type: _getType(json['type'] as int?), // Add null check and cast to int
-      status:
-          _getStatus(json['status'] as int?), // Add null check and cast to int
+      device_id: json['id'] as String? ?? json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      mac: json['mac'] != null ? json['mac'] as String? ?? '' : '',
+      type: json.containsKey('type') ? _getType(json['type']) : null,
+      status: json.containsKey('status') ? _getStatus(json['status']) : null,
+      mission: json.containsKey('mission')
+          ?Mission.fromJson(json['mission'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -43,9 +50,9 @@ class Device {
           DeviceStatus.AVAILABLE, // Default to AVAILABLE if status not found
     );
   }
+
   @override
   String toString() {
-    return 'Device {id: $id, name: $name, type: $type, status: $status}';
+    return 'Device {id: $device_id, name: $name, mac: $mac, type: $type, status: $status, mission $mission }';
   }
-
 }

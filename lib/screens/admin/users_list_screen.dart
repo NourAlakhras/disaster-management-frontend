@@ -291,7 +291,10 @@ class _UsersListScreenState extends State<UsersListScreen> {
                     child: const Text('<'),
                   ),
                   ElevatedButton(
-                    onPressed: allUsersCount > _pageSize&& _pageNumber< allUsersCount/ _pageSize ? _nextPage : null,
+                    onPressed: allUsersCount > _pageSize &&
+                            _pageNumber < allUsersCount / _pageSize
+                        ? _nextPage
+                        : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,
@@ -320,7 +323,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
               _filteredTypes = selectedTypes;
             });
           } else if (selectedTypes.isNotEmpty) {
-            print('hi no status');
             setState(() {
               _filteredTypes = selectedTypes;
             });
@@ -329,10 +331,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 .where((status) => status != UserStatus.INACTIVE)
                 .toList();
 
-            _filteredTypes = [
-              UserType.REGULAR,
-              UserType.ADMIN,
-            ];
+            _filteredTypes = UserType.values;
           }
 
           setState(() {

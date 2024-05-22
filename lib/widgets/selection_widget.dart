@@ -9,12 +9,14 @@ class SelectionWidget<T> extends StatefulWidget {
   final Function(List<T>)
       onSelectionChanged; // Callback function for when selection changes
   final List<T>? preselectedItems; // List of preselected items
+  final bool? singleSelection;
 
   const SelectionWidget({
     super.key,
     required this.items,
     required this.onSelectionChanged,
-    this.preselectedItems, // Add this parameter
+    this.preselectedItems,
+    this.singleSelection,
   });
 
   @override
@@ -58,14 +60,12 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
       if (selectedItem is User && item is User) {
         return (selectedItem as User).user_id == (item as User).user_id;
       } else if (selectedItem is Device && item is Device) {
-        return (selectedItem as Device).id == (item as Device).id;
+        return (selectedItem as Device).device_id == (item as Device).device_id;
       } else if (selectedItem is Mission && item is Mission) {
         return (selectedItem as Mission).id == (item as Mission).id;
       }
       return false;
     });
-    bool isBroker =
-        item is Device && (item as Device).type == DeviceType.BROKER;
 
     return ListTile(
       title: Text(
@@ -79,16 +79,18 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
       ),
       onTap: () {
         setState(() {
-          if (isBroker) {
+          if (widget.singleSelection == true) {
             // Clear all previous selections before adding the new one
             selectedItems.clear();
+            selectedItems.add(item);
           }
           if (isSelected) {
             final indexToRemove = selectedItems.indexWhere((selectedItem) {
               if (selectedItem is User && item is User) {
                 return (selectedItem as User).user_id == (item as User).user_id;
               } else if (selectedItem is Device && item is Device) {
-                return (selectedItem as Device).id == (item as Device).id;
+                return (selectedItem as Device).device_id ==
+                    (item as Device).device_id;
               }
               return false;
             });
@@ -98,7 +100,7 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
           } else {
             selectedItems.add(item);
           }
-                  widget.onSelectionChanged(selectedItems); 
+          widget.onSelectionChanged(selectedItems);
 
           print('SelectionWidget');
           for (var s in selectedItems) {

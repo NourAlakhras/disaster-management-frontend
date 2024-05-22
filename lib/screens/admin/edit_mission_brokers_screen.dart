@@ -7,9 +7,13 @@ import 'package:flutter_3/widgets/selection_widget.dart';
 class EditBrokersScreen extends StatefulWidget {
   final List<Device>? preselectedBrokers;
   final String? missionId;
+    final bool? singleSelection; 
+
 
   EditBrokersScreen(
-      {this.preselectedBrokers, this.missionId}); // Modify constructor
+      {this.preselectedBrokers, this.missionId,
+    this.singleSelection,
+  }); 
   @override
   _EditBrokersScreenState createState() => _EditBrokersScreenState();
 }
@@ -77,6 +81,7 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
                   _selectedBrokers = selectedBrokers;
                 });
               },
+              singleSelection: widget.singleSelection,
             ),
     );
   }

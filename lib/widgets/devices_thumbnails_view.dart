@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/screens/user/device_detailed_screen.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
@@ -10,10 +10,11 @@ import 'package:flutter_3/widgets/filter_drawer.dart';
 
 class DevicesThumbnailsView extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
-
+  final List<Mission>? passedMissions; // pass mission to show its devices TBD
   const DevicesThumbnailsView({
     super.key,
     required this.mqttClient,
+    this.passedMissions
   });
   @override
   State<DevicesThumbnailsView> createState() => _DevicesThumbnailsViewState();

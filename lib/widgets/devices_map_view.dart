@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
-import 'package:flutter_3/services/device_api_service.dart';
+import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
@@ -8,7 +9,7 @@ import 'package:flutter_3/widgets/filter_drawer.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:math' show atan2, cos, pi, sin, sqrt, log;
+import 'dart:math' show Random, atan2, cos, log, pi, sin, sqrt;
 
 class DevicesMapView extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -26,39 +27,38 @@ class _DevicesMapViewState extends State<DevicesMapView> {
     southwest: const LatLng(0, 0), // First corner (e.g., (0, 0))
     northeast: const LatLng(0, 0), // Second corner (e.g., (0, 0))
   );
-  List<Device> _allDevices = [];
   List<Device> _filteredDevices = [];
+  List<Mission> _filteredMissions = [];
   bool _isLoading = false;
   int _pageNumber = 1;
-  final int _pageSize = 6;
+  final int _pageSize = 10000;
   final TextEditingController _searchController = TextEditingController();
-  final List<DeviceStatus> _filteredStatuses = [
-    DeviceStatus.ASSIGNED,
+  final List<MissionStatus> _filteredStatuses = [
+    MissionStatus.ONGOING,
   ];
   List<DeviceType>? _filteredTypes = DeviceType.values;
   String? _name;
   final criteriaList = [
     FilterCriterion(name: 'Device Type', options: DeviceType.values.toList()),
-  ];
+  ]; // Map to store mission IDs and corresponding colors
+  final Map<String, Color> _missionColorMap = {};
   @override
   void initState() {
     super.initState();
-    _fetchDevices();
+    _fetchMissions();
     widget.mqttClient.onDataReceived = _onDataReceived;
     _subscribeToTopics();
     widget.mqttClient.setupMessageListener();
   }
 
-  Future<void> _fetchDevices({
-    List<DeviceStatus>? statuses,
-    List<DeviceType>? types,
+  Future<void> _fetchMissions({
+    List<MissionStatus>? statuses,
     int? pageNumber,
     int? pageSize,
     String? name,
   }) async {
     // Assign default statuses if not provided
     statuses ??= _filteredStatuses;
-    types ??= _filteredTypes;
     pageNumber ??= _pageNumber;
     pageSize ??= _pageSize;
     name ??= _name;
@@ -66,24 +66,58 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       _isLoading = true;
     });
     try {
-      final devices = await DeviceApiService.getAllDevices(
+      final missions = await MissionApiService.getAllMissions(
         pageNumber: _pageNumber,
         pageSize: _pageSize,
-        types: types,
         statuses: statuses,
         name: name,
       );
       setState(() {
-        _allDevices = devices;
-        _filteredDevices = _allDevices;
+        _filteredMissions = missions;
       });
+      print('_filteredMissions $_filteredMissions');
+
+      for (var mission in _filteredMissions) {
+        await mission.fetchMissionDetails(() {
+          if (mounted) {
+            setState(() {});
+          }
+        });
+        await mission.fetchDetailedDeviceInfo();
+      }
+// Generate colors for missions and store them in the mission-color map
+      for (var mission in _filteredMissions) {
+        // Generate a random color
+        Color missionColor = _generateRandomColor();
+
+        // Store the mission ID and its color in the map
+        _missionColorMap[mission.id] = missionColor;
+      }
+      setState(() {
+        _filteredDevices = _filteredMissions
+            .expand((mission) => mission.devices ?? [])
+            .cast<Device>()
+            .where((device) => _filteredTypes!.contains(device.type))
+            .toList();
+      });
+      print('_filteredDevices $_filteredDevices');
     } catch (error) {
-      print('Failed to fetch devices: $error');
+      print('Failed to fetch missions: $error');
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+
+  Color _generateRandomColor() {
+    final Random random = Random();
+    return Color.fromRGBO(
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+      1,
+    );
   }
 
   void _subscribeToTopics() {
@@ -92,12 +126,12 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       widget.mqttClient.subscribeToTopic(mqttTopic);
     }
 
-    widget.mqttClient.subscribeToMultipleTopics([
-      'test-ugv/sensor_data',
-      "test-ugv1/gps",
-      "test-ugv0/gps",
-      "test-ugv2/gps"
-    ]);
+    // widget.mqttClient.subscribeToMultipleTopics([
+    //   'test-ugv/sensor_data',
+    //   "test-ugv1/gps",
+    //   "test-ugv0/gps",
+    //   "test-ugv2/gps"
+    // ]);
   }
 
   void _onDataReceived(Map<String, dynamic> message) {
@@ -113,10 +147,22 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       double long = gpsData['long'];
       LatLng position = LatLng(lat, long);
       _markers.removeWhere((marker) => marker.markerId.value == deviceId);
+      String missionId = _getMissionIdFromDevice(deviceId);
+      Color missionColor = _missionColorMap[missionId] ?? Colors.blue;
 
-      // Get marker color based on the device's ID
-      Color color = _getMarkerColor(deviceId);
-      String deviceName = _getDeviceName(deviceId); // Get the device's name
+      // Find the device by its ID from the _filteredDevices list
+      Device device = _filteredDevices.firstWhere(
+        (device) => device.device_id == deviceId,
+        orElse: () => Device(
+            device_id: deviceId,
+            name: 'Unknown Device',
+            type: DeviceType.UGV, // or any default type
+            status: DeviceStatus.AVAILABLE // or any default status
+            ),
+      );
+
+      // If the device is found, use its name; otherwise, use a default name
+      String deviceName = device.name;
 
       // Add marker with custom color
       _markers.add(
@@ -124,9 +170,9 @@ class _DevicesMapViewState extends State<DevicesMapView> {
           markerId: MarkerId(deviceId),
           position: position,
           icon: BitmapDescriptor.defaultMarkerWithHue(
-            _getColorHue(color),
+            _getColorHue(missionColor),
           ),
-          infoWindow: InfoWindow(title: deviceId), // Set the info window
+          infoWindow: InfoWindow(title: deviceName),
         ),
       );
 
@@ -139,39 +185,22 @@ class _DevicesMapViewState extends State<DevicesMapView> {
     }
   }
 
-  // Define a list of colors to use for markers
-  final List<Color> _markerColors = [
-    Colors.red,
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    // Add more colors as needed
-  ];
-
-  Color _getMarkerColor(String deviceId) {
-    // Choose a color based on the modified device's ID
-    int index = deviceId.hashCode % _markerColors.length;
-    return _markerColors[index];
+// Get the mission ID associated with the device ID
+  String _getMissionIdFromDevice(String deviceId) {
+    for (var mission in _filteredMissions) {
+      for (var device in mission.devices!) {
+        if (device.device_id == deviceId) {
+          return mission.id;
+        }
+      }
+    }
+    return ''; // Return empty string if no mission ID found
   }
 
   double _getColorHue(Color color) {
     // Calculate hue from color
     HSVColor hsvColor = HSVColor.fromColor(color);
     return hsvColor.hue;
-  }
-
-  String _getDeviceName(String deviceId) {
-    // Find the device object by its ID and return its name
-    Device device = _filteredDevices.firstWhere(
-      (device) => device.device_id == deviceId,
-      orElse: () => Device(
-          device_id: deviceId,
-          name: 'Unknown',
-          type: DeviceType.UGV,
-          status: DeviceStatus.AVAILABLE),
-    );
-    return device.name;
   }
 
   void _adjustBounds(LatLng position) {
@@ -359,18 +388,13 @@ class _DevicesMapViewState extends State<DevicesMapView> {
               (selectedCriteria['Device Type'] as List<dynamic>)
                   .cast<DeviceType>();
 
-          if (selectedTypes.isNotEmpty) {
-            setState(() {
-              _filteredTypes = selectedTypes;
-            });
-          } else {
-            _filteredTypes = DeviceType.values;
-          }
-
           setState(() {
+            _filteredTypes =
+                selectedTypes.isNotEmpty ? selectedTypes : DeviceType.values;
             _pageNumber = 1;
           });
-          _fetchDevices();
+
+          _fetchMissions();
         },
         criteriaList: criteriaList,
         title: 'Filter Options',
@@ -397,13 +421,13 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       });
     } else {
       // If query is empty, fetch all devices
-      _fetchDevices();
+      _fetchMissions();
     }
 
     setState(() {
       _pageNumber = 1;
     });
-    _fetchDevices();
+    _fetchMissions();
   }
 
   void _clearSearch() {
@@ -413,7 +437,7 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       _name = '';
       _pageNumber = 1;
     });
-    _fetchDevices();
+    _fetchMissions();
 
     // Call filterDevices with an empty string to reset the filtered list
     _filterDevices('');

@@ -23,7 +23,6 @@ class DeviceApiService {
       const String baseUrl = Constants.baseUrl;
 
       // Convert enums to their corresponding integer values
-
       final List<int>? typeValues =
           types?.map((t) => deviceTypeValues[t]!).toList();
 
@@ -103,9 +102,9 @@ class DeviceApiService {
       if (response.statusCode == 200) {
         // Parse the response body into a list of User objects
         final List<dynamic> usersJson = responseBody;
-        final List<Device> users =
+        final List<Device> devices =
             usersJson.map((json) => Device.fromJson(json)).toList();
-        return users;
+        return devices;
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {

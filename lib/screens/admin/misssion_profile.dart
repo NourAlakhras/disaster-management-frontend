@@ -165,55 +165,18 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
   }
 
   Future<void> fetchMissionDetails() async {
-    if (!mounted) return; // Check if the widget is mounted before proceeding
-    setState(() {
-      _isLoading = true;
+        widget.mission.fetchMissionDetails(() {
+      if (mounted) {
+        setState(() {
+_selectedBrokers =
+              widget.mission.broker != null ? [widget.mission.broker!] : [];
+          _selectedDevices = widget.mission.devices!
+              .where((device) => device.type != DeviceType.BROKER)
+              .toList();
+          _selectedUsers = widget.mission.users!;
+        });
+      }
     });
-    try {
-      final missionDetails =
-          await MissionApiService.getMissionDetails(widget.mission.id);
-      print('missionDetails $missionDetails');
-      print('mission object ${widget.mission}');
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        // Update mission details directly on the widget.mission object
-        widget.mission.name = missionDetails.name;
-        widget.mission.startDate = missionDetails.startDate;
-        widget.mission.endDate = missionDetails.endDate;
-        widget.mission.status = missionDetails.status;
-        widget.mission.devices = missionDetails.devices;
-        widget.mission.users = missionDetails.users;
-        widget.mission.broker = missionDetails.broker;
-
-        _missionNameController.text = missionDetails.name;
-        _selectedUsers = missionDetails.users ?? [];
-        _selectedDevices = missionDetails.devices!
-            .where((device) => device.type != DeviceType.BROKER)
-            .toList();
-        _selectedBrokers = missionDetails.devices!
-            .where((device) => device.type == DeviceType.BROKER)
-            .toList();
-
-        print('mission object ${widget.mission}');
-        print('MissionProfileScreen _selectedUsers');
-        print('mybroker : ${widget.mission.broker}');
-
-        for (var i in _selectedUsers) {
-          print(i.toString());
-        }
-      });
-    } catch (e) {
-      print('Error fetching mission info: $e');
-    } finally {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   Widget _buildNonEditableUserSelection() {

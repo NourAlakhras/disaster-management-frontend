@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
-import 'package:flutter_3/widgets/devices_list_view.dart';
-import 'package:flutter_3/widgets/devices_map_view.dart';
+import 'package:flutter_3/widgets/filter_drawer.dart';
+import 'package:flutter_3/widgets/mission_devices_list_tab.dart';
 import 'package:flutter_3/widgets/mission_devices_map_tab.dart';
 import 'package:flutter_3/widgets/mission_devices_thumbnails_tab.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+
 class MissionDevicesListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
   final Mission mission;
@@ -22,11 +25,19 @@ class MissionDevicesListScreen extends StatefulWidget {
 
 class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  List<DeviceType>? _filteredTypes = DeviceType.values;
+  final criteriaList = [
+    FilterCriterion(name: 'Device Type', options: DeviceType.values.toList()),
+  ];
+  String? _name;
+
+  List<Device> _filteredDevices = [];
+
   @override
   void initState() {
     super.initState();
+    fetchMissionDetails();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -65,10 +76,13 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
             ),
             Expanded(
               child: TabbedView(
-                length: 2,
+                length: 3,
                 tabs: const <Widget>[
                   Tab(
                     child: Icon(Icons.list),
+                  ),
+                  Tab(
+                    child: Icon(Icons.grid_view_rounded),
                   ),
                   Tab(
                     icon: Icon(Icons.map_outlined),
@@ -76,25 +90,32 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                 ],
                 tabContents: <Widget>[
                   // Content for Tab 1
-                  if (widget.mission.devices != null &&
-                      widget.mission.devices!.isNotEmpty)
-                    MissionDevicesThumbnailsTab(
+                  if (_filteredDevices.isNotEmpty)
+                    MissionDevicesListTab(
                       mqttClient: widget.mqttClient,
-                      devices:
-                          widget.mission.devices!, // Use devices from mission
+                      devices: _filteredDevices,
                     )
-                    else
+                  else
                     const Center(
                       child: Text('No devices available',
                           style: TextStyle(color: Colors.white)),
                     ),
                   // Content for Tab 2
-                  if (widget.mission.devices != null &&
-                      widget.mission.devices!.isNotEmpty)
+                  if (_filteredDevices.isNotEmpty)
+                    MissionDevicesThumbnailsTab(
+                      mqttClient: widget.mqttClient,
+                      devices: _filteredDevices,
+                    )
+                  else
+                    const Center(
+                      child: Text('No devices available',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  // Content for Tab 3
+                  if (_filteredDevices.isNotEmpty)
                     MissionDevicesMapTab(
                       mqttClient: widget.mqttClient,
-                      devices:
-                          widget.mission.devices!, // Use devices from mission
+                      devices: _filteredDevices, // Use devices from mission
                     )
                   else
                     const Center(
@@ -107,18 +128,48 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
           ],
         ),
       ),
+      endDrawer: FilterDrawerWidget(
+        onFilterApplied: (selectedCriteria) {
+          final List<DeviceType> selectedTypes =
+              (selectedCriteria['Device Type'] as List<dynamic>)
+                  .cast<DeviceType>();
+
+          setState(() {
+            _filteredTypes =
+                selectedTypes.isNotEmpty ? selectedTypes : DeviceType.values;
+          });
+          _filterDevices(_searchController.text);
+        },
+        criteriaList: criteriaList,
+        title: 'Filter Options',
+      ),
     );
   }
 
   void _filterDevices(String query) {
-    // Implement device filtering logic here
+    setState(() {
+      _name = query.isNotEmpty ? query.toLowerCase() : null;
+      _filteredDevices = widget.mission.devices!.where((device) {
+        final deviceNameLower = device.name.toLowerCase();
+        final matchesName = _name == null || deviceNameLower.contains(_name!);
+        final matchesType = _filteredTypes!.contains(device.type);
+        return matchesName && matchesType;
+      }).toList();
+    });
   }
 
-
-void _clearSearch() {
-    // Clear the search query
+  void _clearSearch() {
     _searchController.clear();
-    // Call filterMissions with an empty string to reset the filtered list
     _filterDevices('');
+  }
+
+  Future<void> fetchMissionDetails() async {
+    widget.mission.fetchMissionDetails(() {
+      if (mounted) {
+        setState(() {
+          _filteredDevices = widget.mission.devices!;
+        });
+      }
+    });
   }
 }

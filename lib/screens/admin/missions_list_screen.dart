@@ -22,11 +22,14 @@ class MissionsListScreen extends StatefulWidget {
 class _MissionsListScreenState extends State<MissionsListScreen> {
   List<Mission> _allMissions = [];
   List<Mission> _filteredMissions = [];
+
   bool _isLoading = false;
   int _pageNumber = 1;
-  final int _pageSize = 6;
+  final int _pageSize = 5;
   final TextEditingController _searchController = TextEditingController();
-  List<MissionStatus>? _filteredstatuses = MissionStatus.values;
+  List<MissionStatus>? _filteredstatuses = MissionStatus.values
+      .where((status) => status != MissionStatus.CANCELED)
+      .toList();
   String? _name;
   final criteriaList = [
     FilterCriterion(
@@ -123,7 +126,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(
-                        height: 20,
+                        height: 10,
                       ),
                       // Labels Row
                       Container(
@@ -233,7 +236,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
-                    child: const Text('<'),
+                    child: const Icon(Icons.arrow_back),
                   ),
                   ElevatedButton(
                     onPressed: () {
@@ -268,8 +271,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
-                    child: const Text('>'),
-                  ),
+child: const Icon(Icons.arrow_forward),                  ),
                 ],
               ),
             ),

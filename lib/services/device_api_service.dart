@@ -13,7 +13,7 @@ class DeviceApiService {
     List<DeviceStatus>? statuses,
     List<DeviceType>? types,
     String? missionId,
-        String? name,
+    String? name,
   }) async {
     try {
       print('statuses from getAllDevices: $statuses');
@@ -129,7 +129,7 @@ class DeviceApiService {
       throw Exception('Failed to fetch users: $e');
     }
   }
-  
+
   static Future<Device> getDeviceDetails(String deviceId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
@@ -166,21 +166,27 @@ class DeviceApiService {
       throw Exception('Failed to retrieve device details: $e');
     }
   }
-  
+
   static Future<void> updateDevice({
     required String deviceId,
-    required String name,
+    String? name,
     List<String>? missionIds,
+    String? oldPassword,
+    String? newPassword,
   }) async {
     const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse('$baseUrl/api/devices/$deviceId');
 
-    final Map<String, dynamic> requestBody = {
-      'name': name,
-      'missionIds': missionIds,
-    };
+    // Dynamically build the request body
+    final Map<String, dynamic> requestBody = {};
+    if (name != null) requestBody['name'] = name;
+    if (missionIds != null) requestBody['missionIds'] = missionIds;
+    if (oldPassword != null) requestBody['old_password'] = oldPassword;
+    if (newPassword != null) requestBody['new_password'] = newPassword;
+
     print('updateDevice url $url');
     print('updateDevice requestBody $requestBody');
+
     try {
       String? token = await AuthApiService.getAuthToken();
 

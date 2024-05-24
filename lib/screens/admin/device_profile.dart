@@ -4,7 +4,7 @@ import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/screens/admin/edit_missions_screen.dart';
-import 'package:flutter_3/screens/admin/mission_devices_list_screen.dart';
+import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -24,7 +24,8 @@ class DeviceProfileScreen extends StatefulWidget {
 
 class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   final TextEditingController _deviceNameController = TextEditingController();
-
+  final TextEditingController _oldPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
   bool _isLoading = false;
   bool _isEditing = false;
   List<Mission> _selectedMissions = [];
@@ -69,7 +70,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                     controller: _deviceNameController,
                     isEditing: _isEditing,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   if (widget.device.mac != null)
                     Row(
                       children: [
@@ -82,7 +83,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                           ),
                         ),
                         Text(
-                          '${widget.device.mac}',
+                          widget.device.mac.toString(),
                           style: const TextStyle(
                             color: Colors.white70,
                           ),
@@ -120,13 +121,36 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                       )
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      const Text(
+                        'Type: ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 255, 255, 255),
+                        ),
+                      ),
+                      Text(
+                        widget.device.type
+                            .toString()
+                            .split('.')
+                            .last
+                            .toLowerCase(),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                   _isEditing
                       ? _buildEditableMissionSelection()
                       : _buildNonEditableMissionSelection(),
                   const SizedBox(height: 20),
                   _buildEditButton(),
                   _buildMonitorButton(),
+                  _buildChangePasswordButton(),
                 ],
               ),
             ),
@@ -134,48 +158,21 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   }
 
   Future<void> fetchDeviceDetails() async {
-    if (!mounted) return; // Check if the widget is mounted before proceeding
-    setState(() {
-      _isLoading = true;
+    widget.device.fetchDeviceDetails(() {
+      if (mounted) {
+        setState(() {
+          _deviceNameController.text = widget.device.name;
+          _selectedMissions =
+              widget.device.mission != null ? [widget.device.mission!] : [];
+        });
+      }
     });
-    try {
-      final deviceDetails =
-          await DeviceApiService.getDeviceDetails(widget.device.device_id);
-      print('deviceDetails $deviceDetails');
-      print('device object ${widget.device}');
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        // Update device details directly on the widget.device object
-        widget.device.name = deviceDetails.name;
-        widget.device.status = deviceDetails.status;
-
-        _deviceNameController.text = deviceDetails.name;
-        _selectedMissions = [deviceDetails.mission!];
-        
-
-        print('device object ${widget.device}');
-        print('DeviceProfileScreen _selectedUsers');
-        print('mybroker : ${widget.device.mission}');
-
-        for (var i in _selectedMissions) {
-          print(i.toString());
-        }
-      });
-    } catch (e) {
-      print('Error fetching device info: $e');
-    } finally {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   Widget _buildNonEditableMissionSelection() {
+    if (widget.device.status != DeviceStatus.ASSIGNED) {
+      return const SizedBox(); // Show nothing if the device is not assigned
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -247,8 +244,12 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                   print('EditMissionsScreen $_selectedMissions');
                 });
               },
-              icon: const Icon(Icons.edit),
-              tooltip: 'Edit',
+              icon: widget.device.status != DeviceStatus.ASSIGNED
+                  ? const Icon(Icons.add)
+                  : const Icon(Icons.edit),
+              tooltip: widget.device.status != DeviceStatus.ASSIGNED
+                  ? 'Add'
+                  : 'Edit',
             ),
           ],
         ),
@@ -301,7 +302,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   }
 
   Widget _buildEditButton() {
-    if (widget.device.status == DeviceStatus.INACTIVE ) {
+    if (widget.device.status == DeviceStatus.INACTIVE) {
       return const SizedBox();
     } else {
       // Otherwise, return the edit button
@@ -323,7 +324,9 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   }
 
   Widget _buildMonitorButton() {
-    if (!_isEditing && widget.device.status == DeviceStatus.ASSIGNED && widget.device.mission?.status==MissionStatus.ONGOING ) {
+    if (!_isEditing &&
+        widget.device.status == DeviceStatus.ASSIGNED &&
+        widget.device.mission?.status == MissionStatus.ONGOING) {
       return ElevatedButton(
         onPressed: () {
           // Navigate to the device monitoring screen
@@ -356,8 +359,24 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
           ]
         : [];
   }
-
-  void _deleteDevice(String id) {}
+  
+void _deleteDevice(String id) {
+    DeviceApiService.deleteDevice(id).then((deletedDevice) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Device deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete device: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    });
+  }
 
   void _saveChanges() async {
     setState(() {
@@ -398,6 +417,100 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
     } finally {
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  Widget _buildChangePasswordButton() {
+    if (widget.device.status == DeviceStatus.INACTIVE) {
+      return const SizedBox();
+    } else {
+      return ElevatedButton(
+        onPressed: () => _showChangePasswordDialog(),
+        child: const Text('Change Password'),
+      );
+    }
+  }
+
+  void _showChangePasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Change Password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _oldPasswordController,
+                decoration: const InputDecoration(labelText: 'Old Password'),
+                obscureText: true,
+              ),
+              TextField(
+                controller: _newPasswordController,
+                decoration: const InputDecoration(labelText: 'New Password'),
+                obscureText: true,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _changePassword();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Change'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _changePassword() async {
+    String oldPassword = _oldPasswordController.text;
+    String newPassword = _newPasswordController.text;
+
+    if (oldPassword.isEmpty || newPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both passwords'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await DeviceApiService.updateDevice(
+        deviceId: widget.device.device_id,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password changed successfully'), backgroundColor: Colors.green,),
+      );
+
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to change password: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+        _oldPasswordController.clear();
+        _newPasswordController.clear();
+
       });
     }
   }

@@ -26,7 +26,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   List<User> _filteredUsers = [];
   bool _isLoading = false;
   int _pageNumber = 1;
-  final int _pageSize = 6;
+  final int _pageSize = 5;
   int allUsersCount = 0;
 
   final TextEditingController _searchController = TextEditingController();
@@ -159,7 +159,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(
-                        height: 20,
+                        height: 10,
                       ),
                       // Labels Row
                       Container(
@@ -288,7 +288,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
-                    child: const Text('<'),
+                    child: const Icon(Icons.arrow_back),
                   ),
                   ElevatedButton(
                     onPressed: allUsersCount > _pageSize &&
@@ -301,7 +301,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
-                    child: const Text('>'),
+                    child: const Icon(Icons.arrow_forward),
                   ),
                 ],
               ),

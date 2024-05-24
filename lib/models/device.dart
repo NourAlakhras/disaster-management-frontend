@@ -1,4 +1,7 @@
+import 'dart:ui';
+
 import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/utils/enums.dart'; // Import enums file
 
 class Device {
@@ -30,6 +33,26 @@ class Device {
     );
   }
 
+  Future<void> fetchDeviceDetails(VoidCallback setStateCallback) async {
+    setStateCallback(); // Notify the widget to start loading
+
+    try {
+
+      final deviceDetails = await DeviceApiService.getDeviceDetails(device_id);
+
+      name = deviceDetails.name;
+      mac = deviceDetails.mac;
+      type = deviceDetails.type;
+      status = deviceDetails.status;
+      status = deviceDetails.status;
+      mission = deviceDetails.mission;
+      
+      setStateCallback(); // Notify the widget that loading is complete
+    } catch (e) {
+      print('Error fetching mission info: $e');
+      setStateCallback(); // Notify the widget even in case of an error
+    }
+  }
   static DeviceType _getType(int? typeValue) {
     if (typeValue == null) {
       return DeviceType.UGV; // Default to UGV if type is null

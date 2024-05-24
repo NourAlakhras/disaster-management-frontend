@@ -1,32 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/screens/admin/device_profile.dart';
+import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
+import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
 
-class DevicesListView extends StatefulWidget {
+class DevicesListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
 
-  const DevicesListView({
+  const DevicesListScreen({
     super.key,
     required this.mqttClient,
   });
 
   @override
-  State<DevicesListView> createState() => _DevicesListViewState();
+  State<DevicesListScreen> createState() => _DevicesListScreenState();
 }
 
-class _DevicesListViewState extends State<DevicesListView> {
+class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> _allDevices = [];
   List<Device> _filteredDevices = [];
   bool _isLoading = false;
   int _pageNumber = 1;
-  final int _pageSize = 6;
+  final int _pageSize = 5;
   final TextEditingController _searchController = TextEditingController();
-  List<DeviceStatus>? _filteredStatuses = DeviceStatus.values;
+  List<DeviceStatus>? _filteredStatuses = DeviceStatus.values
+      .where((status) => status != DeviceStatus.INACTIVE)
+      .toList();
   List<DeviceType>? _filteredTypes = DeviceType.values;
   String? _name;
   final criteriaList = [
@@ -81,18 +85,34 @@ class _DevicesListViewState extends State<DevicesListView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xff121417),
+      appBar: CustomUpperBar(
+        title: 'Devices',
+        leading: IconButton(
+            icon: const Icon(Icons.settings),
+            color: Colors.white,
+            onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          SettingsScreen(mqttClient: widget.mqttClient)),
+                )),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            color: const Color.fromARGB(255, 255, 255, 255),
+            onPressed: () {},
+          )
+        ],
+      ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 00),
+        padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 00),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 15, 0, 0),
-              child: CustomSearchBar(
-                controller: _searchController,
-                onChanged: _filterDevices,
-                onClear: _clearSearch,
-              ),
+            CustomSearchBar(
+              controller: _searchController,
+              onChanged: _filterDevices,
+              onClear: _clearSearch,
             ),
             if (_isLoading)
               const Center(child: CircularProgressIndicator())
@@ -110,6 +130,9 @@ class _DevicesListViewState extends State<DevicesListView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      const SizedBox(
+                        height: 10,
+                      ),
                       // Labels Row
                       Container(
                         decoration: const BoxDecoration(
@@ -238,7 +261,7 @@ class _DevicesListViewState extends State<DevicesListView> {
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
-                    child: const Text('<'),
+                    child: const Icon(Icons.arrow_back),
                   ),
                   ElevatedButton(
                     onPressed:
@@ -249,7 +272,7 @@ class _DevicesListViewState extends State<DevicesListView> {
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
-                    child: const Text('>'),
+                    child: const Icon(Icons.arrow_forward),
                   ),
                 ],
               ),
@@ -348,7 +371,23 @@ class _DevicesListViewState extends State<DevicesListView> {
         : [];
   }
 
-  void _deleteDevice(String id) {}
+  void _deleteDevice(String id) {
+    DeviceApiService.deleteDevice(id).then((deletedDevice) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Device deleted successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }).catchError((error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete device: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    });
+  }
 
   void _clearSearch() {
     // Clear the search query

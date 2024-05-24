@@ -82,7 +82,6 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
           if (widget.singleSelection == true) {
             // Clear all previous selections before adding the new one
             selectedItems.clear();
-            selectedItems.add(item);
           }
           if (isSelected) {
             final indexToRemove = selectedItems.indexWhere((selectedItem) {

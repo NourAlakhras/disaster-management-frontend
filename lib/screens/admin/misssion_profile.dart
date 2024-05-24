@@ -5,7 +5,7 @@ import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/screens/admin/edit_mission_brokers_screen.dart';
 import 'package:flutter_3/screens/admin/edit_mission_devices_screen.dart';
 import 'package:flutter_3/screens/admin/edit_mission_users_screen.dart';
-import 'package:flutter_3/screens/admin/mission_devices_list_screen.dart';
+import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -165,10 +165,10 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
   }
 
   Future<void> fetchMissionDetails() async {
-        widget.mission.fetchMissionDetails(() {
+    widget.mission.fetchMissionDetails(() {
       if (mounted) {
         setState(() {
-_selectedBrokers =
+          _selectedBrokers =
               widget.mission.broker != null ? [widget.mission.broker!] : [];
           _selectedDevices = widget.mission.devices!
               .where((device) => device.type != DeviceType.BROKER)
@@ -427,7 +427,6 @@ _selectedBrokers =
                       preselectedBrokers: _selectedBrokers,
                       missionId: widget.mission.id,
                       singleSelection: true,
-
                     ),
                   ),
                 );

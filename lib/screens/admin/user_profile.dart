@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/screens/admin/edit_missions_screen.dart';
-import 'package:flutter_3/screens/admin/mission_devices_list_screen.dart';
+import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';

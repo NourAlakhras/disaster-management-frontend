@@ -43,18 +43,16 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: ListView.builder(
-        itemCount: widget.items.length,
-        itemBuilder: (context, index) {
-          final item = widget.items[index];
-          return _buildItemText(item);
-        },
-      ),
+    return ListView.builder(
+      itemCount: widget.items.length,
+      itemBuilder: (context, index) {
+        final item = widget.items[index];
+        return _buildItemTile(item);
+      },
     );
   }
 
-  Widget _buildItemText(T item) {
+  Widget _buildItemTile(T item) {
     bool isSelected = selectedItems.any((selectedItem) {
       // Check if the IDs of the selected item and the current item match
       if (selectedItem is User && item is User) {
@@ -67,16 +65,7 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
       return false;
     });
 
-    return ListTile(
-      title: Text(
-        item is User
-            ? (item as User).username
-            : item is Device
-                ? (item as Device).name
-                : item is Mission
-                    ? (item as Mission).name
-                    : '',
-      ),
+    return InkWell(
       onTap: () {
         setState(() {
           if (widget.singleSelection == true) {
@@ -107,8 +96,76 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
           }
         });
       },
-      selected: isSelected,
-      selectedTileColor: Colors.blue.withOpacity(0.5),
+      child: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Color(0xff293038)),
+          ),
+        ),
+        height: 70,
+        child: Row(
+          children: [
+            Expanded(
+              flex: 5,
+              child: Text(
+                item is User ? item.username : '',
+                style: const TextStyle(fontSize: 17, color: Colors.white70),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                item is User
+                    ? item.type.toString().split('.').last.toLowerCase()
+                    : '',
+                style: const TextStyle(fontSize: 17, color: Colors.white70),
+              ),
+            ),
+            Expanded(
+              flex: 3,
+              child: Text(
+                item is User ? item.activeMissionCount.toString() : '',
+                style: const TextStyle(fontSize: 17, color: Colors.white70),
+              ),
+            ),
+            Checkbox(
+              value: isSelected,
+              onChanged: (bool? value) {
+                setState(() {
+                  if (widget.singleSelection == true) {
+                    // Clear all previous selections before adding the new one
+                    selectedItems.clear();
+                  }
+                  if (isSelected) {
+                    final indexToRemove =
+                        selectedItems.indexWhere((selectedItem) {
+                      if (selectedItem is User && item is User) {
+                        return (selectedItem as User).user_id ==
+                            (item as User).user_id;
+                      } else if (selectedItem is Device && item is Device) {
+                        return (selectedItem as Device).device_id ==
+                            (item as Device).device_id;
+                      }
+                      return false;
+                    });
+                    if (indexToRemove != -1) {
+                      selectedItems.removeAt(indexToRemove);
+                    }
+                  } else {
+                    selectedItems.add(item);
+                  }
+                  widget.onSelectionChanged(selectedItems);
+
+                  print('SelectionWidget');
+                  for (var s in selectedItems) {
+                    print(' ${s.toString()}');
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

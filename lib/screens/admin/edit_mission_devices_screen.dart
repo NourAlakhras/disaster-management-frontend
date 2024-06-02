@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/selection_widget.dart';
 
 class EditDevicesScreen extends StatefulWidget {
@@ -23,6 +24,9 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
   late List<Device> _selectedDevices = [];
 
   bool _isLoading = false;
+  int _pageNumber = 1;
+  bool _hasNext = false;
+  bool _hasPrev = false;
 
   @override
   void initState() {
@@ -31,7 +35,7 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
     _fetchDevices();
   }
 
-  Future<void> _fetchDevices() async {
+  Future<void> _fetchDevices({int pageNumber = 1}) async {
     setState(() {
       _isLoading = true;
     });
@@ -39,18 +43,23 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
       final typesToInclude =
           DeviceType.values.where((type) => type != DeviceType.BROKER).toList();
       final deviceResponse = await DeviceApiService.getAllDevices(
-        pageNumber: 1,
-        pageSize: 100,
+        pageNumber: pageNumber,
+        pageSize: 5,
         statuses: [DeviceStatus.AVAILABLE],
         types: typesToInclude,
         missionId: widget.missionId,
         brokerId: widget.brokerId, // Fetch devices by broker ID
       );
+      if (!mounted) return;
+
       setState(() {
         _deviceOptions = deviceResponse.items;
         _isLoading = false;
       });
+      if (!mounted) return;
     } catch (e) {
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
       });
@@ -58,31 +67,124 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
     }
   }
 
-  @override
+  void _nextPage() {
+    if (_hasNext) {
+      _fetchDevices(pageNumber: _pageNumber + 1);
+    }
+  }
+
+  void _previousPage() {
+    if (_hasPrev) {
+      _fetchDevices(pageNumber: _pageNumber - 1);
+    }
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Select Devices'),
+      backgroundColor: const Color(0xff121417),
+      appBar: CustomUpperBar(
+        title: 'Select Devices',
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          color: const Color.fromARGB(255, 255, 255, 255),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.check),
+            color: Colors.white,
             onPressed: () {
               Navigator.pop<List<Device>>(context, _selectedDevices);
             },
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SelectionWidget<Device>(
-              items: _deviceOptions,
-              preselectedItems: _selectedDevices,
-              onSelectionChanged: (selectedDevices) {
-                setState(() {
-                  _selectedDevices = selectedDevices;
-                });
-              },
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Title Row
+            Container(
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey),
+                ),
+              ),
+              height: 60,
+              child: const Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Text("Device's name",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.white)),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Text('Type',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.white)),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: SizedBox(),
+                  ),
+                ],
+              ),
             ),
+            // Device List
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SelectionWidget<Device>(
+                      items: _deviceOptions,
+                      preselectedItems: _selectedDevices,
+                      onSelectionChanged: (selectedDevices) {
+                        setState(() {
+                          _selectedDevices = selectedDevices;
+                        });
+                      },
+                    ),
+            ),
+            // Pagination Controls
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10.0, 20, 30),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  ElevatedButton(
+                    onPressed: _hasPrev ? _previousPage : null,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      elevation: 0,
+                      shape: const CircleBorder(),
+                    ),
+                    child: const Icon(Icons.arrow_back),
+                  ),
+                  ElevatedButton(
+                    onPressed: _hasNext ? _nextPage : null,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      elevation: 0,
+                      shape: const CircleBorder(),
+                    ),
+                    child: const Icon(Icons.arrow_forward),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

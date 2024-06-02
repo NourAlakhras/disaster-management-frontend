@@ -34,16 +34,16 @@ class Mission {
 
     if (json['devices'] != null) {
       devices = List<Device>.from(
-          json['devices'].map((deviceJson) => Device.fromJson(deviceJson)));
-      // Find the broker device and assign it to the mission's broker attribute
-      for (Device device in devices) {
-        if (device.type == DeviceType.BROKER) {
-          brokerDevice = device;
-          break; // Exit the loop once the broker device is found
-        }
-      }
+        json['devices'].map((deviceJson) => Device.fromJson(deviceJson)),
+      );
     }
 
+    if (json['broker'] != null) {
+      brokerDevice = Device(
+        device_id: json['broker']['broker_id'] as String? ?? '',
+        name: json['broker']['broker_name'] as String? ?? '',
+      );
+    }
     List<User> users = [];
     if (json['users'] != null) {
       users = List<User>.from(
@@ -62,7 +62,7 @@ class Mission {
     }
 
     return Mission(
-      id: json['id'] as String? ?? '',
+      id: json['mission_id'] as String? ?? json['id'] as String? ?? '',
       name: json['name'],
       startDate: startDate,
       endDate: endDate,
@@ -101,8 +101,7 @@ class Mission {
       status = missionDetails.status;
       devices = missionDetails.devices;
       users = missionDetails.users;
-      broker = missionDetails.devices!
-          .firstWhere((device) => device.type == DeviceType.BROKER);
+      broker = missionDetails.broker;
 
       setStateCallback(); // Notify the widget that loading is complete
     } catch (e) {

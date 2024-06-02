@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/models/paginated_response.dart';
+import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/services/auth_api_service.dart';
 import 'package:flutter_3/utils/constants.dart';
 import 'package:flutter_3/utils/exceptions.dart';
@@ -7,12 +9,13 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_3/utils/enums.dart';
 
 class DeviceApiService {
-  static Future<List<Device>> getAllDevices({
+  static Future<PaginatedResponse<Device>> getAllDevices({
     int? pageNumber,
     int? pageSize,
     List<DeviceStatus>? statuses,
     List<DeviceType>? types,
     String? missionId,
+    String? brokerId,
     String? name,
   }) async {
     try {
@@ -65,6 +68,9 @@ class DeviceApiService {
       if (missionId != null) {
         queryParameters['mission'] = missionId;
       }
+      if (brokerId != null) {
+        queryParameters['broker'] = brokerId;
+      }
 
       if (name != "" && name != null && name.isNotEmpty) {
         queryParameters['name'] = name;
@@ -98,13 +104,11 @@ class DeviceApiService {
 
       final responseBody = jsonDecode(response.body);
       print('getAllDevices responseBody: $responseBody');
-
+ 
       if (response.statusCode == 200) {
-        // Parse the response body into a list of User objects
-        final List<dynamic> usersJson = responseBody;
-        final List<Device> devices =
-            usersJson.map((json) => Device.fromJson(json)).toList();
-        return devices;
+        final paginatedResponse = PaginatedResponse<Device>.fromJson(
+            responseBody, (json) => Device.fromJson(json));
+        return paginatedResponse;
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {
@@ -174,7 +178,7 @@ class DeviceApiService {
     String? oldPassword,
     String? newPassword,
   }) async {
-    const String baseUrl = Constants.baseUrl;
+      const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse('$baseUrl/api/devices/$deviceId');
 
     // Dynamically build the request body

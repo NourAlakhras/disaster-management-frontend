@@ -15,4 +15,5 @@ class AuthApiService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_token');
   }
+  
 }

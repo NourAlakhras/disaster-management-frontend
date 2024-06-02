@@ -33,17 +33,17 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
       _isLoading = true;
     });
     try {
-      final List<User> users = await AdminApiService.getAllUsers(
+      final userResponse = await AdminApiService.getAllUsers(
         pageNumber: 1,
         pageSize: 100,
         statuses: [
           UserStatus.AVAILABLE,
           UserStatus.ASSIGNED,
-          UserStatus.ACCEPTED
         ],
       );
       setState(() {
-        _userOptions = users;
+        print('userResponse EditUsersScreen $userResponse');
+        _userOptions = userResponse.items;
         _isLoading = false;
       });
     } catch (e) {

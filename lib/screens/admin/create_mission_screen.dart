@@ -4,12 +4,8 @@ import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/screens/admin/edit_mission_brokers_screen.dart';
 import 'package:flutter_3/screens/admin/edit_mission_devices_screen.dart';
 import 'package:flutter_3/screens/admin/edit_mission_users_screen.dart';
-import 'package:flutter_3/services/admin_api_service.dart';
-import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
-import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
-import 'package:multi_dropdown/multiselect_dropdown.dart';
 
 class CreateMissionScreen extends StatefulWidget {
   const CreateMissionScreen({Key? key});
@@ -22,7 +18,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
   final TextEditingController _missionNameController = TextEditingController();
   List<User> _selectedUsers = [];
   List<Device> _selectedDevices = [];
-  List<Device> _selectedBrokers = [];
+  Device? _selectedBroker;
 
   bool _isLoading = false;
 
@@ -78,7 +74,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
     );
   }
 
-  Widget _buildEditableDeviceSelection() {
+    Widget _buildEditableDeviceSelection() {
     return Column(
       children: [
         Row(
@@ -94,10 +90,22 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
             ),
             IconButton(
               onPressed: () async {
+                if (_selectedBroker == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select a broker first.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
                 List<Device>? selectedDevices = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditDevicesScreen(),
+                    builder: (context) => EditDevicesScreen(
+                      brokerId: _selectedBroker!.device_id,
+                    ),
                   ),
                 );
                 if (selectedDevices != null) {
@@ -141,32 +149,43 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
             ),
             IconButton(
               onPressed: () async {
-                List<Device> selectedBrokers = await Navigator.push(
+                Device? selectedBroker = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => EditBrokersScreen(),
                   ),
                 );
-                setState(() {
-                  _selectedBrokers = selectedBrokers;
-                  print('EditDevicesScreen $selectedBrokers');
-                });
+                if (selectedBroker != null) {
+                  setState(() {
+                    if (_selectedBroker != null &&
+                        _selectedBroker!.device_id !=
+                            selectedBroker.device_id) {
+                      _selectedDevices = [];
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Broker changed, device selection cleared.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                    _selectedBroker = selectedBroker;
+                  });
+                }
               },
               icon: const Icon(Icons.edit),
               tooltip: 'Edit',
             ),
           ],
         ),
-        Column(
-          children: _selectedBrokers.map((device) {
-            return ListTile(
-              title: Text(
-                device.name,
-                style: const TextStyle(color: Colors.white70),
-              ),
-            );
-          }).toList(),
-        ),
+        _selectedBroker != null
+            ? ListTile(
+                title: Text(
+                  _selectedBroker!.name,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              )
+            : Container(),
       ],
     );
   }
@@ -207,10 +226,9 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                   const SizedBox(height: 20),
                   _buildEditableUserSelection(),
                   const SizedBox(height: 20),
-                  _buildEditableDeviceSelection(),
-                  const SizedBox(height: 20),
                   _buildEditableBrokerSelection(),
-
+                  const SizedBox(height: 20),
+                  _buildEditableDeviceSelection(),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: () {
@@ -256,32 +274,33 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
     });
 
     try {
-      // Extract mission details
       final String missionName = _missionNameController.text;
       final List<String> userIds =
           _selectedUsers.map((user) => user.user_id).toList();
+
+      final String brokerId = _selectedBroker?.device_id ?? '';
+
       final List<String> deviceIds =
           _selectedDevices.map((device) => device.device_id).toList();
-
       // Call createMission API
-      await MissionApiService.createMission(
+      String? missionId = await MissionApiService.createMission(
         name: missionName,
         deviceIds: deviceIds,
         userIds: userIds,
+        brokerId: brokerId,
       );
-
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mission created successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-// Navigate back to the previous screen
-      Navigator.pop(context);
+      if (missionId != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Mission created successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      } else {
+        throw Exception('Mission creation returned null');
+      }
     } catch (e) {
-      // Show error message if creation fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to create mission: $e'),

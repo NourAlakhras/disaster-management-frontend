@@ -403,6 +403,8 @@ class _DevicesThumbnailsViewState extends State<DevicesThumbnailsView> {
 
   Map<String, int> batteryLevels = {}; // Store battery levels for each device
   Map<String, int> wifiLevels = {}; // Store Wi-Fi levels for each device
+  bool _hasNext = false;
+  bool _hasPrev = false;
 
   @override
   void initState() {
@@ -426,14 +428,16 @@ class _DevicesThumbnailsViewState extends State<DevicesThumbnailsView> {
       _isLoading = true;
     });
     try {
-      final missions = await MissionApiService.getAllMissions(
+       final missionResponse = await MissionApiService.getAllMissions(
         pageNumber: _pageNumber,
         pageSize: _pageSize,
         statuses: statuses,
         name: name,
       );
       setState(() {
-        _filteredMissions = missions;
+        _filteredMissions = missionResponse.items;
+        _hasNext = missionResponse.hasNext;
+        _hasPrev = missionResponse.hasPrev;
       });
       print('_filteredMissions $_filteredMissions');
 

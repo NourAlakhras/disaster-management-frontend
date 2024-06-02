@@ -5,6 +5,7 @@ import 'package:flutter_3/screens/admin/misssion_profile.dart';
 import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -20,7 +21,6 @@ class MissionsListScreen extends StatefulWidget {
 }
 
 class _MissionsListScreenState extends State<MissionsListScreen> {
-  List<Mission> _allMissions = [];
   List<Mission> _filteredMissions = [];
 
   bool _isLoading = false;
@@ -31,10 +31,24 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
       .where((status) => status != MissionStatus.CANCELED)
       .toList();
   String? _name;
-  final criteriaList = [
-    FilterCriterion(
-        name: 'Mission Status', options: MissionStatus.values.toList()),
-  ];
+
+  final criteriaList = UserCredentials().getUserType() == UserType.ADMIN
+      ? [
+          FilterCriterion(
+              name: 'Mission Status', options: MissionStatus.values.toList()),
+        ]
+      : [
+          FilterCriterion(
+              name: 'Mission Status',
+              options: MissionStatus.values
+                  .where((status) =>
+                      status != MissionStatus.CANCELED &&
+                      status != MissionStatus.FINISHED)
+                  .toList()),
+        ];
+
+  bool _hasNext = false;
+  bool _hasPrev = false;
 
   @override
   void initState() {
@@ -57,15 +71,23 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
       _isLoading = true;
     });
     try {
-      final missions = await MissionApiService.getAllMissions(
-        pageNumber: _pageNumber,
-        pageSize: _pageSize,
-        statuses: statuses,
-        name: name,
-      );
+      final missionResponse = UserCredentials().getUserType() == UserType.ADMIN
+          ? await MissionApiService.getAllMissions(
+              pageNumber: pageNumber,
+              pageSize: pageSize,
+              statuses: statuses,
+              name: name,
+            )
+          : await UserApiService.getCurrentMissions(
+              pageNumber: pageNumber,
+              pageSize: pageSize,
+              statuses: statuses,
+              name: name,
+            );
       setState(() {
-        _allMissions = missions;
-        _filteredMissions = _allMissions;
+        _filteredMissions = missionResponse.items;
+        _hasNext = missionResponse.hasNext;
+        _hasPrev = missionResponse.hasPrev;
       });
     } catch (error) {
       print('Failed to fetch missions: $error');
@@ -83,14 +105,19 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
       appBar: CustomUpperBar(
         title: "Missions' List",
         leading: IconButton(
-            icon: const Icon(Icons.settings),
-            color: Colors.white,
-            onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          SettingsScreen(mqttClient: widget.mqttClient)),
-                )),
+          icon: const Icon(Icons.settings),
+          color: Colors.white,
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    SettingsScreen(mqttClient: widget.mqttClient)),
+          ).then((_) {
+            setState(() {
+              // Call setState to refresh the page.
+            });
+          }),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -173,7 +200,11 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                                 builder: (context) => MissionProfileScreen(
                                     mission: mission,
                                     mqttClient: widget.mqttClient),
-                              )),
+                              )).then((_) {
+                            setState(() {
+                              // Call setState to refresh the page.
+                            });
+                          }),
                           child: Container(
                             decoration: const BoxDecoration(
                               border: Border(
@@ -228,50 +259,49 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   ElevatedButton(
-                    onPressed: _pageNumber > 1 ? _previousPage : null,
+                    onPressed: _hasPrev ? _previousPage : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,
-
-                      elevation: 0, // No shadow
-                      shape: const CircleBorder(), // Circular button shape
+                      elevation: 0,
+                      shape: const CircleBorder(),
                     ),
                     child: const Icon(Icons.arrow_back),
                   ),
+                  UserCredentials().getUserType() == UserType.ADMIN
+                      ? ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const CreateMissionScreen()),
+                            ).then((_) {
+                              setState(() {
+                                _fetchMissions();
+                              });
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: Colors.black,
+                            backgroundColor: Colors.white70,
+                            elevation: 0, // No shadow
+                            shape: const CircleBorder(),
+                            padding: const EdgeInsets.all(20),
+                          ),
+                          child: const Icon(Icons.add), // Black icon color
+                        )
+                      : SizedBox(),
                   ElevatedButton(
-                    onPressed: () {
-                      // Navigate to the CreateMissionScreen when the button is pressed
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const CreateMissionScreen()),
-                      ).then((result) {
-                        // Reload missions if mission creation was successful
-                        if (result == true) {
-                          _fetchMissions();
-                        }
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
-
-                      elevation: 0, // No shadow
-                      shape: const CircleBorder(),
-                      padding: const EdgeInsets.all(20),
-                    ),
-                    child: const Icon(Icons.add), // Black icon color
-                  ),
-                  ElevatedButton(
-                    onPressed:
-                        _allMissions.length > _pageSize ? _nextPage : null,
+                    onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
-child: const Icon(Icons.arrow_forward),                  ),
+                    child: const Icon(Icons.arrow_forward),
+                  ),
                 ],
               ),
             ),
@@ -337,79 +367,83 @@ child: const Icon(Icons.arrow_forward),                  ),
   }
 
   List<Widget> _buildMissionActions(Mission mission) {
-    switch (mission.status) {
-      case MissionStatus.CREATED:
-        print('mission.id ${mission.id}');
-        return [
-          PopupMenuButton<int>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 1,
-                child: Text('Start'),
-              ),
-              const PopupMenuItem(
-                value: 2,
-                child: Text('Cancel'),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 1) {
-                _startMission(mission.id);
-              } else if (value == 2) {
-                _cancelMission(mission.id);
-              }
-            },
-          ),
-        ];
-      case MissionStatus.ONGOING:
-        return [
-          PopupMenuButton<int>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 1,
-                child: Text('Pause'),
-              ),
-              const PopupMenuItem(
-                value: 2,
-                child: Text('End'),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 1) {
-                _pauseMission(mission.id);
-              } else if (value == 2) {
-                _endMission(mission.id);
-              }
-            },
-          ),
-        ];
-      case MissionStatus.PAUSED:
-        return [
-          PopupMenuButton<int>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 1,
-                child: Text('Resume'),
-              ),
-              const PopupMenuItem(
-                value: 2,
-                child: Text('End'),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 1) {
-                _resumeMission(mission.id);
-              } else if (value == 2) {
-                _endMission(mission.id);
-              }
-            },
-          ),
-        ];
-      default:
-        return [];
+    if (UserCredentials().getUserType() == UserType.ADMIN) {
+      switch (mission.status) {
+        case MissionStatus.CREATED:
+          print('mission.id ${mission.id}');
+          return [
+            PopupMenuButton<int>(
+              icon: const Icon(Icons.more_vert, color: Colors.white70),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 1,
+                  child: Text('Start'),
+                ),
+                const PopupMenuItem(
+                  value: 2,
+                  child: Text('Cancel'),
+                ),
+              ],
+              onSelected: (value) {
+                if (value == 1) {
+                  _startMission(mission.id);
+                } else if (value == 2) {
+                  _cancelMission(mission.id);
+                }
+              },
+            ),
+          ];
+        case MissionStatus.ONGOING:
+          return [
+            PopupMenuButton<int>(
+              icon: const Icon(Icons.more_vert, color: Colors.white70),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 1,
+                  child: Text('Pause'),
+                ),
+                const PopupMenuItem(
+                  value: 2,
+                  child: Text('End'),
+                ),
+              ],
+              onSelected: (value) {
+                if (value == 1) {
+                  _pauseMission(mission.id);
+                } else if (value == 2) {
+                  _endMission(mission.id);
+                }
+              },
+            ),
+          ];
+        case MissionStatus.PAUSED:
+          return [
+            PopupMenuButton<int>(
+              icon: const Icon(Icons.more_vert, color: Colors.white70),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 1,
+                  child: Text('Resume'),
+                ),
+                const PopupMenuItem(
+                  value: 2,
+                  child: Text('End'),
+                ),
+              ],
+              onSelected: (value) {
+                if (value == 1) {
+                  _resumeMission(mission.id);
+                } else if (value == 2) {
+                  _endMission(mission.id);
+                }
+              },
+            ),
+          ];
+        default:
+          return [];
+      }
+    } else {
+      return [];
     }
   }
 

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/services/auth_api_service.dart'; // Make sure you import your authentication service
 
 class DashboardScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
 
   const DashboardScreen({super.key, required this.mqttClient});
+
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -25,106 +29,188 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchCounts();
+    // _fetchCounts();
   }
 
-  Future<void> _fetchCounts() async {
-    setState(() {
-      _isLoading = true;
-    });
+  // Future<Map<MissionStatus, int>> countMissionsByStatus() async {
+  //   try {
+  //     final List<Mission> missions = await UserApiService.getCurrentMissions();
+  //     final Map<MissionStatus, int> statusCounts = {};
 
-    try {
-      // Fetch all users counts
+  //     for (var mission in missions) {
+  //       if (mission.status != null) {
+  //         statusCounts[mission.status!] =
+  //             (statusCounts[mission.status!] ?? 0) + 1;
+  //       }
+  //     }
 
-      allUsersCount = await AdminApiService.getUserCount();
-      allDevicesCount = await AdminApiService.getDeviceCount();
-      allMissionsCount = await AdminApiService.getMissionCount();
+  //     return statusCounts;
+  //   } catch (e) {
+  //     print('Error counting missions by status: $e');
+  //     return {};
+  //   }
+  // }
 
-      // Fetch user counts by status
-      for (var status in UserStatus.values) {
-        if (status != UserStatus.REJECTED) {
-          final count = await AdminApiService.getUserCount(
-              status: [userStatusValues[status]!]);
-          combinedUserCounts[getStatusTitle(status)] = count;
-        }
-      }
+  // Future<void> _fetchCounts() async {
+  //   if (!mounted) return;
 
-      // Fetch user counts by type
-      for (var type in UserType.values) {
-        final count =
-            await AdminApiService.getUserCount(type: [userTypeValues[type]!]);
-        combinedUserCounts[getUserTypeTitle(type)] = count;
-      }
+  //   setState(() {
+  //     _isLoading = true;
+  //   });
 
-      // Fetch mission counts by status
-      for (var status in MissionStatus.values) {
-        if (status != MissionStatus.CANCELED) {
-          missionCountByStatus[status] = await AdminApiService.getMissionCount(
-              status: [missionStatusValues[status]!]);
-        }
-      }
+  //   final userType = UserCredentials().getUserType();
 
-      // Fetch device counts by status
-      for (var status in DeviceStatus.values) {
-        if (status != DeviceStatus.INACTIVE) {
-          deviceCountByStatus[status] = await AdminApiService.getDeviceCount(
-              status: [deviceStatusValues[status]!]);
-        }
-      }
-    } catch (e) {
-      // Handle error
-      print('Error fetching counts: $e');
-    }
+  //   try {
+  //     if (userType == UserType.ADMIN) {
+  //       // Fetch admin statistics
+  //       allUsersCount = await AdminApiService.getUserCount();
+  //       allDevicesCount = await AdminApiService.getDeviceCount();
+  //       allMissionsCount = await AdminApiService.getMissionCount();
 
-    setState(() {
-      _isLoading = false;
-    });
-  }
+  //       for (var status in UserStatus.values) {
+  //         if (status != UserStatus.REJECTED) {
+  //           final count = await AdminApiService.getUserCount(
+  //               status: [userStatusValues[status]!]);
+  //           combinedUserCounts[getUserStatusTitle(status)] = count;
+  //         }
+  //       }
+
+  //       for (var type in UserType.values) {
+  //         final count =
+  //             await AdminApiService.getUserCount(type: [userTypeValues[type]!]);
+  //         combinedUserCounts[getUserTypeTitle(type)] = count;
+  //       }
+
+  //       for (var status in MissionStatus.values) {
+  //         if (status != MissionStatus.CANCELED) {
+  //           missionCountByStatus[status] =
+  //               await AdminApiService.getMissionCount(
+  //                   status: [missionStatusValues[status]!]);
+  //         }
+  //       }
+
+  //       for (var status in DeviceStatus.values) {
+  //         if (status != DeviceStatus.INACTIVE) {
+  //           deviceCountByStatus[status] = await AdminApiService.getDeviceCount(
+  //               status: [deviceStatusValues[status]!]);
+  //         }
+  //       }
+  //     } else {
+  //       // Fetch regular user statistics
+  //       missionCountByStatus = await countMissionsByStatus();
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching counts: $e');
+  //   }
+
+  //   if (!mounted) return;
+
+  //   setState(() {
+  //     _isLoading = false;
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xff121417),
-      appBar: CustomUpperBar(
-        title: "Dashboard",
-        leading: IconButton(
-            icon: const Icon(Icons.settings),
-            color: Colors.white,
-            onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          SettingsScreen(mqttClient: widget.mqttClient)),
-                )),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
-            onPressed: () {},
-          )
-        ],
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
+    final userType = UserCredentials().getUserType();
+
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xff121417),
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (userType == UserType.ADMIN) {
+      return Scaffold(
+        backgroundColor: const Color(0xff121417),
+        appBar: CustomUpperBar(
+          title: "Dashboard",
+          leading: IconButton(
+              icon: const Icon(Icons.settings),
+              color: Colors.white,
+              onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            SettingsScreen(mqttClient: widget.mqttClient)),
+                  ).then((_) {
+              setState(() {
+                // Call setState to refresh the page.
+              });
+            }),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications),
+              color: const Color.fromARGB(255, 255, 255, 255),
+              onPressed: () {},
             )
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 00),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSection(
-                        'Users Statistics', combinedUserCounts, allUsersCount),
-                    _buildSection('Missions Statistics', missionCountByStatus,
-                        allMissionsCount),
-                    _buildSection('Devices Statistics', deviceCountByStatus,
-                        allDevicesCount),
-                  ],
-                ),
-              ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSection(
+                    'Users Statistics', combinedUserCounts, allUsersCount),
+                _buildSection('Missions Statistics', missionCountByStatus,
+                    allMissionsCount),
+                _buildSection(
+                    'Devices Statistics', deviceCountByStatus, allDevicesCount),
+              ],
             ),
-    );
+          ),
+        ),
+      );
+    } else {
+      return Scaffold(
+        backgroundColor: const Color(0xff121417),
+        appBar: CustomUpperBar(
+          title: "Dashboard",
+          leading: IconButton(
+              icon: const Icon(Icons.settings),
+              color: Colors.white,
+              onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            SettingsScreen(mqttClient: widget.mqttClient)),
+                  ).then((_) {
+              setState(() {
+                // Call setState to refresh the page.
+              });
+            }),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications),
+              color: const Color.fromARGB(255, 255, 255, 255),
+              onPressed: () {},
+            )
+          ],
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSection(
+                    'My Missions Statistics',
+                    missionCountByStatus,
+                    missionCountByStatus.values
+                        .fold(0, (sum, count) => sum + count)),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Widget _buildSection(String title, Map<dynamic, int> data, int totalCount) {
@@ -198,10 +284,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  String getStatusTitle(UserStatus status) {
+  String getUserStatusTitle(UserStatus status) {
     switch (status) {
-      case UserStatus.ACCEPTED:
-        return 'Accepted Users';
       case UserStatus.AVAILABLE:
         return 'Available Users';
       case UserStatus.PENDING:
@@ -273,7 +357,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   String getTitleFromEnum(dynamic enumValue) {
     if (enumValue is UserStatus) {
-      return getStatusTitle(enumValue);
+      return getUserStatusTitle(enumValue);
     } else if (enumValue is UserType) {
       return getUserTypeTitle(enumValue);
     } else if (enumValue is MissionStatus) {

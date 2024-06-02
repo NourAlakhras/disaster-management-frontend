@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
-import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
-import 'package:flutter_3/models/user.dart';
-import 'package:flutter_3/screens/admin/edit_missions_screen.dart';
 import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
@@ -143,7 +140,30 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  if (widget.device.broker != null)
+                    Column(
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Broker: ',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color.fromARGB(255, 255, 255, 255),
+                              ),
+                            ),
+                            Text(
+                              widget.device.broker!.name,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
                   _isEditing
                       ? _buildEditableMissionSelection()
                       : _buildNonEditableMissionSelection(),
@@ -184,32 +204,41 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
             color: Color.fromARGB(255, 255, 255, 255),
           ),
         ),
-        Column(
-          children: _selectedMissions.map((mission) {
-            return ListTile(
-              title: Text(
-                mission.name,
-                style: const TextStyle(color: Colors.white70),
+        _selectedMissions.isEmpty
+            ? const Text(
+                'No missions assigned',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              )
+            : Column(
+                children: _selectedMissions.map((mission) {
+                  return ListTile(
+                    title: Text(
+                      mission.name,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    trailing: (mission.status == MissionStatus.ONGOING)
+                        ? ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      MissionDevicesListScreen(
+                                    mission: mission,
+                                    mqttClient: widget.mqttClient,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: const Text('Monitor Mission'),
+                          )
+                        : const SizedBox.shrink(),
+                  );
+                }).toList(),
               ),
-              trailing: (mission.status == MissionStatus.ONGOING)
-                  ? ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MissionDevicesListScreen(
-                              mission: mission,
-                              mqttClient: widget.mqttClient,
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Monitor Mission'),
-                    )
-                  : const SizedBox.shrink(),
-            );
-          }).toList(),
-        ),
       ],
     );
   }
@@ -217,41 +246,13 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   Widget _buildEditableMissionSelection() {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Mission:',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 255, 255, 255),
-              ),
-            ),
-            IconButton(
-              onPressed: () async {
-                List<Mission> selectedMissions = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditMissionsScreen(
-                      preselectedMissions: _selectedMissions,
-                      singleSelection: true,
-                    ),
-                  ),
-                );
-                setState(() {
-                  _selectedMissions = selectedMissions;
-                  print('EditMissionsScreen $_selectedMissions');
-                });
-              },
-              icon: widget.device.status != DeviceStatus.ASSIGNED
-                  ? const Icon(Icons.add)
-                  : const Icon(Icons.edit),
-              tooltip: widget.device.status != DeviceStatus.ASSIGNED
-                  ? 'Add'
-                  : 'Edit',
-            ),
-          ],
+        const Text(
+          'Mission:',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color.fromARGB(255, 255, 255, 255),
+          ),
         ),
         Column(
           children: _selectedMissions.map((mission) {
@@ -302,24 +303,28 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   }
 
   Widget _buildEditButton() {
-    if (widget.device.status == DeviceStatus.INACTIVE) {
-      return const SizedBox();
+    if (UserCredentials().getUserType() == UserType.ADMIN) {
+      if (widget.device.status == DeviceStatus.INACTIVE) {
+        return const SizedBox();
+      } else {
+        // Otherwise, return the edit button
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20.0),
+          child: ElevatedButton(
+            onPressed: () {
+              if (_isEditing) {
+                _saveChanges();
+              }
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+            child: Text(_isEditing ? 'Save' : 'Edit'),
+          ),
+        );
+      }
     } else {
-      // Otherwise, return the edit button
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20.0),
-        child: ElevatedButton(
-          onPressed: () {
-            if (_isEditing) {
-              _saveChanges();
-            }
-            setState(() {
-              _isEditing = !_isEditing;
-            });
-          },
-          child: Text(_isEditing ? 'Save' : 'Edit'),
-        ),
-      );
+      return const SizedBox();
     }
   }
 
@@ -337,7 +342,11 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                   device: widget.device,
                   mqttClient: widget.mqttClient,
                 ),
-              ));
+              )).then((_) {
+            setState(() {
+              // Call setState to refresh the page.
+            });
+          });
         },
         child: const Text('Monitor Device'),
       );
@@ -347,20 +356,24 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   }
 
   List<Widget> _buildDeviceActions(Device device) {
-    return (device.status != DeviceStatus.INACTIVE)
-        ? [
-            ElevatedButton(
-              onPressed: () {
-                _deleteDevice(device.device_id);
-              },
-              child: const Text('Delete'),
-            ),
-            const SizedBox(width: 5)
-          ]
-        : [];
+    if (UserCredentials().getUserType() == UserType.ADMIN) {
+      return (device.status != DeviceStatus.INACTIVE)
+          ? [
+              ElevatedButton(
+                onPressed: () {
+                  _deleteDevice(device.device_id);
+                },
+                child: const Text('Delete'),
+              ),
+              const SizedBox(width: 5)
+            ]
+          : [];
+    } else {
+      return [];
+    }
   }
-  
-void _deleteDevice(String id) {
+
+  void _deleteDevice(String id) {
     DeviceApiService.deleteDevice(id).then((deletedDevice) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -395,7 +408,7 @@ void _deleteDevice(String id) {
       await DeviceApiService.updateDevice(
         deviceId: deviceId,
         name: deviceName,
-        missionIds: missionIds,
+        // missionIds: missionIds,
       );
       await fetchDeviceDetails();
 
@@ -422,13 +435,17 @@ void _deleteDevice(String id) {
   }
 
   Widget _buildChangePasswordButton() {
-    if (widget.device.status == DeviceStatus.INACTIVE) {
-      return const SizedBox();
+    if (UserCredentials().getUserType() == UserType.ADMIN) {
+      if (widget.device.status == DeviceStatus.INACTIVE) {
+        return const SizedBox();
+      } else {
+        return ElevatedButton(
+          onPressed: () => _showChangePasswordDialog(),
+          child: const Text('Change Password'),
+        );
+      }
     } else {
-      return ElevatedButton(
-        onPressed: () => _showChangePasswordDialog(),
-        child: const Text('Change Password'),
-      );
+      return SizedBox();
     }
   }
 
@@ -477,7 +494,8 @@ void _deleteDevice(String id) {
 
     if (oldPassword.isEmpty || newPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter both passwords'),
+        const SnackBar(
+          content: Text('Please enter both passwords'),
           backgroundColor: Colors.red,
         ),
       );
@@ -495,13 +513,15 @@ void _deleteDevice(String id) {
         newPassword: newPassword,
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password changed successfully'), backgroundColor: Colors.green,),
+        const SnackBar(
+          content: Text('Password changed successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
-
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to change password: $e'),
+        SnackBar(
+          content: Text('Failed to change password: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -510,7 +530,6 @@ void _deleteDevice(String id) {
         _isLoading = false;
         _oldPasswordController.clear();
         _newPasswordController.clear();
-
       });
     }
   }

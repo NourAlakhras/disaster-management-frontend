@@ -35,8 +35,8 @@ class _MonitoringViewState extends State<MonitoringView> {
     widget.mqttClient.onDataReceived = _onDataReceived;
     widget.mqttClient.subscribeToMultipleTopics([
       'test-ugv/sensor_data',
-      '${widget.deviceId}/gps',
-      '${widget.deviceId}/sensor_data',
+      '${widget.deviceId}/gps',//cloud/reg/<broker_name>/<device_name>/gps:
+      '${widget.deviceId}/sensor_data',//cloud/reg/<broker_name>/<device_name>/sensor-data:
       '${widget.deviceId}/connectivity',
       '${widget.deviceId}/battery',
     ]);

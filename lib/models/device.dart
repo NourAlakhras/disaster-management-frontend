@@ -11,25 +11,36 @@ class Device {
   DeviceType? type;
   DeviceStatus? status;
   Mission? mission;
-
+  Device? broker;
   Device(
       {required this.device_id,
       required this.name,
       this.mac,
       this.type,
       this.status,
-      this.mission});
+      this.mission,
+      this.broker});
 
   factory Device.fromJson(Map<String, dynamic> json) {
     return Device(
-      device_id: json['id'] as String? ?? json['id'] as String? ?? '',
+      device_id: json['device_id'] as String? ?? json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       mac: json['mac'] != null ? json['mac'] as String? ?? '' : '',
       type: json.containsKey('type') ? _getType(json['type']) : null,
       status: json.containsKey('status') ? _getStatus(json['status']) : null,
-      mission: json.containsKey('mission')
-          ?Mission.fromJson(json['mission'] as Map<String, dynamic>)
+      mission: json.containsKey('cur_mission')
+          ? Mission.fromJson(json['cur_mission'] as Map<String, dynamic>)
           : null,
+      broker: json.containsKey('broker')
+          ? _getBroker(json['broker'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  static Device? _getBroker(Map<String, dynamic> brokerJson) {
+    return Device(
+      device_id: brokerJson['broker_id'] as String? ?? '',
+      name: brokerJson['broker_name'] as String? ?? '',
     );
   }
 
@@ -37,7 +48,6 @@ class Device {
     setStateCallback(); // Notify the widget to start loading
 
     try {
-
       final deviceDetails = await DeviceApiService.getDeviceDetails(device_id);
 
       name = deviceDetails.name;
@@ -46,13 +56,15 @@ class Device {
       status = deviceDetails.status;
       status = deviceDetails.status;
       mission = deviceDetails.mission;
-      
+      broker = deviceDetails.broker;
+
       setStateCallback(); // Notify the widget that loading is complete
     } catch (e) {
       print('Error fetching mission info: $e');
       setStateCallback(); // Notify the widget even in case of an error
     }
   }
+
   static DeviceType _getType(int? typeValue) {
     if (typeValue == null) {
       return DeviceType.UGV; // Default to UGV if type is null

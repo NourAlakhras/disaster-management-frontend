@@ -1,4 +1,8 @@
 // lib\models\user.dart
+import 'dart:ui';
+
+import 'package:flutter_3/services/admin_api_service.dart';
+import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/models/mission.dart';
 
@@ -31,8 +35,8 @@ class User {
       activeMissionCount: json['active_mission_count'] != null
           ? json['active_mission_count'] as int
           : 0,
-      missions: json.containsKey('missions')
-          ? List<Mission>.from(json['missions'].map((missionJson) =>
+      missions: json.containsKey('cur_missions')
+          ? List<Mission>.from(json['cur_missions'].map((missionJson) =>
               Mission.fromJson(missionJson as Map<String, dynamic>)))
           : null,
     );
@@ -54,6 +58,26 @@ class User {
             orElse: () => MapEntry(
                 UserStatus.AVAILABLE, userStatusValues[UserStatus.AVAILABLE]!))
         .key;
+  }
+
+  Future<void> fetchUserDetails(VoidCallback setStateCallback) async {
+    setStateCallback(); // Notify the widget to start loading
+
+    try {
+      final userDetails = await AdminApiService.getUserDetails(user_id);
+
+      username = userDetails.username;
+      email = userDetails.email ?? 'No email available';
+      status = userDetails.status;
+      type = userDetails.type;
+      activeMissionCount = userDetails.activeMissionCount;
+      missions = userDetails.missions ?? [];
+
+      setStateCallback(); // Notify the widget that loading is complete
+    } catch (e) {
+      print('Error fetching mission info: $e');
+      setStateCallback(); // Notify the widget even in case of an error
+    }
   }
 
   @override

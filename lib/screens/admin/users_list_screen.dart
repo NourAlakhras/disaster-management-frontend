@@ -22,52 +22,33 @@ class UsersListScreen extends StatefulWidget {
 }
 
 class _UsersListScreenState extends State<UsersListScreen> {
-  List<User> _allUsers = [];
   List<User> _filteredUsers = [];
   bool _isLoading = false;
   int _pageNumber = 1;
   final int _pageSize = 5;
-  int allUsersCount = 0;
 
   final TextEditingController _searchController = TextEditingController();
 
   List<UserStatus>? _filteredStatuses = UserStatus.values
-      .where((status) => status != UserStatus.INACTIVE)
+      .where((status) =>
+          status != UserStatus.INACTIVE && status != UserStatus.REJECTED)
       .toList();
 
-  List<UserType>? _filteredTypes = [
-    UserType.REGULAR,
-    UserType.ADMIN,
-  ];
+  List<UserType>? _filteredTypes = UserType.values;
   String? _name;
+
   final criteriaList = [
-    FilterCriterion(name: 'User Status', options: UserStatus.values.toList()),
-    FilterCriterion(name: 'User Type', options: UserType.values.toList()),
+    FilterCriterion(name: 'User Status', options: UserStatus.values),
+    FilterCriterion(name: 'User Type', options: UserType.values),
   ];
+
+  bool _hasNext = false;
+  bool _hasPrev = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchCounts();
     _fetchUsers();
-  }
-
-  Future<void> _fetchCounts() async {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      // Fetch all users counts
-
-      allUsersCount = await AdminApiService.getUserCount();
-    } catch (e) {
-      // Handle error
-      print('Error fetching counts: $e');
-    }
-
-    setState(() {
-      _isLoading = false;
-    });
   }
 
   Future<void> _fetchUsers({
@@ -84,12 +65,13 @@ class _UsersListScreenState extends State<UsersListScreen> {
     pageSize ??= _pageSize;
     name ??= _name;
 
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
     try {
-      print('from fetch: $statuses');
-      final allUsersResponse = await AdminApiService.getAllUsers(
+      final userResponse = await AdminApiService.getAllUsers(
         pageNumber: pageNumber,
         pageSize: pageSize,
         statuses: statuses,
@@ -97,12 +79,15 @@ class _UsersListScreenState extends State<UsersListScreen> {
         username: name,
       );
       setState(() {
-        _allUsers = allUsersResponse;
-        _filteredUsers = _allUsers;
+        _filteredUsers = userResponse.items;
+        _hasNext = userResponse.hasNext;
+        _hasPrev = userResponse.hasPrev;
       });
     } catch (error) {
       print('Failed to fetch users: $error');
     } finally {
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
       });
@@ -209,7 +194,11 @@ class _UsersListScreenState extends State<UsersListScreen> {
                               MaterialPageRoute(
                                 builder: (context) => UserProfileScreen(
                                     user: user, mqttClient: widget.mqttClient),
-                              )),
+                              )).then((_) {
+                            setState(() {
+                              // Call setState to refresh the page.
+                            });
+                          }),
                           child: Container(
                             decoration: const BoxDecoration(
                               border: Border(
@@ -281,25 +270,22 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   ElevatedButton(
-                    onPressed: _pageNumber > 1 ? _previousPage : null,
+                    onPressed: _hasPrev ? _previousPage : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,
-                      elevation: 0, // No shadow
-                      shape: const CircleBorder(), // Circular button shape
+                      elevation: 0,
+                      shape: const CircleBorder(),
                     ),
                     child: const Icon(Icons.arrow_back),
                   ),
                   ElevatedButton(
-                    onPressed: allUsersCount > _pageSize &&
-                            _pageNumber < allUsersCount / _pageSize
-                        ? _nextPage
-                        : null,
+                    onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,
                       elevation: 0, // No shadow
-                      shape: const CircleBorder(), // Circular button shape
+                      shape: const CircleBorder(),
                     ),
                     child: const Icon(Icons.arrow_forward),
                   ),
@@ -346,17 +332,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
   }
 
   void _filterUsers(String name) {
-    if (name.isNotEmpty) {
-      // Call fetch missions with the search query
-      setState(() {
-        _name = name;
-      });
-    } else {
-      // If query is empty, fetch all missions
-      _fetchUsers();
-    }
-
     setState(() {
+      _name = name.isNotEmpty ? name : '';
       _pageNumber = 1;
     });
     _fetchUsers();
@@ -382,123 +359,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
     }
   }
 
-  Future<void> _activateUser(User user) async {
-    // Implement activating logic
-  }
-
   Future<void> _deleteUser(String userId) async {
     try {
       await AdminApiService.deleteUser(userId);
       await _fetchUsers();
     } catch (error) {
       print('Failed to delete user: $error');
-    }
-  }
-
-  Future<List<Mission>> _getUserCurrentMissions(String userId) async {
-    try {
-      final List<Mission> missions =
-          await UserApiService.getUserCurrentMissions(userId);
-      return missions;
-    } on NotFoundException {
-      // Handle the case when no missions are found for the user
-      print('No missions found for the user.');
-      return [];
-    } catch (error) {
-      // Handle other errors
-      print('Failed to retrieve user missions: $error');
-      throw Exception('Failed to retrieve current missions: $error');
-    }
-  }
-
-  // Future<void> _showUserDetailsDialog(User user) async {
-  //   try {
-  //     final userDetails = await AdminApiService.getUserDetails(user.user_id);
-  //     final userMissions = await _getUserCurrentMissions(user.user_id);
-
-  //     showDialog(
-  //       context: context,
-  //       builder: (context) {
-  //         return AlertDialog(
-  //           title: const Text('User Details'),
-  //           content: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               Text('Username: ${userDetails['username']}'),
-  //               Text('Email: ${userDetails['email']}'),
-  //               Text(
-  //                   'Type: ${user.type.toString().split('.').last.toLowerCase()}'),
-  //               Text(
-  //                   'Status: ${user.status.toString().split('.').last.toLowerCase()}'),
-  //               const SizedBox(
-  //                   height: 16), // Add space between details and buttons
-  //               const Text('Current Missions:'),
-  //               userMissions.isNotEmpty
-  //                   ? Column(
-  //                       crossAxisAlignment: CrossAxisAlignment.start,
-  //                       children: userMissions
-  //                           .map((mission) => Text('- ${mission.name}'))
-  //                           .toList(),
-  //                     )
-  //                   : const Text('No missions available.'),
-  //               const SizedBox(
-  //                   height: 16), // Add space between missions and buttons
-  //               Row(
-  //                 mainAxisAlignment: MainAxisAlignment.end,
-  //                 children: _buildUserActionsForDetails(user),
-  //               ),
-  //             ],
-  //           ),
-  //         );
-  //       },
-  //     );
-  //   } catch (error) {
-  //     print('Failed to load user details: $error');
-  //     // Handle error
-  //   }
-  // }
-
-  List<Widget> _buildUserActionsForDetails(User user) {
-    if (user.status == UserStatus.PENDING) {
-      return [
-        ElevatedButton(
-          onPressed: () {
-            _showApprovalDialog(user.user_id);
-          },
-          child: const Text('Approve'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            _rejectUser(user.user_id);
-          },
-          child: const Text('Reject'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            _deleteUser(user.user_id);
-          },
-          child: const Text('Delete'),
-        ),
-      ];
-    } else if (user.status == UserStatus.REJECTED) {
-      return [
-        ElevatedButton(
-          onPressed: () {
-            _showApprovalDialog(user.user_id);
-          },
-          child: const Text('Approve'),
-        ),
-      ];
-    } else {
-      return [
-        ElevatedButton(
-          onPressed: () {
-            _deleteUser(user.user_id);
-          },
-          child: const Text('Delete'),
-        ),
-      ];
     }
   }
 
@@ -544,18 +410,12 @@ class _UsersListScreenState extends State<UsersListScreen> {
               value: 2,
               child: Text('Reject'),
             ),
-            const PopupMenuItem(
-              value: 3,
-              child: Text('Delete'),
-            ),
           ],
           onSelected: (value) {
             if (value == 1) {
               _showApprovalDialog(user.user_id);
             } else if (value == 2) {
               _rejectUser(user.user_id);
-            } else if (value == 3) {
-              _deleteUser(user.user_id);
             }
           },
         ),

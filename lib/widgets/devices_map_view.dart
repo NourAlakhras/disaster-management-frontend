@@ -66,14 +66,15 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       _isLoading = true;
     });
     try {
-      final missions = await MissionApiService.getAllMissions(
+       final missionResponse = await MissionApiService.getAllMissions(
         pageNumber: _pageNumber,
         pageSize: _pageSize,
         statuses: statuses,
         name: name,
       );
       setState(() {
-        _filteredMissions = missions;
+        _filteredMissions = missionResponse.items;
+
       });
       print('_filteredMissions $_filteredMissions');
 

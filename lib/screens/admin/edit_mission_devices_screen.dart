@@ -6,10 +6,14 @@ import 'package:flutter_3/widgets/selection_widget.dart';
 
 class EditDevicesScreen extends StatefulWidget {
   final List<Device>? preselectedDevices;
-  final String? missionId; 
+  final String? missionId;
+  final String? brokerId; // Add brokerId parameter
 
-  EditDevicesScreen(
-      {this.preselectedDevices,  this.missionId}); // Modify constructor
+  EditDevicesScreen({
+    this.preselectedDevices,
+    this.missionId,
+    this.brokerId,
+  }); // Modify constructor
   @override
   _EditDevicesScreenState createState() => _EditDevicesScreenState();
 }
@@ -24,7 +28,6 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
   void initState() {
     super.initState();
     _selectedDevices = widget.preselectedDevices ?? [];
-
     _fetchDevices();
   }
 
@@ -35,15 +38,16 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
     try {
       final typesToInclude =
           DeviceType.values.where((type) => type != DeviceType.BROKER).toList();
-      final List<Device> devices = await DeviceApiService.getAllDevices(
+      final deviceResponse = await DeviceApiService.getAllDevices(
         pageNumber: 1,
         pageSize: 100,
         statuses: [DeviceStatus.AVAILABLE],
         types: typesToInclude,
         missionId: widget.missionId,
+        brokerId: widget.brokerId, // Fetch devices by broker ID
       );
       setState(() {
-        _deviceOptions = devices;
+        _deviceOptions = deviceResponse.items;
         _isLoading = false;
       });
     } catch (e) {

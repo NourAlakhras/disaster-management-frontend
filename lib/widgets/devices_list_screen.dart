@@ -27,6 +27,9 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   bool _isLoading = false;
   int _pageNumber = 1;
   final int _pageSize = 5;
+  bool _hasNext = false;
+  bool _hasPrev = false;
+
   final TextEditingController _searchController = TextEditingController();
   List<DeviceStatus>? _filteredStatuses = DeviceStatus.values
       .where((status) => status != DeviceStatus.INACTIVE)
@@ -61,7 +64,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       _isLoading = true;
     });
     try {
-      final devices = await DeviceApiService.getAllDevices(
+      final deviceResponse = await DeviceApiService.getAllDevices(
         pageNumber: _pageNumber,
         pageSize: _pageSize,
         types: types,
@@ -69,8 +72,9 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         name: name,
       );
       setState(() {
-        _allDevices = devices;
-        _filteredDevices = _allDevices;
+        _filteredDevices = deviceResponse.items;
+        _hasNext = deviceResponse.hasNext;
+        _hasPrev = deviceResponse.hasPrev;
       });
     } catch (error) {
       print('Failed to fetch devices: $error');
@@ -95,7 +99,11 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                   MaterialPageRoute(
                       builder: (context) =>
                           SettingsScreen(mqttClient: widget.mqttClient)),
-                )),
+                ).then((_) {
+                  setState(() {
+                    // Call setState to refresh the page.
+                  });
+                })),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
@@ -186,7 +194,11 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                 builder: (context) => DeviceProfileScreen(
                                     device: device,
                                     mqttClient: widget.mqttClient),
-                              )),
+                              )).then((_) {
+                            setState(() {
+                              // Call setState to refresh the page.
+                            });
+                          }),
                           child: Container(
                             decoration: const BoxDecoration(
                               border: Border(
@@ -254,7 +266,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   ElevatedButton(
-                    onPressed: _pageNumber > 1 ? _previousPage : null,
+                    onPressed: _hasPrev ? _previousPage : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,
@@ -264,8 +276,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                     child: const Icon(Icons.arrow_back),
                   ),
                   ElevatedButton(
-                    onPressed:
-                        _allDevices.length > _pageSize ? _nextPage : null,
+                    onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_3/screens/user/home_screen.dart';
 import 'package:flutter_3/screens/admin/home_screen.dart';
 import 'package:flutter_3/services/auth_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -68,30 +67,20 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Set user credentials globally
       final credentials = UserCredentials();
-      // credentials.setUserCredentials(username, password);
-      credentials.setUserCredentials('test-mobile-app','Test-mobile12');
+
+      // credentials.setUserCredentials(username, password,userType);
+      credentials.setUserCredentials('test-mobile-app','Test-mobile12', userType);
 
       // Connect to MQTT broker
       await _mqttClient.prepareMqttClient();
 
-      // Navigate to the appropriate screen based on user type
-      if (userType == UserType.ADMIN) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                AdminHomeScreen(
-                mqttClient: _mqttClient), // Redirect to AdminHomeScreen
-          ),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(mqttClient: _mqttClient),
-          ),
-        );
-      }
+      // Navigate to the home screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(mqttClient: _mqttClient),
+        ),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Login failed: $e')));

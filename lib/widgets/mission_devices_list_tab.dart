@@ -205,7 +205,7 @@ class _MissionDevicesListTabState extends State<MissionDevicesListTab> {
     );
   }
 
-  List<Widget> _buildDeviceActions(Device device) {
+  List<Widget> _buildDeviceActions(Device device) {    if (UserCredentials().getUserType() == UserType.ADMIN) {
     return (device.status != DeviceStatus.INACTIVE)
         ? [
             PopupMenuButton<int>(
@@ -224,6 +224,9 @@ class _MissionDevicesListTabState extends State<MissionDevicesListTab> {
             )
           ]
         : [];
+    } else {
+      return [];
+    }
   }
 
   void _deleteDevice(String id) {

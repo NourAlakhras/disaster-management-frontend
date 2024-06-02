@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/models/paginated_response.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_3/utils/constants.dart';
 import 'package:flutter_3/utils/exceptions.dart';
@@ -8,7 +9,7 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/services/auth_api_service.dart';
 
 class AdminApiService {
-  static Future<List<User>> getAllUsers({
+  static Future<PaginatedResponse<User>> getAllUsers({
     int? pageNumber,
     int? pageSize,
     List<UserStatus>? statuses,
@@ -101,11 +102,9 @@ class AdminApiService {
       print('responseBody: $responseBody');
 
       if (response.statusCode == 200) {
-        // Parse the response body into a list of User objects
-        final List<dynamic> usersJson = responseBody;
-        final List<User> users =
-            usersJson.map((json) => User.fromJson(json)).toList();
-        return users;
+        final paginatedResponse = PaginatedResponse<User>.fromJson(
+            responseBody, (json) => User.fromJson(json));
+        return paginatedResponse;
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 401) {
@@ -435,23 +434,28 @@ class AdminApiService {
       throw Exception('Failed to get mission count: $e');
     }
   }
-  
+
   static Future<void> updateUser({
     required String user_id,
-    required String username,
-    required String email,
-    required List<String> missionIds,
+    String? email,
+    UserType? type,
   }) async {
     const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse('$baseUrl/api/users/$user_id');
 
-    final Map<String, dynamic> requestBody = {
-      'email': email,
-      'username': username,
-      'missionIds': missionIds,
-    };
+    final Map<String, dynamic> requestBody = {};
+
+    if (email != null) {
+      requestBody['email'] = email;
+    }
+
+    if (type != null) {
+      requestBody['type'] = userTypeValues[type];
+    }
+
     print('updateUser url $url');
     print('updateUser requestBody $requestBody');
+
     try {
       String? token = await AuthApiService.getAuthToken();
 

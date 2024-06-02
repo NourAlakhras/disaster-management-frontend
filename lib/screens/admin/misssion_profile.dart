@@ -27,7 +27,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
   final TextEditingController _missionNameController = TextEditingController();
   List<User> _selectedUsers = [];
   List<Device> _selectedDevices = [];
-  List<Device> _selectedBrokers = [];
+  Device? _selectedBroker;
 
   bool _isLoading = false;
   bool _isEditing = false;
@@ -72,7 +72,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                     controller: _missionNameController,
                     isEditing: _isEditing,
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   if (widget.mission.startDate != null)
                     Row(
                       children: [
@@ -90,9 +90,9 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                             color: Colors.white70,
                           ),
                         ),
+                        const SizedBox(height: 8),
                       ],
                     ),
-                  const SizedBox(height: 8),
                   if (widget.mission.endDate != null)
                     Row(
                       children: [
@@ -110,9 +110,9 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                             color: Colors.white70,
                           ),
                         ),
+                        const SizedBox(height: 8),
                       ],
                     ),
-                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -143,18 +143,18 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                       )
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   _isEditing
                       ? _buildEditableUserSelection()
                       : _buildNonEditableUserSelection(),
                   const SizedBox(height: 20),
                   _isEditing
-                      ? _buildEditableDeviceSelection()
-                      : _buildNonEditableDeviceSelection(),
-                  const SizedBox(height: 20),
-                  _isEditing
                       ? _buildEditableBrokerSelection()
                       : _buildNonEditableBrokerSelection(),
+                  const SizedBox(height: 20),
+                  _isEditing
+                      ? _buildEditableDeviceSelection()
+                      : _buildNonEditableDeviceSelection(),
                   const SizedBox(height: 20),
                   _buildEditButton(),
                   _buildMonitorButton(),
@@ -168,8 +168,8 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
     widget.mission.fetchMissionDetails(() {
       if (mounted) {
         setState(() {
-          _selectedBrokers =
-              widget.mission.broker != null ? [widget.mission.broker!] : [];
+          _missionNameController.text = widget.mission.name;
+          _selectedBroker = widget.mission.broker;
           _selectedDevices = widget.mission.devices!
               .where((device) => device.type != DeviceType.BROKER)
               .toList();
@@ -191,16 +191,24 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
             color: Color.fromARGB(255, 255, 255, 255),
           ),
         ),
-        Column(
-          children: _selectedUsers.map((user) {
-            return ListTile(
-              title: Text(
-                user.username,
-                style: const TextStyle(color: Colors.white70),
+        _selectedUsers.isEmpty
+            ? const Text(
+                'No users assigned',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              )
+            : Column(
+                children: _selectedUsers.map((user) {
+                  return ListTile(
+                    title: Text(
+                      user.username,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  );
+                }).toList(),
               ),
-            );
-          }).toList(),
-        ),
       ],
     );
   }
@@ -217,36 +225,48 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
             color: Color.fromARGB(255, 255, 255, 255),
           ),
         ),
-        Column(
-          children: _selectedDevices.map((device) {
-            return ListTile(
-              title: Text(
-                device.name,
-                style: const TextStyle(color: Colors.white70),
+        _selectedDevices.isEmpty
+            ? const Text(
+                'No devices assigned',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              )
+            : Column(
+                children: _selectedDevices.map((device) {
+                  return ListTile(
+                    title: Text(
+                      device.name,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    subtitle: Text(
+                      device.type.toString().split('.').last.toLowerCase(),
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    trailing: (widget.mission.status == MissionStatus.ONGOING)
+                        ? ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DeviceDetailedScreen(
+                                    device: device,
+                                    mqttClient: widget.mqttClient,
+                                  ),
+                                ),
+                              ).then((_) {
+                                setState(() {
+                                  // Call setState to refresh the page.
+                                });
+                              });
+                            },
+                            child: const Text('Monitor Device'),
+                          )
+                        : const SizedBox.shrink(),
+                  );
+                }).toList(),
               ),
-              subtitle: Text(
-                device.type.toString().split('.').last.toLowerCase(),
-                style: const TextStyle(color: Colors.white70),
-              ),
-              trailing: (widget.mission.status == MissionStatus.ONGOING)
-                  ? ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DeviceDetailedScreen(
-                              device: device,
-                              mqttClient: widget.mqttClient,
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Monitor Device'),
-                    )
-                  : const SizedBox.shrink(),
-            );
-          }).toList(),
-        ),
       ],
     );
   }
@@ -263,36 +283,40 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
             color: Color.fromARGB(255, 255, 255, 255),
           ),
         ),
-        Column(
-          children: _selectedBrokers.map((device) {
-            return ListTile(
-              title: Text(
-                device.name,
-                style: const TextStyle(color: Colors.white70),
-              ),
-              subtitle: Text(
-                device.type.toString().split('.').last.toLowerCase(),
-                style: const TextStyle(color: Colors.white70),
-              ),
-              trailing: (widget.mission.status == MissionStatus.ONGOING)
-                  ? ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DeviceDetailedScreen(
-                              device: device,
-                              mqttClient: widget.mqttClient,
+        _selectedBroker == null
+            ? const Text(
+                'No broker assigned',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              )
+            : ListTile(
+                title: Text(
+                  _selectedBroker!.name,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                trailing: (widget.mission.status == MissionStatus.ONGOING)
+                    ? ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceDetailedScreen(
+                                device: _selectedBroker!,
+                                mqttClient: widget.mqttClient,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      child: const Text('Monitor Device'),
-                    )
-                  : const SizedBox.shrink(),
-            );
-          }).toList(),
-        ),
+                          ).then((_) {
+                            setState(() {
+                              // Call setState to refresh the page.
+                            });
+                          });
+                        },
+                        child: const Text('Monitor Device'),
+                      )
+                    : const SizedBox.shrink(),
+              ),
       ],
     );
   }
@@ -321,7 +345,11 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                       preselectedUsers: _selectedUsers,
                     ),
                   ),
-                );
+                ).then((_) {
+                  setState(() {
+                    // Call setState to refresh the page.
+                  });
+                });
                 if (selectedUsers != null) {
                   setState(() {
                     _selectedUsers = selectedUsers;
@@ -371,12 +399,22 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
             ),
             IconButton(
               onPressed: () async {
+                if (_selectedBroker == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please select a broker first.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
                 List<Device> selectedDevices = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => EditDevicesScreen(
                       preselectedDevices: _selectedDevices,
                       missionId: widget.mission.id,
+                      brokerId: _selectedBroker!.device_id,
                     ),
                   ),
                 );
@@ -420,36 +458,54 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
             ),
             IconButton(
               onPressed: () async {
-                List<Device> selectedBrokers = await Navigator.push(
+                if (widget.mission.status != MissionStatus.CREATED) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'You are not able to change the broker of a started mission.'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                Device? selectedBroker = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditBrokersScreen(
-                      preselectedBrokers: _selectedBrokers,
-                      missionId: widget.mission.id,
-                      singleSelection: true,
-                    ),
+                    builder: (context) => EditBrokersScreen(),
                   ),
                 );
-                setState(() {
-                  _selectedBrokers = selectedBrokers;
-                  print('EditDevicesScreen $_selectedBrokers');
-                });
+                if (selectedBroker != null) {
+                  setState(() {
+                    if (_selectedBroker != null &&
+                        _selectedBroker!.device_id !=
+                            selectedBroker.device_id) {
+                      _selectedDevices = [];
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('Broker changed, device selection cleared.'),
+                          backgroundColor: Colors.orange,
+                        ),
+                      );
+                    }
+                    _selectedBroker = selectedBroker;
+                  });
+                }
               },
               icon: const Icon(Icons.edit),
               tooltip: 'Edit',
             ),
           ],
         ),
-        Column(
-          children: _selectedBrokers.map((device) {
-            return ListTile(
-              title: Text(
-                device.name,
-                style: const TextStyle(color: Colors.white70),
-              ),
-            );
-          }).toList(),
-        ),
+        _selectedBroker != null
+            ? ListTile(
+                title: Text(
+                  _selectedBroker!.name,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              )
+            : Container(),
       ],
     );
   }
@@ -489,26 +545,30 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
   }
 
   Widget _buildEditButton() {
-    if (widget.mission.status == MissionStatus.FINISHED ||
-        widget.mission.status == MissionStatus.CANCELED) {
-      // If mission status is FINISHED or CANCELED, return an empty container
-      return const SizedBox();
+    if (UserCredentials().getUserType() == UserType.ADMIN) {
+      if (widget.mission.status == MissionStatus.FINISHED ||
+          widget.mission.status == MissionStatus.CANCELED) {
+        // If mission status is FINISHED or CANCELED, return an empty container
+        return const SizedBox();
+      } else {
+        // Otherwise, return the edit button
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20.0),
+          child: ElevatedButton(
+            onPressed: () {
+              if (_isEditing) {
+                _saveChanges();
+              }
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+            child: Text(_isEditing ? 'Save' : 'Edit'),
+          ),
+        );
+      }
     } else {
-      // Otherwise, return the edit button
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20.0),
-        child: ElevatedButton(
-          onPressed: () {
-            if (_isEditing) {
-              _saveChanges();
-            }
-            setState(() {
-              _isEditing = !_isEditing;
-            });
-          },
-          child: Text(_isEditing ? 'Save' : 'Edit'),
-        ),
-      );
+      return const SizedBox();
     }
   }
 
@@ -534,57 +594,61 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
   }
 
   List<Widget> _buildMissionActions(Mission mission) {
-    switch (mission.status) {
-      case MissionStatus.CREATED:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              _startMission(mission.id);
-            },
-            child: const Text('Start'),
-          ),
-          const SizedBox(width: 5),
-          ElevatedButton(
-            onPressed: () {
-              _cancelMission(mission.id);
-            },
-            child: const Text('Cancel'),
-          ),
-        ];
-      case MissionStatus.ONGOING:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              _pauseMission(mission.id);
-            },
-            child: const Text('Pause'),
-          ),
-          const SizedBox(width: 5),
-          ElevatedButton(
-            onPressed: () {
-              _endMission(mission.id);
-            },
-            child: const Text('End'),
-          ),
-        ];
-      case MissionStatus.PAUSED:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              _resumeMission(mission.id);
-            },
-            child: const Text('Resume'),
-          ),
-          const SizedBox(width: 5),
-          ElevatedButton(
-            onPressed: () {
-              _endMission(mission.id);
-            },
-            child: const Text('End'),
-          ),
-        ];
-      default:
-        return [];
+    if (UserCredentials().getUserType() == UserType.ADMIN) {
+      switch (mission.status) {
+        case MissionStatus.CREATED:
+          return [
+            ElevatedButton(
+              onPressed: () {
+                _startMission(mission.id);
+              },
+              child: const Text('Start'),
+            ),
+            const SizedBox(width: 5),
+            ElevatedButton(
+              onPressed: () {
+                _cancelMission(mission.id);
+              },
+              child: const Text('Cancel'),
+            ),
+          ];
+        case MissionStatus.ONGOING:
+          return [
+            ElevatedButton(
+              onPressed: () {
+                _pauseMission(mission.id);
+              },
+              child: const Text('Pause'),
+            ),
+            const SizedBox(width: 5),
+            ElevatedButton(
+              onPressed: () {
+                _endMission(mission.id);
+              },
+              child: const Text('End'),
+            ),
+          ];
+        case MissionStatus.PAUSED:
+          return [
+            ElevatedButton(
+              onPressed: () {
+                _resumeMission(mission.id);
+              },
+              child: const Text('Resume'),
+            ),
+            const SizedBox(width: 5),
+            ElevatedButton(
+              onPressed: () {
+                _endMission(mission.id);
+              },
+              child: const Text('End'),
+            ),
+          ];
+        default:
+          return [];
+      }
+    } else {
+      return [];
     }
   }
 
@@ -649,40 +713,35 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
     });
 
     try {
-      // Extract mission details
-      final String missionId = widget.mission.id;
       final String missionName = _missionNameController.text;
       final List<String> userIds =
           _selectedUsers.map((user) => user.user_id).toList();
 
-      // Combine selected devices and brokers
-      List<Device> allSelectedDevices = List.from(_selectedDevices);
-      allSelectedDevices.addAll(_selectedBrokers);
-      final List<String> deviceIds =
-          allSelectedDevices.map((device) => device.device_id).toList();
+      final String brokerId = _selectedBroker?.device_id ?? '';
 
-      print('save devices : $deviceIds');
-      // Call updateMission API
+      final List<String> deviceIds =
+          _selectedDevices.map((device) => device.device_id).toList();
+
       await MissionApiService.updateMission(
-        missionId: missionId,
         name: missionName,
         deviceIds: deviceIds,
         userIds: userIds,
+        brokerId: brokerId,
+        missionId: widget.mission.id,
       );
-      await fetchMissionDetails();
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Mission updated successfully'),
+          content: Text('Mission created successfully'),
           backgroundColor: Colors.green,
         ),
       );
+
+      Navigator.pop(context);
     } catch (e) {
-      // Show error message if update fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to update mission: $e'),
+          content: Text('Failed to create mission: $e'),
           backgroundColor: Colors.red,
         ),
       );

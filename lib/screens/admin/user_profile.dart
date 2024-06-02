@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart';
-import 'package:flutter_3/screens/admin/edit_missions_screen.dart';
 import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
@@ -20,13 +19,11 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _userEmailController = TextEditingController();
-
-  List<Mission> _selectedMissions = [];
 
   bool _isLoading = false;
   bool _isEditing = false;
+  List<Mission> _userMissions = [];
 
   @override
   void initState() {
@@ -39,7 +36,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return Scaffold(
       backgroundColor: const Color.fromARGB(144, 41, 48, 56),
       appBar: CustomUpperBar(
-        title: 'user Profile',
+        title: 'User Profile',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           color: const Color.fromARGB(255, 255, 255, 255),
@@ -63,10 +60,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildEditableField(
-                    label: 'Username',
-                    controller: _userNameController,
-                    isEditing: _isEditing,
+                  Row(
+                    children: [
+                      const Text(
+                        'Username: ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color.fromARGB(255, 255, 255, 255),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          widget.user.username,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   _buildEditableField(
@@ -136,9 +148,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  _isEditing
-                      ? _buildEditableMissionSelection()
-                      : _buildNonEditableMissionSelection(),
+                  _buildMissionsSection(),
                   const SizedBox(height: 20),
                   _buildEditButton(),
                 ],
@@ -148,45 +158,34 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _fetchUserDetails() async {
-    if (!mounted) return; // Check if the widget is mounted before proceeding
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
     try {
-      final userDetails =
-          await AdminApiService.getUserDetails(widget.user.user_id);
-
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        // Update user details directly on the widget.user object
-        widget.user.username = userDetails.username;
-        widget.user.email = userDetails.email;
-        widget.user.status = userDetails.status;
-        widget.user.type = userDetails.type;
-        widget.user.activeMissionCount = userDetails.activeMissionCount;
-        widget.user.missions = userDetails.missions;
-
-        _userNameController.text = userDetails.username;
-        _userEmailController.text = userDetails.email!;
-
-        _selectedMissions = userDetails.missions!;
-        print('user object ${widget.user}');
+      await widget.user.fetchUserDetails(() {
+        if (mounted) {
+          setState(() {
+            _userEmailController.text =
+                widget.user.email ?? 'No email available';
+            _userMissions = widget.user.missions ?? [];
+            print('user object ${widget.user}');
+          });
+        }
       });
-    } catch (e) {
-      print('Error fetching user info: $e');
+    } catch (error) {
+      print("Failed to fetch user's details: $error");
     } finally {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
       });
     }
   }
 
-  Widget _buildNonEditableMissionSelection() {
+  Widget _buildMissionsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -198,34 +197,51 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             color: Color.fromARGB(255, 255, 255, 255),
           ),
         ),
-        Column(
-          children: _selectedMissions.map((mission) {
-            return ListTile(
-              title: Text(
-                mission.name,
-                style: const TextStyle(color: Colors.white70),
+        _userMissions.isEmpty
+            ? const Text(
+                'No missions assigned',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              )
+            : Column(
+                children: _userMissions.map((mission) {
+                  return ListTile(
+                    title: Text(
+                      mission.name,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    trailing: (widget.user.status == UserStatus.ASSIGNED) &&
+                            !_isEditing
+                        ? _buildMonitorButton(mission)
+                        : const SizedBox.shrink(),
+                  );
+                }).toList(),
               ),
-              trailing: (widget.user.status == UserStatus.ASSIGNED)
-                  ? ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MissionDevicesListScreen(
-                              mission: mission,
-                              mqttClient: widget.mqttClient,
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text('Monitor Mission'),
-                    )
-                  : const SizedBox.shrink(),
-            );
-          }).toList(),
-        ),
       ],
     );
+  }
+
+  Widget _buildMonitorButton(Mission mission) {
+    if (!_isEditing && mission.status == MissionStatus.ONGOING) {
+      return ElevatedButton(
+        onPressed: () {
+          // Navigate to the mission monitoring screen
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MissionDevicesListScreen(
+                  mission: mission,
+                  mqttClient: widget.mqttClient,
+                ),
+              ));
+        },
+        child: const Text('Monitor Mission'),
+      );
+    } else {
+      return const SizedBox();
+    }
   }
 
   Future<void> _showApprovalDialog(String userId) async {
@@ -289,53 +305,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     switch (user.status) {
       case UserStatus.PENDING:
         return [
-          PopupMenuButton<int>(
-            icon: const Icon(Icons.more_vert, color: Colors.white70),
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 1,
-                child: Text('Approve'),
-              ),
-              const PopupMenuItem(
-                value: 2,
-                child: Text('Reject'),
-              ),
-              const PopupMenuItem(
-                value: 3,
-                child: Text('Delete'),
-              ),
-            ],
-            onSelected: (value) {
-              if (value == 1) {
-                _showApprovalDialog(user.user_id);
-              } else if (value == 2) {
-                _rejectUser(user.user_id);
-              } else if (value == 3) {
-                _deleteUser(user.user_id);
-              }
+          ElevatedButton(
+            onPressed: () {
+              _showApprovalDialog(user.user_id);
             },
+            child: const Text('Approve'),
+          ),
+          const SizedBox(width: 5),
+          ElevatedButton(
+            onPressed: () {
+              _rejectUser(user.user_id);
+            },
+            child: const Text('Reject'),
           ),
         ];
-      //   ElevatedButton(
-      //     onPressed: () {
-      //       _showApprovalDialog(user.user_id);
-      //     },
-      //     child: const Text('Approve'),
-      //   ),
-      //   const SizedBox(width: 5),
-      //   ElevatedButton(
-      //     onPressed: () {
-      //       _rejectUser(user.user_id);
-      //     },
-      //     child: const Text('Reject'),
-      //   ),
-      //   ElevatedButton(
-      //     onPressed: () {
-      //       _deleteUser(user.user_id);
-      //     },
-      //     child: const Text('Delete'),
-      //   ),
-      // ];
       case UserStatus.REJECTED:
         return [
           ElevatedButton(
@@ -346,6 +329,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
           const SizedBox(width: 5),
         ];
+      case UserStatus.INACTIVE:
+        return [];
       default:
         return [
           ElevatedButton(
@@ -356,55 +341,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
         ];
     }
-  }
-
-  Widget _buildEditableMissionSelection() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'Missions:',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 255, 255, 255),
-              ),
-            ),
-            IconButton(
-              onPressed: () async {
-                List<Mission> selectedMissions = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EditMissionsScreen(
-                      preselectedMissions: _selectedMissions,
-                      
-                    ),
-                  ),
-                );
-                setState(() {
-                  _selectedMissions = selectedMissions;
-                  print('EditMissionsScreen $_selectedMissions');
-                });
-              },
-              icon: const Icon(Icons.edit),
-              tooltip: 'Edit',
-            ),
-          ],
-        ),
-        Column(
-          children: _selectedMissions.map((mission) {
-            return ListTile(
-              title: Text(
-                mission.name,
-                style: const TextStyle(color: Colors.white70),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
   }
 
   Widget _buildEditableField({
@@ -442,9 +378,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Widget _buildEditButton() {
-    if (widget.user.status == MissionStatus.FINISHED ||
-        widget.user.status == MissionStatus.CANCELED) {
-      // If user status is FINISHED or CANCELED, return an empty container
+    if (widget.user.status == UserStatus.REJECTED ||
+        widget.user.status == UserStatus.INACTIVE ||
+        widget.user.status == UserStatus.PENDING) {
+      // If user status is REJECTED or INACTIVE, return an empty container
       return const SizedBox();
     } else {
       // Otherwise, return the edit button
@@ -473,29 +410,39 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     try {
       // Extract user details
       final String userId = widget.user.user_id;
-      final String username = _userNameController.text;
-      final String email = _userNameController.text;
-      final List<String> missionIds =
-          _selectedMissions.map((mission) => mission.id).toList();
+      final String newEmail = _userEmailController.text;
 
-      print('save missions : $missionIds');
+      // Build the update data
+      final Map<String, dynamic> updateData = {};
 
-      // Call updateuser API
-      await AdminApiService.updateUser(
-        user_id: userId,
-        username: username,
-        email: email,
-        missionIds: missionIds,
-      );
-      await _fetchUserDetails();
+      if (newEmail != widget.user.email) {
+        updateData['email'] = newEmail;
+      }
 
-      // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('user updated successfully'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (updateData.isNotEmpty) {
+        // Call update user API only if there are changes
+        await AdminApiService.updateUser(
+          user_id: userId,
+          email: updateData['email'],
+        );
+        await _fetchUserDetails();
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        // Show a message indicating no changes
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No changes to update'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
     } catch (e) {
       // Show error message if update fails
       ScaffoldMessenger.of(context).showSnackBar(
@@ -511,26 +458,41 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
-  _buildTypeSwitchActions(User user) {
-    switch (user.type) {
-      case UserType.ADMIN:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              
-            },
-            child: const Text('Switch to Regular'),
-          ),
-          const SizedBox(width: 5),
-        ];
-      default:
-        return [
-          ElevatedButton(
-            onPressed: () {
-            },
-            child: const Text('Switch to Admin'),
-          ),
-        ];
+  List<Widget> _buildTypeSwitchActions(User user) {
+    if (widget.user.status != UserStatus.INACTIVE &&
+        widget.user.status != UserStatus.PENDING &&
+        widget.user.status != UserStatus.REJECTED) {
+      switch (user.type) {
+        case UserType.ADMIN:
+          return [
+            ElevatedButton(
+              onPressed: () async {
+                await AdminApiService.updateUser(
+                  user_id: widget.user.user_id,
+                  type: UserType.REGULAR,
+                );
+                await _fetchUserDetails();
+              },
+              child: const Text('Switch to Regular'),
+            ),
+            const SizedBox(width: 5),
+          ];
+        default:
+          return [
+            ElevatedButton(
+              onPressed: () async {
+                await AdminApiService.updateUser(
+                  user_id: widget.user.user_id,
+                  type: UserType.ADMIN,
+                );
+                await _fetchUserDetails();
+              },
+              child: const Text('Switch to Admin'),
+            ),
+          ];
+      }
+    } else {
+      return [];
     }
   }
 }

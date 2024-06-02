@@ -159,6 +159,8 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                               'EditUsersScreen selectedUsers: $_selectedUsers');
                         });
                       },
+                      itemBuilder: (user, isSelected) =>
+                          _buildUserTile(user, isSelected),
                     ),
             ),
             // Pagination Controls
@@ -192,6 +194,46 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUserTile(User user, bool isSelected) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xff293038)),
+        ),
+      ),
+      height: 70,
+      child: Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: Text(
+              user.username,
+              style: const TextStyle(fontSize: 17, color: Colors.white70),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              user.type.toString().split('.').last.toLowerCase(),
+              style: const TextStyle(fontSize: 17, color: Colors.white70),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              user.activeMissionCount.toString(),
+              style: const TextStyle(fontSize: 17, color: Colors.white70),
+            ),
+          ),
+          Checkbox(
+            value: isSelected,
+            onChanged: (bool? value) {},
+          ),
+        ],
       ),
     );
   }

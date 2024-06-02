@@ -147,6 +147,9 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
                               : null;
                         });
                       },
+                      itemBuilder: (broker, isSelected) =>
+                          _buildBrokerTile(broker, isSelected),
+
                       singleSelection: widget.singleSelection,
                     ),
             ),
@@ -181,6 +184,33 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBrokerTile(Device broker, bool isSelected) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xff293038)),
+        ),
+      ),
+      height: 70,
+      child: Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: Text(
+              broker.name,
+              style: const TextStyle(fontSize: 17, color: Colors.white70),
+            ),
+          ),
+
+          Checkbox(
+            value: isSelected,
+            onChanged: (bool? value) {},
+          ),
+        ],
       ),
     );
   }

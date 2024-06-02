@@ -151,6 +151,9 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
                           _selectedDevices = selectedDevices;
                         });
                       },
+                      itemBuilder: (device, isSelected) =>
+                          _buildDeviceTile(device, isSelected),
+
                     ),
             ),
             // Pagination Controls
@@ -187,4 +190,39 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
       ),
     );
   }
+
+
+  Widget _buildDeviceTile(Device device, bool isSelected) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xff293038)),
+        ),
+      ),
+      height: 70,
+      child: Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: Text(
+              device.name,
+              style: const TextStyle(fontSize: 17, color: Colors.white70),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              device.type.toString().split('.').last.toLowerCase(),
+              style: const TextStyle(fontSize: 17, color: Colors.white70),
+            ),
+          ),
+          Checkbox(
+            value: isSelected,
+            onChanged: (bool? value) {},
+          ),
+        ],
+      ),
+    );
+  }
 }
+

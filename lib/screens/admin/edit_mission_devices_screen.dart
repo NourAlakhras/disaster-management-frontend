@@ -146,6 +146,7 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
                   : SelectionWidget<Device>(
                       items: _deviceOptions,
                       preselectedItems: _selectedDevices,
+                      singleSelection: false,
                       onSelectionChanged: (selectedDevices) {
                         setState(() {
                           _selectedDevices = selectedDevices;
@@ -153,7 +154,6 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
                       },
                       itemBuilder: (device, isSelected) =>
                           _buildDeviceTile(device, isSelected),
-
                     ),
             ),
             // Pagination Controls

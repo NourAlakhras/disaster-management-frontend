@@ -334,21 +334,14 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
   }
 
   void _filterMissions(String name) {
-    if (name.isNotEmpty) {
       // Call fetch missions with the search query
       setState(() {
-        _name = name;
+        _name = name.isNotEmpty ? name : '';
+        _pageNumber = 1;
       });
-    } else {
       // If query is empty, fetch all missions
       _fetchMissions();
     }
-
-    setState(() {
-      _pageNumber = 1;
-    });
-    _fetchMissions();
-  }
 
   Future<void> _previousPage() async {
     if (_pageNumber > 1) {

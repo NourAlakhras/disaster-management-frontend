@@ -79,7 +79,13 @@ class User {
       setStateCallback(); // Notify the widget even in case of an error
     }
   }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is User && runtimeType == other.runtimeType && user_id == other.user_id;
 
+  @override
+  int get hashCode => user_id.hashCode;
   @override
   String toString() {
     return 'User {user_id: $user_id, username: $username, email: $email, type: $type, status: $status, missions: $missions, activeMissionCount: $activeMissionCount}';

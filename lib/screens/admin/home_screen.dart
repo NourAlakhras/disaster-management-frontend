@@ -8,7 +8,7 @@ import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/widgets/devices_list_screen.dart';
+import 'package:flutter_3/screens/admin/devices_list_screen.dart';
 import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
 
 import 'package:flutter_3/models/mission.dart';

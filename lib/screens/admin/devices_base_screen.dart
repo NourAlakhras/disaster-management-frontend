@@ -4,7 +4,7 @@ import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
-import 'package:flutter_3/widgets/devices_list_screen.dart';
+import 'package:flutter_3/screens/admin/devices_list_screen.dart';
 import 'package:flutter_3/widgets/devices_map_view.dart';
 import 'package:flutter_3/widgets/devices_thumbnails_view.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';

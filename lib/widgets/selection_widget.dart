@@ -2,23 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart';
-
 class SelectionWidget<T> extends StatefulWidget {
-  final List<T> items; // List of items (users or devices)
-  final Function(List<T>)
-      onSelectionChanged; // Callback function for when selection changes
-  final List<T>? preselectedItems; // List of preselected items
-  final bool? singleSelection;
-  final Widget Function(T item, bool isSelected)
-      itemBuilder; // Builder function
+  final List<T> items;
+  final List<T> preselectedItems;
+  final bool singleSelection;
+  final Function(List<T>) onSelectionChanged;
+  final Widget Function(T item, bool isSelected) itemBuilder;
 
-  const SelectionWidget({
-    super.key,
+  SelectionWidget({
     required this.items,
+    required this.preselectedItems,
+    required this.singleSelection,
     required this.onSelectionChanged,
     required this.itemBuilder,
-    this.preselectedItems,
-    this.singleSelection,
   });
 
   @override
@@ -26,13 +22,27 @@ class SelectionWidget<T> extends StatefulWidget {
 }
 
 class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
-  late List<T> selectedItems;
+  late List<T> _selectedItems;
 
   @override
   void initState() {
     super.initState();
-    // Initialize selectedItems with preselectedItems if provided, else empty list
-    selectedItems = List.from(widget.preselectedItems ?? []);
+    _selectedItems = widget.preselectedItems;
+  }
+
+  void _toggleSelection(T item) {
+    setState(() {
+      if (_selectedItems.contains(item)) {
+        _selectedItems.remove(item);
+      } else {
+        if (widget.singleSelection) {
+          _selectedItems = [item];
+        } else {
+          _selectedItems.add(item);
+        }
+      }
+      widget.onSelectionChanged(_selectedItems);
+    });
   }
 
   @override
@@ -41,22 +51,9 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
       itemCount: widget.items.length,
       itemBuilder: (context, index) {
         final item = widget.items[index];
-        final isSelected = selectedItems.contains(item);
+        final isSelected = _selectedItems.contains(item);
         return InkWell(
-          onTap: () {
-            setState(() {
-              if (widget.singleSelection == true) {
-                // Clear all previous selections before adding the new one
-                selectedItems.clear();
-              }
-              if (isSelected) {
-                selectedItems.remove(item);
-              } else {
-                selectedItems.add(item);
-              }
-              widget.onSelectionChanged(selectedItems);
-            });
-          },
+          onTap: () => _toggleSelection(item),
           child: widget.itemBuilder(item, isSelected),
         );
       },

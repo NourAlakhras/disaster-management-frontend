@@ -160,7 +160,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                         });
                       },
                       itemBuilder: (user, isSelected) =>
-                          _buildUserTile(user, isSelected),
+                          _buildUserTile(user, isSelected), singleSelection: false,
                     ),
             ),
             // Pagination Controls

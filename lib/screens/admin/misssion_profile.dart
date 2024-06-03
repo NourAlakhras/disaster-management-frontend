@@ -93,7 +93,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                         const SizedBox(height: 8),
                       ],
                     ),
-                  if (widget.mission.endDate != null)
+                  widget.mission.endDate != null?
                     Row(
                       children: [
                         const Text(
@@ -112,7 +112,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                       ],
-                    ),
+                    ): const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -136,6 +136,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                               color: Colors.white70,
                             ),
                           ),
+
                         ],
                       ),
                       Row(
@@ -143,19 +144,19 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                       )
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  _isEditing
-                      ? _buildEditableUserSelection()
-                      : _buildNonEditableUserSelection(),
-                  const SizedBox(height: 20),
+                  UserCredentials().getUserType() == UserType.ADMIN
+                      ? (_isEditing
+                          ? _buildEditableUserSelection()
+                          : _buildNonEditableUserSelection())
+                      : const SizedBox(height: 8),
                   _isEditing
                       ? _buildEditableBrokerSelection()
                       : _buildNonEditableBrokerSelection(),
-                  const SizedBox(height: 20),
+
                   _isEditing
                       ? _buildEditableDeviceSelection()
                       : _buildNonEditableDeviceSelection(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
                   _buildEditButton(),
                   _buildMonitorButton(),
                 ],
@@ -345,11 +346,8 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                       preselectedUsers: _selectedUsers,
                     ),
                   ),
-                ).then((_) {
-                  setState(() {
-                    // Call setState to refresh the page.
-                  });
-                });
+                );
+
                 if (selectedUsers != null) {
                   setState(() {
                     _selectedUsers = selectedUsers;

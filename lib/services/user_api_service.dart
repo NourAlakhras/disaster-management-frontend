@@ -235,7 +235,7 @@ class UserApiService {
     final List<String> statusStrings =
         _missionStatusValues?.map((s) => s.toString()).toList() ?? [];
 
-    print('statusStrings from getAllMissions: $statusStrings');
+    print('statusStrings from getCurrentMissions: $statusStrings');
 // Build query parameters
     Map<String, dynamic> queryParameters = {
       'page-number': pageNumber ?? 1,
@@ -307,15 +307,44 @@ class UserApiService {
   }
 
   // _________________________________________________________
+static Future<int> getCurrentMissionsCount({
+    List<MissionStatus>? statuses,
+  }) async {
+    final String baseUrl = Constants.baseUrl;
 
-  static Future<List<Mission>> getUserCurrentMissions(String userId) async {
-    const String baseUrl = Constants.baseUrl;
-    final Uri url = Uri.parse('$baseUrl/api/users/$userId/cur_missions');
+    // Convert enums to their corresponding integer values
+    final List<int>? _missionStatusValues =
+        statuses?.map((s) => missionStatusValues[s]!).toList();
+
+    // Build query parameters
+    Map<String, dynamic> queryParameters = {};
+
+    // Add status query parameters
+    if (_missionStatusValues != null && _missionStatusValues.isNotEmpty) {
+      // Add each status value separately to the query parameters
+      queryParameters['status'] = _missionStatusValues.join('&status=');
+    }
+
+    // Convert query parameters to a list of key-value pairs
+    final List<String> queryString =
+        queryParameters.entries.map((e) => '${e.key}=${e.value}').toList();
+
+    // Join query parameters with '&' to form the final query string
+    final String queryStringJoined = queryString.join('&');
+
+    final Uri url =
+        Uri.parse('$baseUrl/api/users/cur_missions?$queryStringJoined');
+
+    // Print out the generated URL
+    print('URL: $url');
 
     try {
       final String? token = await AuthApiService.getAuthToken();
+      if (token == null) {
+        throw UnauthorizedException();
+      }
 
-      final http.Response response = await http.get(
+      final response = await http.get(
         url,
         headers: <String, String>{
           'Authorization': 'Bearer $token',
@@ -323,15 +352,20 @@ class UserApiService {
         },
       );
 
+      final responseBody = jsonDecode(response.body);
+      print('mission responseBody: $responseBody');
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        final List<Mission> missions =
-            data.map((json) => Mission.fromJson(json)).toList();
-        return missions;
+        final int curMissionsCount = responseBody['cur_missions_count'] ?? 0;
+        return curMissionsCount;
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
       } else if (response.statusCode == 401) {
         throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ForbiddenException();
       } else if (response.statusCode == 404) {
-        return [];
+        throw NotFoundException();
       } else if (response.statusCode == 500) {
         throw InternalServerErrorException();
       } else {
@@ -339,7 +373,8 @@ class UserApiService {
             'Unexpected response from server: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Failed to retrieve current missions: $e');
+      throw Exception('Failed to get missions count: $e');
     }
   }
+
 }

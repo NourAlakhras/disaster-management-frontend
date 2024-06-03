@@ -120,6 +120,13 @@ class Mission {
   }
 
   @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Mission && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
+  @override
   String toString() {
     return 'Mission(id: $id, name: $name, status: $status, startDate: $startDate, endDate: $endDate, devices: $devices, broker: $broker, users: $users)';
   }

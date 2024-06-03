@@ -85,6 +85,13 @@ class Device {
           DeviceStatus.AVAILABLE, // Default to AVAILABLE if status not found
     );
   }
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Device && runtimeType == other.runtimeType && device_id == other.device_id;
+
+  @override
+  int get hashCode => device_id.hashCode;
 
   @override
   String toString() {

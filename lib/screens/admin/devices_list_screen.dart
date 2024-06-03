@@ -329,17 +329,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
 
   void _filterDevices(String name) {
-    if (name.isNotEmpty) {
-      // Call fetch devices with the search query
-      setState(() {
-        _name = name;
-      });
-    } else {
-      // If query is empty, fetch all devices
-      _fetchDevices();
-    }
-
     setState(() {
+      _name = name.isNotEmpty ? name : '';
       _pageNumber = 1;
     });
     _fetchDevices();

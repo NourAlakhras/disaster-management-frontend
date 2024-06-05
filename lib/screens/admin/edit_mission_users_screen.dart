@@ -40,6 +40,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
       final userResponse = await AdminApiService.getAllUsers(
         pageNumber: pageNumber,
         pageSize: 5,
+        missionId: widget.missionId,
         statuses: [
           UserStatus.AVAILABLE,
           UserStatus.ASSIGNED,

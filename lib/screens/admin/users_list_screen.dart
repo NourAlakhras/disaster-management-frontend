@@ -25,7 +25,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   List<User> _filteredUsers = [];
   bool _isLoading = false;
   int _pageNumber = 1;
-  final int _pageSize = 5;
+  final int _pageSize = 6;
 
   final TextEditingController _searchController = TextEditingController();
 

@@ -232,7 +232,7 @@ class DeviceApiService {
       const String baseUrl = Constants.baseUrl;
       final Uri url = Uri.parse('$baseUrl/api/devices/$deviceId');
 
-      final response = await http.get(
+      final response = await http.delete(
         url,
         headers: <String, String>{
           'Authorization': 'Bearer $token',
@@ -241,7 +241,7 @@ class DeviceApiService {
       );
 
       if (response.statusCode == 200) {
-        print('getDeviceDetails response.body ${response.body}');
+        print('deleteDevice response.body ${response.body}');
         final Map<String, dynamic> deviceDetails = jsonDecode(response.body);
         return Device.fromJson(deviceDetails);
       } else if (response.statusCode == 400) {

@@ -65,22 +65,23 @@ class MissionApiService {
     }
   }
 
+
   static Future<void> updateMission({
     required String missionId,
-    required String name,
-    required List<String> deviceIds,
-    required List<String> userIds,
-    required String brokerId,
+    String? name,
+    List<String>? deviceIds,
+    List<String>? userIds,
+    String? brokerId,
   }) async {
     const String baseUrl = Constants.baseUrl;
     final Uri url = Uri.parse('$baseUrl/api/missions/$missionId');
 
-    final Map<String, dynamic> requestBody = {
-      'name': name,
-      'device_ids': deviceIds,
-      'user_ids': userIds,
-      'broker_id': brokerId,
-    };
+    final Map<String, dynamic> requestBody = {};
+    if (name != null) requestBody['name'] = name;
+    if (deviceIds != null) requestBody['device_ids'] = deviceIds;
+    if (userIds != null) requestBody['user_ids'] = userIds;
+    if (brokerId != null) requestBody['broker_id'] = brokerId;
+
     print('updateMission url $url');
     print('updateMission requestBody $requestBody');
     try {
@@ -118,6 +119,7 @@ class MissionApiService {
       throw Exception('Failed to update mission: $e');
     }
   }
+
 
   static Future<PaginatedResponse<Mission>> getAllMissions({
     int? pageNumber,

@@ -26,7 +26,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> _filteredDevices = [];
   bool _isLoading = false;
   int _pageNumber = 1;
-  final int _pageSize = 5;
+  final int _pageSize = 6;
   bool _hasNext = false;
   bool _hasPrev = false;
 
@@ -60,6 +60,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     pageNumber ??= _pageNumber;
     pageSize ??= _pageSize;
     name ??= _name;
+    
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
@@ -79,6 +81,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     } catch (error) {
       print('Failed to fetch devices: $error');
     } finally {
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
       });
@@ -365,7 +369,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               ],
               onSelected: (value) {
                 if (value == 1) {
-                  _deleteDevice(device.device_id);
+                  _deleteDevice(device);
                 }
               },
             )
@@ -373,14 +377,26 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         : [];
   }
 
-  void _deleteDevice(String id) {
-    DeviceApiService.deleteDevice(id).then((deletedDevice) {
+  void _deleteDevice(Device device) {
+    if (device.type == DeviceType.BROKER &&
+        device.status == DeviceStatus.ASSIGNED) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("You're not allowed to delete an assigned broker"),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    DeviceApiService.deleteDevice(device.device_id).then((deletedDevice) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Device deleted successfully'),
           backgroundColor: Colors.green,
         ),
       );
+      _fetchDevices(); // Fetch the updated list of devices
     }).catchError((error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

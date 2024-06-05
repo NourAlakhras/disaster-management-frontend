@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/screens/admin/create_mission_screen.dart';
-import 'package:flutter_3/screens/admin/misssion_profile.dart';
+import 'package:flutter_3/screens/admin/mission_profile.dart';
 import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
@@ -20,17 +20,19 @@ class MissionsListScreen extends StatefulWidget {
   _MissionsListScreenState createState() => _MissionsListScreenState();
 }
 
-class _MissionsListScreenState extends State<MissionsListScreen> {
+class _MissionsListScreenState extends State<MissionsListScreen>
+    with SingleTickerProviderStateMixin {
   List<Mission> _filteredMissions = [];
-
+  int _pageNumberAllMissions = 1;
+  int _pageNumberMyMissions = 1;
   bool _isLoading = false;
-  int _pageNumber = 1;
   final int _pageSize = 5;
   final TextEditingController _searchController = TextEditingController();
   List<MissionStatus>? _filteredstatuses = MissionStatus.values
       .where((status) => status != MissionStatus.CANCELED)
       .toList();
   String? _name;
+  late TabController _tabController;
 
   final criteriaList = UserCredentials().getUserType() == UserType.ADMIN
       ? [
@@ -53,33 +55,51 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
   @override
   void initState() {
     super.initState();
+    if (UserCredentials().getUserType() == UserType.ADMIN) {
+      _tabController = TabController(length: 2, vsync: this);
+      _tabController.addListener(_onTabChanged);
+    }
+    _fetchMissions();
+  }
+
+  void _onTabChanged() {
+    setState(() {
+      _pageNumberAllMissions = 1;
+      _pageNumberMyMissions = 1;
+    });
     _fetchMissions();
   }
 
   Future<void> _fetchMissions({
     List<MissionStatus>? statuses,
-    int? pageNumber,
     int? pageSize,
     String? name,
   }) async {
-    // Assign default statuses if not provided
-    statuses ??= _filteredstatuses;
-    pageNumber ??= _pageNumber;
     pageSize ??= _pageSize;
+    statuses ??= _filteredstatuses;
     name ??= _name;
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
     });
     try {
       final missionResponse = UserCredentials().getUserType() == UserType.ADMIN
-          ? await MissionApiService.getAllMissions(
-              pageNumber: pageNumber,
-              pageSize: pageSize,
-              statuses: statuses,
-              name: name,
-            )
+          ? (_tabController.index == 0
+              ? await MissionApiService.getAllMissions(
+                  pageNumber: _pageNumberAllMissions,
+                  pageSize: pageSize,
+                  statuses: statuses,
+                  name: name,
+                )
+              : await UserApiService.getCurrentMissions(
+                  pageNumber: _pageNumberMyMissions,
+                  pageSize: pageSize,
+                  statuses: statuses,
+                  name: name,
+                ))
           : await UserApiService.getCurrentMissions(
-              pageNumber: pageNumber,
+              pageNumber: _pageNumberMyMissions,
               pageSize: pageSize,
               statuses: statuses,
               name: name,
@@ -92,6 +112,8 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     } catch (error) {
       print('Failed to fetch missions: $error');
     } finally {
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
       });
@@ -127,7 +149,7 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 00),
+        padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -136,123 +158,136 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
               onChanged: _filterMissions,
               onClear: _clearSearch,
             ),
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (_filteredMissions.isEmpty)
-              const Center(
-                child: Text(
-                  'No missions available',
-                  style: TextStyle(color: Colors.white), // White text color
-                ),
-              )
-            else
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.vertical,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      // Labels Row
-                      Container(
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: Colors.grey),
-                          ),
-                        ),
-                        height: 60,
-                        child: const Row(
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: Text('Mission Name',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      color: Colors.white)),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Text('Status',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 18,
-                                      color: Colors.white)), // Light text color
-                            ),
-                            Expanded(
-                              flex: 2,
-                              child:
-                                  SizedBox(), // Placeholder for actions column
-                            ),
-                          ],
-                        ),
-                      ),
-                      // Mission Rows
-                      ..._filteredMissions.map((mission) {
-                        print(mission.id);
-
-                        return InkWell(
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => MissionProfileScreen(
-                                    mission: mission,
-                                    mqttClient: widget.mqttClient),
-                              )).then((_) {
-                            setState(() {
-                              // Call setState to refresh the page.
-                            });
-                          }),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              border: Border(
-                                  bottom: BorderSide(
-                                color: Color(0xff293038),
-                              )),
-                            ),
-                            height: 70,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  flex: 5,
-                                  child: Text(mission.name,
-                                      style: const TextStyle(
-                                          fontSize: 17,
-                                          color: Colors
-                                              .white70)), // Light text color
-                                ),
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                      mission.status
-                                          .toString()
-                                          .split('.')
-                                          .last
-                                          .toLowerCase(),
-                                      style: const TextStyle(
-                                          fontSize: 17,
-                                          color: Colors
-                                              .white70)), // Light text color
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: _buildMissionActions(mission),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }),
-                    ],
+            if (UserCredentials().getUserType() == UserType.ADMIN)
+              TabBar(
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white60,
+                indicator: const BoxDecoration(
+                  color: Color(0xff121417),
+                  border: Border(
+                    bottom: BorderSide(
+                        color: Colors.white,
+                        width: 5.0), // Customize the underline color and width
                   ),
                 ),
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: 'All Missions'),
+                  Tab(text: 'My Missions'),
+                ],
               ),
+            Expanded(
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _filteredMissions.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No missions available',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        )
+                      : SingleChildScrollView(
+                          scrollDirection: Axis.vertical,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              Container(
+                                decoration: const BoxDecoration(
+                                  border: Border(
+                                    bottom: BorderSide(color: Colors.grey),
+                                  ),
+                                ),
+                                height: 60,
+                                child: const Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 5,
+                                      child: Text('Mission Name',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                              color: Colors.white)),
+                                    ),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text('Status',
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                              color: Colors.white)),
+                                    ),
+                                    Expanded(
+                                      flex: 2,
+                                      child: SizedBox(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ..._filteredMissions.map((mission) {
+                                return InkWell(
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            MissionProfileScreen(
+                                                mission: mission,
+                                                mqttClient: widget.mqttClient),
+                                      )).then((_) {
+                                    setState(() {
+                                      _fetchMissions();
+                                    });
+                                  }),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      border: Border(
+                                          bottom: BorderSide(
+                                        color: Color(0xff293038),
+                                      )),
+                                    ),
+                                    height: 70,
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 5,
+                                          child: Text(mission.name,
+                                              style: const TextStyle(
+                                                  fontSize: 17,
+                                                  color: Colors.white70)),
+                                        ),
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                              mission.status
+                                                  .toString()
+                                                  .split('.')
+                                                  .last
+                                                  .toLowerCase(),
+                                              style: const TextStyle(
+                                                  fontSize: 17,
+                                                  color: Colors.white70)),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.end,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children:
+                                                _buildMissionActions(mission),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 10.0, 20, 30),
               child: Row(
@@ -285,20 +320,20 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
                           style: ElevatedButton.styleFrom(
                             foregroundColor: Colors.black,
                             backgroundColor: Colors.white70,
-                            elevation: 0, // No shadow
+                            elevation: 0,
                             shape: const CircleBorder(),
                             padding: const EdgeInsets.all(20),
                           ),
-                          child: const Icon(Icons.add), // Black icon color
+                          child: const Icon(Icons.add),
                         )
-                      : SizedBox(),
+                      : const SizedBox(),
                   ElevatedButton(
                     onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,
-                      elevation: 0, // No shadow
-                      shape: const CircleBorder(), // Circular button shape
+                      elevation: 0,
+                      shape: const CircleBorder(),
                     ),
                     child: const Icon(Icons.arrow_forward),
                   ),
@@ -323,7 +358,8 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
           }
 
           setState(() {
-            _pageNumber = 1;
+            _pageNumberAllMissions = 1;
+            _pageNumberMyMissions = 1;
           });
           _fetchMissions();
         },
@@ -334,28 +370,42 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
   }
 
   void _filterMissions(String name) {
-      // Call fetch missions with the search query
-      setState(() {
-        _name = name.isNotEmpty ? name : '';
-        _pageNumber = 1;
-      });
-      // If query is empty, fetch all missions
-      _fetchMissions();
-    }
+    setState(() {
+      _name = name.isNotEmpty ? name : '';
+      _pageNumberAllMissions = 1;
+      _pageNumberMyMissions = 1;
+    });
+    _fetchMissions();
+  }
 
   Future<void> _previousPage() async {
-    if (_pageNumber > 1) {
-      setState(() {
-        _pageNumber--;
-      });
+    if (_tabController.index == 0) {
+      if (_pageNumberAllMissions > 1) {
+        setState(() {
+          _pageNumberAllMissions--;
+        });
+      }
+      await _fetchMissions();
+    } else {
+      if (_pageNumberMyMissions > 1) {
+        setState(() {
+          _pageNumberMyMissions--;
+        });
+      }
       await _fetchMissions();
     }
   }
 
   Future<void> _nextPage() async {
-    setState(() {
-      _pageNumber++;
-    });
+    if (_tabController.index == 0) {
+      setState(() {
+        _pageNumberAllMissions++;
+      });
+    } else {
+      setState(() {
+        _pageNumberMyMissions++;
+      });
+    }
     await _fetchMissions();
   }
 
@@ -363,7 +413,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
     if (UserCredentials().getUserType() == UserType.ADMIN) {
       switch (mission.status) {
         case MissionStatus.CREATED:
-          print('mission.id ${mission.id}');
           return [
             PopupMenuButton<int>(
               icon: const Icon(Icons.more_vert, color: Colors.white70),
@@ -442,7 +491,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
 
   Future<void> _startMission(String missionId) async {
     try {
-      print('missionId $missionId');
       String command = "start";
       await MissionApiService.updateMissionStatus(missionId, command);
       await _fetchMissions();
@@ -453,7 +501,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
 
   void _pauseMission(String missionId) async {
     try {
-      print('missionId $missionId');
       String command = "pause";
       await MissionApiService.updateMissionStatus(missionId, command);
       await _fetchMissions();
@@ -464,7 +511,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
 
   void _endMission(String missionId) async {
     try {
-      print('missionId $missionId');
       String command = "end";
       await MissionApiService.updateMissionStatus(missionId, command);
       await _fetchMissions();
@@ -475,7 +521,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
 
   void _cancelMission(String missionId) async {
     try {
-      print('missionId $missionId');
       String command = "cancel";
       await MissionApiService.updateMissionStatus(missionId, command);
       await _fetchMissions();
@@ -486,7 +531,6 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
 
   void _resumeMission(String missionId) async {
     try {
-      print('missionId $missionId');
       String command = "continue";
       await MissionApiService.updateMissionStatus(missionId, command);
       await _fetchMissions();
@@ -496,15 +540,14 @@ class _MissionsListScreenState extends State<MissionsListScreen> {
   }
 
   void _clearSearch() {
-    // Clear the search query
     _searchController.clear();
     setState(() {
       _name = '';
-      _pageNumber = 1;
+      _pageNumberAllMissions = 1;
+      _pageNumberMyMissions = 1;
     });
     _fetchMissions();
 
-    // Call filterMissions with an empty string to reset the filtered list
     _filterMissions('');
   }
 }

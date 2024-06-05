@@ -4,6 +4,7 @@
         "filteredstatuses",
         "latlong",
         "LTRB",
-        "mqtt"
+        "mqtt",
+        "vsync"
     ]
 }

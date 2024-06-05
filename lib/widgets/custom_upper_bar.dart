@@ -11,7 +11,7 @@ class CustomUpperBar extends StatelessWidget implements PreferredSizeWidget {
     required this.title,
     this.leading = const SizedBox(),
     this.actions = const [],
-    this.backgroundColor = const Color(0xff121417), // Assign default value
+    this.backgroundColor = const Color(0xff121417), TabBar? bottom, // Assign default value
   });
 
   @override

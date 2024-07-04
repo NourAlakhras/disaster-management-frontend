@@ -35,8 +35,8 @@ class _MonitoringViewState extends State<MonitoringView> {
     widget.mqttClient.onDataReceived = _onDataReceived;
     widget.mqttClient.subscribeToMultipleTopics([
       'test-ugv/sensor_data',
-      '${widget.device.name}/gps', //cloud/reg/<broker_name>/<device_name>/gps:
-      '${widget.device.name}/sensor_data', //cloud/reg/<broker_name>/<device_name>/sensor-data:
+      '${widget.device.name}/gps',
+      '${widget.device.name}/sensor_data',
       '${widget.device.name}/connectivity',
       '${widget.device.name}/battery',
     ]);
@@ -47,24 +47,20 @@ class _MonitoringViewState extends State<MonitoringView> {
     if (data.containsKey('lat') && data.containsKey('long')) {
       final latitude = data['lat'] ?? 0.0;
       final longitude = data['long'] ?? 0.0;
-      // Update device's location
       setState(() {
         _deviceLocation = LatLng(latitude, longitude);
-        // Update camera position to center on the device's location
         _updateCameraPosition(_deviceLocation);
-        // Update marker position
         _updateMarker(_deviceLocation);
       });
-    } else if (data.containsKey('wifi')) {
-      setState(() {});
-    } else if (data.containsKey('battery')) {
-      final batteryLevel = data['battery'] ?? 0.0;
-      setState(() {});
+    // } else if (data.containsKey('wifi')) {
+    //   setState(() {});
+    // } else if (data.containsKey('battery')) {
+    //   final batteryLevel = data['battery'] ?? 0.0;
+    //   setState(() {});
     } else {
-      // Handle other sensor data here
       data.forEach((key, value) {
         setState(() {
-          _sensorData[key] = value;
+          _sensorData[key.toLowerCase()] = value;
         });
       });
     }
@@ -85,9 +81,41 @@ class _MonitoringViewState extends State<MonitoringView> {
     );
   }
 
+  // Define thresholds for sensor data
+  final Map<String, Map<String, double>> thresholds = {
+    'temperature': {'low': 0, 'high': 30},
+    'humidity': {'low': 30, 'high': 70},
+    'gas concentration': {'low': 0, 'high': 50},
+    'air quality': {'low': 0, 'high': 100},
+    'smoke detection': {'low': 0, 'high': 1},
+    'earthquake detection': {'low': 0, 'high': 1},
+    'radiation level': {'low': 0, 'high': 100},
+    'sound level': {'low': 0, 'high': 70},
+    'distance': {'low': 0, 'high': 100},
+    'light': {'low': 0, 'high': 1000},
+  };
+
+  // Determine the status of the sensor data
+  String _getSensorStatus(String key, dynamic value) {
+    if (value is! num) {
+      return 'unknown';
+    }
+    if (thresholds.containsKey(key)) {
+      final threshold = thresholds[key]!;
+      if (value < threshold['low']!) {
+        return 'low';
+      } else if (value > threshold['high']!) {
+        return 'high';
+      } else {
+        return 'normal';
+      }
+    }
+    return 'unknown';
+  }
+
+  // Define icon mapping
   final Map<String, IconData> iconMap = {
     'Location': Icons.map_outlined,
-    'Operating Status': Icons.directions_run,
     'Battery Status': Icons.battery_full,
     'Temperature': Icons.thermostat,
     'Humidity': Icons.water_drop,
@@ -102,10 +130,9 @@ class _MonitoringViewState extends State<MonitoringView> {
     'Timestamp': Icons.access_time,
   };
 
+  // Define all keys
   final List<String> allKeys = [
     'Location',
-    'Operating Status',
-    'id',
     'Battery Status',
     'Temperature',
     'Humidity',
@@ -119,6 +146,7 @@ class _MonitoringViewState extends State<MonitoringView> {
     'Light',
     'Timestamp',
   ];
+
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
@@ -127,6 +155,21 @@ class _MonitoringViewState extends State<MonitoringView> {
         final key = allKeys[index];
         final value = _sensorData[key.toLowerCase()] ?? 'No data';
         final icon = iconMap[key] ?? Icons.info;
+        final sensorStatus = _getSensorStatus(key.toLowerCase(), value);
+
+        Color getStatusColor() {
+          switch (sensorStatus) {
+            case 'low':
+              return lowValueColor;
+            case 'high':
+              return highValueColor;
+            case 'normal':
+              return normalValueColor;
+            default:
+              return noValueColor;
+          }
+        }
+
         if (index == 0) {
           return Column(
             children: [
@@ -172,22 +215,19 @@ class _MonitoringViewState extends State<MonitoringView> {
                         () => HorizontalDragGestureRecognizer()))
                     ..add(Factory<LongPressGestureRecognizer>(
                         () => LongPressGestureRecognizer())),
-
                   compassEnabled: true,
                   buildingsEnabled: true,
                   indoorViewEnabled: true,
                   myLocationButtonEnabled: true,
-                  rotateGesturesEnabled: true, // Respond to rotate gestures
-                  tiltGesturesEnabled: true, // Respond to tilt gestures
-                  zoomControlsEnabled: true, // Show zoom controls
-                  zoomGesturesEnabled: true, // Respond to zoom gestures
+                  rotateGesturesEnabled: true,
+                  tiltGesturesEnabled: true,
+                  zoomControlsEnabled: true,
+                  zoomGesturesEnabled: true,
                   initialCameraPosition: CameraPosition(
-                    target:
-                        _deviceLocation, // Set initial camera position to device's location
+                    target: _deviceLocation,
                     zoom: 15.0,
                   ),
                   markers: _markers,
-
                   onMapCreated: (GoogleMapController controller) {
                     _controller = controller;
                   },
@@ -201,7 +241,7 @@ class _MonitoringViewState extends State<MonitoringView> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: barColor,
+                color: getStatusColor(),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(

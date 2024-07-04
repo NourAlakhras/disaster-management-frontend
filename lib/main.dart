@@ -5,7 +5,7 @@ import 'package:flutter_3/screens/shared/login_screen.dart';
 import 'package:flutter_3/screens/shared/signup_screen.dart';
 import 'package:flutter_3/theme.dart';
 void main() => runApp(MaterialApp(
-      theme: CustomTheme.darkTheme, // Apply the custom theme
+      theme: CustomTheme.darkTheme, 
       initialRoute: '/',
       routes: {
         '/': (context) => const WelcomeScreen(),
@@ -15,10 +15,3 @@ void main() => runApp(MaterialApp(
       },
     ));
 
-
-// #06141b Color(0xff06141b)
-// #11212d
-// #253745
-// #ccd0cf
-// #4A5c6a
-// #ffffff

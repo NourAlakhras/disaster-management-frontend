@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class CustomTheme {
   static ThemeData get darkTheme {
     return ThemeData(
-      errorColor:errorColor,
-      toggleableActiveColor:accentColor,
+
       hoverColor:accentColor,
       disabledColor: secondaryTextColor,
       highlightColor:accentColor,

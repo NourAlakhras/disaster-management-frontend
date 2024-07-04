@@ -1,7 +1,7 @@
 // constants.dart
 class Constants {
   // Web server base URL
-  static const String webServerBaseUrl = 'http://192.168.6.253:5000';
+  static const String webServerBaseUrl = 'http://192.168.132.253:5000';
 
   // RTMP stream URL
   static const String rtmpStreamUrl = 'rtmp://192.168.68.126/live';

@@ -20,12 +20,12 @@ class MonitoringView extends StatefulWidget {
   @override
   _MonitoringViewState createState() => _MonitoringViewState();
 }
-
 class _MonitoringViewState extends State<MonitoringView> {
   late GoogleMapController _controller;
   late LatLng _deviceLocation;
   final Set<Marker> _markers = {};
   late Map<String, dynamic> _sensorData;
+  late List<String> mqttTopics;
 
   @override
   void initState() {
@@ -34,15 +34,23 @@ class _MonitoringViewState extends State<MonitoringView> {
     _sensorData = {};
     _loadThresholds();
 
-    widget.mqttClient.onDataReceived = _onDataReceived;
-    widget.mqttClient.subscribeToMultipleTopics([
+    mqttTopics = [
       'test-ugv/sensor_data',
-      '${widget.device.name}/gps',
-      '${widget.device.name}/sensor_data',
-      '${widget.device.name}/connectivity',
-      '${widget.device.name}/battery',
-    ]);
+      'cloud/reg/${widget.device.broker}/${widget.device.name}/gps',
+      'cloud/reg/${widget.device.broker}/${widget.device.name}/sensor-data',
+      'cloud/reg/${widget.device.broker}/${widget.device.name}/connectivity',
+      'cloud/reg/${widget.device.broker}/${widget.device.name}/battery',
+    ];
+
+    widget.mqttClient.onDataReceived = _onDataReceived;
+    widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
     widget.mqttClient.setupMessageListener();
+  }
+
+  @override
+  void dispose() {
+    widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
+    super.dispose();
   }
 
   Future<void> _loadThresholds() async {
@@ -156,8 +164,13 @@ class _MonitoringViewState extends State<MonitoringView> {
   ];
 
   void _showThresholdDialog(String key) {
-    final TextEditingController lowController = TextEditingController();
-    final TextEditingController highController = TextEditingController();
+    final currentLow = thresholds[key.toLowerCase()]?['low'] ?? '';
+    final currentHigh = thresholds[key.toLowerCase()]?['high'] ?? '';
+
+    final TextEditingController lowController =
+        TextEditingController(text: currentLow.toString());
+    final TextEditingController highController =
+        TextEditingController(text: currentHigh.toString());
 
     showDialog(
       context: context,
@@ -170,14 +183,14 @@ class _MonitoringViewState extends State<MonitoringView> {
               TextField(
                 controller: lowController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Low Threshold',
                 ),
               ),
               TextField(
                 controller: highController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'High Threshold',
                 ),
               ),
@@ -188,7 +201,7 @@ class _MonitoringViewState extends State<MonitoringView> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () async {
@@ -206,7 +219,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                 }
                 Navigator.of(context).pop();
               },
-              child: Text('Save'),
+              child: const Text('Save'),
             ),
           ],
         );
@@ -295,7 +308,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                   rotateGesturesEnabled: true,
                   tiltGesturesEnabled: true,
                   zoomControlsEnabled: true,
-                  zoomGesturesEnabled: true,
+                  zoomGesturesEnabled: true,                 
                   initialCameraPosition: CameraPosition(
                     target: _deviceLocation,
                     zoom: 15.0,
@@ -308,8 +321,8 @@ class _MonitoringViewState extends State<MonitoringView> {
               ),
             ],
           );
-        } else {
-          return ListTile(
+           } else {
+   return ListTile(
             leading: Container(
               width: 48,
               height: 48,
@@ -344,15 +357,5 @@ class _MonitoringViewState extends State<MonitoringView> {
     );
   }
 
-  @override
-  void dispose() {
-    widget.mqttClient.unsubscribeFromMultipleTopics([
-      'test-ugv/sensor_data',
-      '${widget.device.name}/gps',
-      '${widget.device.name}/sensor_data',
-      '${widget.device.name}/connectivity',
-      '${widget.device.name}/battery',
-    ]);
-    super.dispose();
-  }
+
 }

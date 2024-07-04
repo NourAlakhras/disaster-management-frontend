@@ -72,11 +72,19 @@ class CustomTheme {
       iconTheme: const IconThemeData(color: primaryTextColor),
       dialogTheme: DialogTheme(
         titleTextStyle: const TextStyle(
-            color: primaryTextColor, fontSize: 18, fontWeight: FontWeight.bold),
+            color: accentColor, fontSize: 18, fontWeight: FontWeight.bold),
         contentTextStyle: const TextStyle(color: accentColor),
         backgroundColor: secondaryTextColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         // Define other properties like button styles if needed
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: accentColor,
+          textStyle: const TextStyle(
+            color: accentColor,
+          ),
+        ),
       ),
     );
   }

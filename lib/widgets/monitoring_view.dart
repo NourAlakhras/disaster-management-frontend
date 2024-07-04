@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_3/utils/app_colors.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MonitoringView extends StatefulWidget {
   final Device device;
@@ -31,6 +32,7 @@ class _MonitoringViewState extends State<MonitoringView> {
     super.initState();
     _deviceLocation = const LatLng(0.0, 0.0);
     _sensorData = {};
+    _loadThresholds();
 
     widget.mqttClient.onDataReceived = _onDataReceived;
     widget.mqttClient.subscribeToMultipleTopics([
@@ -43,6 +45,17 @@ class _MonitoringViewState extends State<MonitoringView> {
     widget.mqttClient.setupMessageListener();
   }
 
+  Future<void> _loadThresholds() async {
+    final prefs = await SharedPreferences.getInstance();
+    thresholds.forEach((key, value) {
+      final low = prefs.getDouble('${key}_low') ?? value['low'];
+      final high = prefs.getDouble('${key}_high') ?? value['high'];
+      setState(() {
+        thresholds[key] = {'low': low!, 'high': high!};
+      });
+    });
+  }
+
   void _onDataReceived(Map<String, dynamic> data) {
     if (data.containsKey('lat') && data.containsKey('long')) {
       final latitude = data['lat'] ?? 0.0;
@@ -52,11 +65,6 @@ class _MonitoringViewState extends State<MonitoringView> {
         _updateCameraPosition(_deviceLocation);
         _updateMarker(_deviceLocation);
       });
-    // } else if (data.containsKey('wifi')) {
-    //   setState(() {});
-    // } else if (data.containsKey('battery')) {
-    //   final batteryLevel = data['battery'] ?? 0.0;
-    //   setState(() {});
     } else {
       data.forEach((key, value) {
         setState(() {
@@ -146,6 +154,71 @@ class _MonitoringViewState extends State<MonitoringView> {
     'Light',
     'Timestamp',
   ];
+
+  void _showThresholdDialog(String key) {
+    final TextEditingController lowController = TextEditingController();
+    final TextEditingController highController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Set Thresholds for $key'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: lowController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Low Threshold',
+                ),
+              ),
+              TextField(
+                controller: highController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'High Threshold',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final lowThreshold = double.tryParse(lowController.text);
+                final highThreshold = double.tryParse(highController.text);
+                if (lowThreshold != null && highThreshold != null) {
+                  setState(() {
+                    thresholds[key.toLowerCase()] = {
+                      'low': lowThreshold,
+                      'high': highThreshold,
+                    };
+                  });
+                  await _saveThresholds(
+                      key.toLowerCase(), lowThreshold, highThreshold);
+                }
+                Navigator.of(context).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _saveThresholds(String key, double low, double high) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setDouble('${key}_low', low);
+    prefs.setDouble('${key}_high', high);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +337,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                 color: secondaryTextColor,
               ),
             ),
+            onTap: () => _showThresholdDialog(key),
           );
         }
       },

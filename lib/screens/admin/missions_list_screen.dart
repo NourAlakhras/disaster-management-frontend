@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/screens/admin/create_mission_screen.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionsListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -29,7 +31,8 @@ class _MissionsListScreenState extends State<MissionsListScreen>
   final int _pageSize = 5;
   final TextEditingController _searchController = TextEditingController();
   List<MissionStatus>? _filteredstatuses = MissionStatus.values
-      .where((status) => status != MissionStatus.CANCELED)
+      .where((status) =>
+          status != MissionStatus.CANCELED && status != MissionStatus.FINISHED)
       .toList();
   String? _name;
   late TabController _tabController;
@@ -123,12 +126,11 @@ class _MissionsListScreenState extends State<MissionsListScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: "Missions' List",
         leading: IconButton(
           icon: const Icon(Icons.settings),
-          color: Colors.white,
+          color: primaryTextColor,
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
@@ -143,7 +145,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
             onPressed: () {},
           )
         ],
@@ -160,20 +162,32 @@ class _MissionsListScreenState extends State<MissionsListScreen>
             ),
             if (UserCredentials().getUserType() == UserType.ADMIN)
               TabBar(
-                labelColor: Colors.white,
-                unselectedLabelColor: Colors.white60,
+                labelColor: primaryTextColor,
+                unselectedLabelColor: secondaryTextColor,
                 indicator: const BoxDecoration(
-                  color: Color(0xff121417),
                   border: Border(
                     bottom: BorderSide(
-                        color: Colors.white,
-                        width: 5.0), // Customize the underline color and width
+                      color: accentColor,
+                      width: 5.0,
+                    ),
                   ),
                 ),
                 controller: _tabController,
                 tabs: const [
-                  Tab(text: 'All Missions'),
-                  Tab(text: 'My Missions'),
+                  Tab(
+                    child: SizedBox.expand(
+                      child: Center(
+                        child: Text('All Missions'),
+                      ),
+                    ),
+                  ),
+                  Tab(
+                    child: SizedBox.expand(
+                      child: Center(
+                        child: Text('My Missions'),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             Expanded(
@@ -183,7 +197,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                       ? const Center(
                           child: Text(
                             'No missions available',
-                            style: TextStyle(color: Colors.white),
+                            style: TextStyle(color: primaryTextColor),
                           ),
                         )
                       : SingleChildScrollView(
@@ -197,7 +211,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                               Container(
                                 decoration: const BoxDecoration(
                                   border: Border(
-                                    bottom: BorderSide(color: Colors.grey),
+                                    bottom: BorderSide(color: accentColor),
                                   ),
                                 ),
                                 height: 60,
@@ -209,7 +223,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 18,
-                                              color: Colors.white)),
+                                              color: primaryTextColor)),
                                     ),
                                     Expanded(
                                       flex: 3,
@@ -217,7 +231,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 18,
-                                              color: Colors.white)),
+                                              color: primaryTextColor)),
                                     ),
                                     Expanded(
                                       flex: 2,
@@ -244,7 +258,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                     decoration: const BoxDecoration(
                                       border: Border(
                                           bottom: BorderSide(
-                                        color: Color(0xff293038),
+                                        color: barColor,
                                       )),
                                     ),
                                     height: 70,
@@ -255,7 +269,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                           child: Text(mission.name,
                                               style: const TextStyle(
                                                   fontSize: 17,
-                                                  color: Colors.white70)),
+                                                  color: secondaryTextColor)),
                                         ),
                                         Expanded(
                                           flex: 3,
@@ -267,7 +281,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                                   .toLowerCase(),
                                               style: const TextStyle(
                                                   fontSize: 17,
-                                                  color: Colors.white70)),
+                                                  color: secondaryTextColor)),
                                         ),
                                         Expanded(
                                           flex: 2,
@@ -296,42 +310,66 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                   ElevatedButton(
                     onPressed: _hasPrev ? _previousPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0,
                       shape: const CircleBorder(),
                     ),
                     child: const Icon(Icons.arrow_back),
                   ),
-                  UserCredentials().getUserType() == UserType.ADMIN
-                      ? ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
+                  Container(
+                    decoration: UserCredentials().getUserType() ==
+                            UserType.ADMIN
+                        ? BoxDecoration(
+                            // ignore: prefer_const_constructors
+                            gradient: LinearGradient(
+                              // ignore: prefer_const_literals_to_create_immutables
+                              colors: [cardColor, accentColor],
+                            ),
+                            borderRadius:
+                                BorderRadius.circular(50), // Adjust as needed
+                            boxShadow: [
+                              BoxShadow(
+                                color: barColor.withOpacity(0.3),
+                                spreadRadius: 2,
+                                blurRadius: 7,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          )
+                        : const BoxDecoration(), // Empty BoxDecoration for non-admins
+                    child: UserCredentials().getUserType() == UserType.ADMIN
+                        ? ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
                                   builder: (context) =>
-                                      const CreateMissionScreen()),
-                            ).then((_) {
-                              setState(() {
-                                _fetchMissions();
+                                      const CreateMissionScreen(),
+                                ),
+                              ).then((_) {
+                                setState(() {
+                                  _fetchMissions();
+                                });
                               });
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            foregroundColor: Colors.black,
-                            backgroundColor: Colors.white70,
-                            elevation: 0,
-                            shape: const CircleBorder(),
-                            padding: const EdgeInsets.all(20),
-                          ),
-                          child: const Icon(Icons.add),
-                        )
-                      : const SizedBox(),
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors
+                                  .transparent, // Remove default background
+                              padding: const EdgeInsets.all(20),
+                              shape: const CircleBorder(),
+                              elevation:
+                                  0, // No elevation as it's handled by BoxDecoration
+                            ),
+                            child: const Icon(Icons.add,color:primaryTextColor),
+                          )
+                        : const SizedBox(), // Empty SizedBox for non-admins
+                  ),
                   ElevatedButton(
                     onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0,
                       shape: const CircleBorder(),
                     ),
@@ -415,7 +453,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
         case MissionStatus.CREATED:
           return [
             PopupMenuButton<int>(
-              icon: const Icon(Icons.more_vert, color: Colors.white70),
+              icon: const Icon(Icons.more_vert, color: secondaryTextColor),
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 1,
@@ -438,7 +476,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
         case MissionStatus.ONGOING:
           return [
             PopupMenuButton<int>(
-              icon: const Icon(Icons.more_vert, color: Colors.white70),
+              icon: const Icon(Icons.more_vert, color: secondaryTextColor),
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 1,
@@ -461,7 +499,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
         case MissionStatus.PAUSED:
           return [
             PopupMenuButton<int>(
-              icon: const Icon(Icons.more_vert, color: Colors.white70),
+              icon: const Icon(Icons.more_vert, color: secondaryTextColor),
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 1,

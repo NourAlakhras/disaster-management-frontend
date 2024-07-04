@@ -10,17 +10,20 @@ import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/models/mission.dart';
 
 class UserApiService {
-  static const String baseUrl = Constants.baseUrl;
+  static const String webServerBaseUrl = Constants.webServerBaseUrl;
 
   static Future<Map<String, dynamic>> signUp(
       String email, String password, String username) async {
-    final Uri url = Uri.parse('${Constants.baseUrl}/api/users/signup');
+    final Uri url = Uri.parse('${Constants.webServerBaseUrl}/api/users/signup');
     final Map<String, dynamic> requestBody = {
       'email': email,
       'password': password,
       'username': username,
     };
     print(requestBody);
+    print(
+        'signUp loooooooooooooooooooooooooooooooooooooooooooooooooooooooooo ${url}');
+
     try {
       final response = await http.post(
         url,
@@ -52,12 +55,15 @@ class UserApiService {
 
   static Future<Map<String, dynamic>> login(
       String emailOrUsername, String password) async {
-    final Uri url = Uri.parse('${Constants.baseUrl}/api/users/login');
+    print(
+        'login loooooooooooooooooooooooooooooooooooooooooooooooooooooooooo ${Constants.webServerBaseUrl}');
+
+    final Uri url = Uri.parse('${Constants.webServerBaseUrl}/api/users/login');
     final Map<String, dynamic> requestBody = {
       'email_or_username': emailOrUsername,
       'password': password,
     };
-
+    print(url);
     try {
       final response = await http.post(
         url,
@@ -87,6 +93,7 @@ class UserApiService {
         throw Exception('Failed to login');
       }
     } catch (e) {
+      print('Error: $e');
       rethrow;
     }
   }
@@ -97,7 +104,8 @@ class UserApiService {
       String? token = await AuthApiService.getAuthToken();
 
       // Send the logout request with the token in the header
-      final Uri url = Uri.parse('${Constants.baseUrl}/api/users/logout');
+      final Uri url =
+          Uri.parse('${Constants.webServerBaseUrl}/api/users/logout');
       final response = await http.post(
         url,
         headers: <String, String>{
@@ -129,7 +137,7 @@ class UserApiService {
 
   static Future<User> getUserInfo() async {
     String? token = await AuthApiService.getAuthToken();
-    final Uri url = Uri.parse('$baseUrl/api/users/');
+    final Uri url = Uri.parse('$webServerBaseUrl/api/users/');
     final response = await http.get(
       url,
       headers: <String, String>{
@@ -153,7 +161,7 @@ class UserApiService {
   static Future<void> updateUserInfo(
       {required String username, required String email}) async {
     String? token = await AuthApiService.getAuthToken();
-    final Uri url = Uri.parse('$baseUrl/api/users');
+    final Uri url = Uri.parse('$webServerBaseUrl/api/users');
     final Map<String, String> body = {
       'username': username,
       'email': email,
@@ -189,7 +197,7 @@ class UserApiService {
     required String newPassword,
   }) async {
     String? token = await AuthApiService.getAuthToken();
-    final Uri url = Uri.parse('$baseUrl/api/users/password');
+    final Uri url = Uri.parse('$webServerBaseUrl/api/users/password');
     final Map<String, String> body = {
       'old_password': oldPassword,
       'new_password': newPassword,
@@ -260,8 +268,8 @@ class UserApiService {
 // Join query parameters with '&' to form the final query string
     final String queryStringJoined = queryString.join('&');
 
-    final Uri url =
-        Uri.parse('$baseUrl/api/users/cur_missions?$queryStringJoined');
+    final Uri url = Uri.parse(
+        '$webServerBaseUrl/api/users/cur_missions?$queryStringJoined');
 
 // Print out the generated URL
     print('URL: $url');
@@ -307,10 +315,10 @@ class UserApiService {
   }
 
   // _________________________________________________________
-static Future<int> getCurrentMissionsCount({
+  static Future<int> getCurrentMissionsCount({
     List<MissionStatus>? statuses,
   }) async {
-    final String baseUrl = Constants.baseUrl;
+    final String webServerBaseUrl = Constants.webServerBaseUrl;
 
     // Convert enums to their corresponding integer values
     final List<int>? _missionStatusValues =
@@ -332,8 +340,8 @@ static Future<int> getCurrentMissionsCount({
     // Join query parameters with '&' to form the final query string
     final String queryStringJoined = queryString.join('&');
 
-    final Uri url =
-        Uri.parse('$baseUrl/api/users/cur_missions?$queryStringJoined');
+    final Uri url = Uri.parse(
+        '$webServerBaseUrl/api/users/cur_missions?$queryStringJoined');
 
     // Print out the generated URL
     print('URL: $url');
@@ -376,5 +384,4 @@ static Future<int> getCurrentMissionsCount({
       throw Exception('Failed to get missions count: $e');
     }
   }
-
 }

@@ -22,7 +22,7 @@ class AdminApiService {
 
       print('types from getAllUsers: $types');
 
-      const String baseUrl = Constants.baseUrl;
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
 
       // Convert enums to their corresponding integer values
 
@@ -80,7 +80,7 @@ class AdminApiService {
 // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
 
-      final Uri url = Uri.parse('$baseUrl/api/users/all?$queryStringJoined');
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users/all?$queryStringJoined');
 
 // Print out the generated URL
       print('URL: $url');
@@ -136,8 +136,8 @@ class AdminApiService {
       int type = isAdmin ? 2 : 1;
       print(type);
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/users/$userId/approval');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users/$userId/approval');
 
       final response = await http.put(
         url,
@@ -179,8 +179,8 @@ class AdminApiService {
   static Future<void> rejectUser(String userId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/users/$userId/approval');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users/$userId/approval');
 
       final response = await http.put(
         url,
@@ -219,8 +219,8 @@ class AdminApiService {
   static Future<void> deleteUser(String userId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/users/$userId');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users/$userId');
 
       final response = await http.delete(
         url,
@@ -256,8 +256,8 @@ class AdminApiService {
   static Future<User> getUserDetails(String userId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/users/$userId');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users/$userId');
 
       final response = await http.get(
         url,
@@ -295,8 +295,8 @@ class AdminApiService {
   static Future<int> getUserCount({List<int>? status, List<int>? type}) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/users/count');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users/count');
 
       // Construct query parameters based on provided filters
       Map<String, dynamic> queryParameters = {};
@@ -345,8 +345,8 @@ class AdminApiService {
       {List<int>? status, List<int>? type}) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/devices/count');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/devices/count');
 
       // Construct query parameters based on provided filters
       Map<String, dynamic> queryParameters = {};
@@ -394,8 +394,8 @@ class AdminApiService {
   static Future<int> getMissionCount({List<int>? status}) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/missions/count');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/missions/count');
 
       // Construct query parameters based on provided filters
       Map<String, dynamic> queryParameters = {};
@@ -440,8 +440,8 @@ class AdminApiService {
     String? email,
     UserType? type,
   }) async {
-    const String baseUrl = Constants.baseUrl;
-    final Uri url = Uri.parse('$baseUrl/api/users/$user_id');
+    const String webServerBaseUrl = Constants.webServerBaseUrl;
+    final Uri url = Uri.parse('$webServerBaseUrl/api/users/$user_id');
 
     final Map<String, dynamic> requestBody = {};
 

@@ -12,6 +12,7 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/screens/user/device_detailed_screen.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionProfileScreen extends StatefulWidget {
   final Mission mission;
@@ -43,12 +44,11 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(144, 41, 48, 56),
       appBar: CustomUpperBar(
         title: 'Mission Profile',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: const Color.fromARGB(255, 255, 255, 255),
+          color: primaryTextColor,
           onPressed: () {
             Navigator.pop(context);
           },
@@ -56,11 +56,10 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
             onPressed: () {},
           )
         ],
-        backgroundColor: const Color.fromARGB(144, 41, 48, 56),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -83,13 +82,13 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 255, 255, 255),
+                            color: primaryTextColor,
                           ),
                         ),
                         Text(
                           '${widget.mission.startDate}',
                           style: const TextStyle(
-                            color: Colors.white70,
+                            color: secondaryTextColor,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -103,13 +102,13 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 255, 255, 255),
+                                color: primaryTextColor,
                               ),
                             ),
                             Text(
                               '${widget.mission.endDate}',
                               style: const TextStyle(
-                                color: Colors.white70,
+                                color: secondaryTextColor,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -126,7 +125,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 255, 255, 255),
+                              color: primaryTextColor,
                             ),
                           ),
                           Text(
@@ -136,7 +135,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                                 .last
                                 .toLowerCase(),
                             style: const TextStyle(
-                              color: Colors.white70,
+                              color: secondaryTextColor,
                             ),
                           ),
                         ],
@@ -190,7 +189,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         _selectedUsers.isEmpty
@@ -198,7 +197,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                 'No users assigned',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white70,
+                  color: secondaryTextColor,
                 ),
               )
             : Column(
@@ -206,7 +205,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                   return ListTile(
                     title: Text(
                       user.username,
-                      style: const TextStyle(color: Colors.white70),
+                      style: const TextStyle(color: secondaryTextColor),
                     ),
                   );
                 }).toList(),
@@ -224,7 +223,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         _selectedDevices.isEmpty
@@ -232,7 +231,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                 'No devices assigned',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white70,
+                  color: secondaryTextColor,
                 ),
               )
             : Column(
@@ -240,11 +239,11 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                   return ListTile(
                     title: Text(
                       device.name,
-                      style: const TextStyle(color: Colors.white70),
+                      style: const TextStyle(color: secondaryTextColor),
                     ),
                     subtitle: Text(
                       device.type.toString().split('.').last.toLowerCase(),
-                      style: const TextStyle(color: Colors.white70),
+                      style: const TextStyle(color: secondaryTextColor),
                     ),
                     trailing: (widget.mission.status == MissionStatus.ONGOING)
                         ? ElevatedButton(
@@ -282,7 +281,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         _selectedBroker == null
@@ -290,13 +289,13 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                 'No broker assigned',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white70,
+                  color: secondaryTextColor,
                 ),
               )
             : ListTile(
                 title: Text(
                   _selectedBroker!.name,
-                  style: const TextStyle(color: Colors.white70),
+                  style: const TextStyle(color: secondaryTextColor),
                 ),
                 trailing: (widget.mission.status == MissionStatus.ONGOING)
                     ? ElevatedButton(
@@ -334,7 +333,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 255, 255, 255),
+                color: primaryTextColor,
               ),
             ),
             IconButton(
@@ -364,7 +363,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
             return ListTile(
               title: Text(
                 user.username, // Assuming User class has a 'name' property
-                style: const TextStyle(color: Colors.white70),
+                style: const TextStyle(color: secondaryTextColor),
               ),
             );
           }).toList(),
@@ -384,7 +383,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 255, 255, 255),
+                color: primaryTextColor,
               ),
             ),
             IconButton(
@@ -393,7 +392,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Please select a broker first.'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: errorColor,
                     ),
                   );
                   return;
@@ -423,7 +422,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
             return ListTile(
               title: Text(
                 device.name,
-                style: const TextStyle(color: Colors.white70),
+                style: const TextStyle(color: secondaryTextColor),
               ),
             );
           }).toList(),
@@ -443,7 +442,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 255, 255, 255),
+                color: primaryTextColor,
               ),
             ),
             IconButton(
@@ -453,7 +452,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                     const SnackBar(
                       content: Text(
                           'You are not able to change the broker of a started mission.'),
-                      backgroundColor: Colors.red,
+                      backgroundColor: errorColor,
                     ),
                   );
                   return;
@@ -478,7 +477,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                         const SnackBar(
                           content:
                               Text('Broker changed, device selection cleared.'),
-                          backgroundColor: Colors.orange,
+                          backgroundColor: warningColor,
                         ),
                       );
                     }
@@ -495,7 +494,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
             ? ListTile(
                 title: Text(
                   _selectedBroker!.name,
-                  style: const TextStyle(color: Colors.white70),
+                  style: const TextStyle(color: secondaryTextColor),
                 ),
               )
             : Container(),
@@ -515,7 +514,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         Expanded(
@@ -523,13 +522,13 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
               ? TextFormField(
                   controller: controller,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: secondaryTextColor,
                   ),
                 )
               : Text(
                   controller.text,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: secondaryTextColor,
                   ),
                 ),
         ),
@@ -733,7 +732,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         const SnackBar(
 //           content: Text('Mission created successfully'),
-//           backgroundColor: Colors.green,
+//           backgroundColor: successColor,
 //         ),
 //       );
 
@@ -742,7 +741,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
 //       ScaffoldMessenger.of(context).showSnackBar(
 //         SnackBar(
 //           content: Text('Failed to create mission: $e'),
-//           backgroundColor: Colors.red,
+//           backgroundColor: errorColor,
 //         ),
 //       );
 //     } finally {
@@ -816,7 +815,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Mission updated successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: successColor,
           ),
         );
       } else {
@@ -824,7 +823,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('No changes to update'),
-            backgroundColor: Colors.orange,
+            backgroundColor: warningColor,
           ),
         );
       }
@@ -833,7 +832,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update mission: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     } finally {

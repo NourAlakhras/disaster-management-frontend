@@ -9,6 +9,23 @@ final userTypeValues = {
   UserType.REGULAR: 1,
   UserType.ADMIN: 2,
 };
+// Define the UserStatus enum with specific numbers assigned to each enum value
+enum UserStatus {
+  PENDING,
+  AVAILABLE,
+  ASSIGNED,
+  REJECTED,
+  INACTIVE,
+}
+
+// Map each enum value to its corresponding number
+final userStatusValues = {
+  UserStatus.PENDING: 1,
+  UserStatus.AVAILABLE: 2,
+  UserStatus.ASSIGNED: 3,
+  UserStatus.REJECTED: 4,
+  UserStatus.INACTIVE: 5,
+};
 
 // Define the DeviceType enum with specific numbers assigned to each enum value
 enum DeviceType {
@@ -42,23 +59,7 @@ final deviceStatusValues = {
   DeviceStatus.INACTIVE: 3,
 };
 
-// Define the UserStatus enum with specific numbers assigned to each enum value
-enum UserStatus {
-  PENDING,
-  AVAILABLE,
-  ASSIGNED,
-  REJECTED,
-  INACTIVE,
-}
 
-// Map each enum value to its corresponding number
-final userStatusValues = {
-  UserStatus.PENDING: 1,
-  UserStatus.AVAILABLE: 2,
-  UserStatus.ASSIGNED: 3,
-  UserStatus.REJECTED: 4,
-  UserStatus.INACTIVE: 5,
-};
 
 // Define the MissionStatus enum with specific numbers assigned to each enum value
 enum MissionStatus {

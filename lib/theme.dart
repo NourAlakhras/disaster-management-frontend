@@ -1,51 +1,85 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
-// Define your colors
-const Color primaryColor = Color(0xff06141b);
-const Color secondaryColor = Color(0xff11212d);
-const Color accentColor = Color(0xff253745);
-const Color lightColor = Color(0xff11212d);
-const Color darkColor = Color(0xff11212d);
-
-final ThemeData myTheme = ThemeData(
-  // Define primary color
-  primaryColor: primaryColor,
-
-  // Define secondary color
-
-  // Define scaffold background color
-  scaffoldBackgroundColor: lightColor,
-
-  // Define text theme
-  textTheme: const TextTheme(
-    // Define headline1 color
-    displayLarge: TextStyle(color: darkColor),
-
-    // Define headline2 color
-    displayMedium: TextStyle(color: darkColor),
-
-    // Define headline3 color
-    displaySmall: TextStyle(color: darkColor),
-
-    // Define headline4 color
-    headlineMedium: TextStyle(color: darkColor),
-
-    // Define headline5 color
-    headlineSmall: TextStyle(color: darkColor),
-
-    // Define headline6 color
-    titleLarge: TextStyle(color: darkColor),
-
-    // Define bodyText1 color
-    bodyLarge: TextStyle(color: darkColor),
-
-    // Define bodyText2 color
-    bodyMedium: TextStyle(color: darkColor),
-
-    // Define subtitle1 color
-    titleMedium: TextStyle(color: darkColor),
-
-    // Define subtitle2 color
-    titleSmall: TextStyle(color: darkColor),
-  ),
-);
+class CustomTheme {
+  static ThemeData get darkTheme {
+    return ThemeData(
+      errorColor:errorColor,
+      toggleableActiveColor:accentColor,
+      hoverColor:accentColor,
+      disabledColor: secondaryTextColor,
+      highlightColor:accentColor,
+      dialogBackgroundColor: secondaryTextColor,
+      hintColor: accentColor,
+      primaryColor: accentColor,
+      scaffoldBackgroundColor: backgroundColor,
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: accentColor,
+        selectionColor: accentColor,
+        selectionHandleColor: accentColor,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: secondaryTextColor,
+          foregroundColor: accentColor,
+          textStyle: const TextStyle(
+            color: accentColor,
+          ),
+        ),
+      ),
+      dividerColor: accentColor,
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: accentColor, // Color of CircularProgressIndicator
+      ),
+      buttonTheme: const ButtonThemeData(
+        buttonColor: accentColor, // Default button color
+        textTheme: ButtonTextTheme.primary,
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        floatingLabelStyle:TextStyle(color: accentColor),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: accentColor),
+        ),
+        // labelStyle: TextStyle(color: accentColor), // Label color when focused
+      ),
+      // Checkbox theme
+      checkboxTheme: CheckboxThemeData(
+        fillColor: MaterialStateColor.resolveWith(
+          (Set<MaterialState> states) {
+            if (states.contains(MaterialState.selected)) {
+              return accentColor; // Selected checkbox color
+            }
+            return Colors.transparent; // Default fill color
+          },
+        ),
+        checkColor: MaterialStateColor.resolveWith(
+          (Set<MaterialState> states) {
+            return accentColor; // Color of the checkmark icon
+          },
+        ),
+      ),
+      // Radio button theme
+      radioTheme: RadioThemeData(
+        fillColor: MaterialStateColor.resolveWith(
+          (Set<MaterialState> states) {
+            if (states.contains(MaterialState.selected)) {
+              return accentColor; // Selected radio button color
+            }
+            return Colors.transparent; // Default fill color
+          },
+        ),
+      ),
+      // Dropdown theme (dropdown arrow color)
+      iconTheme: const IconThemeData(color: primaryTextColor),
+      dialogTheme: DialogTheme(
+        titleTextStyle: const TextStyle(
+            color: primaryTextColor, fontSize: 18, fontWeight: FontWeight.bold),
+        contentTextStyle: const TextStyle(color: accentColor),
+        backgroundColor: secondaryTextColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        // Define other properties like button styles if needed
+      ),
+    );
+  }
+}

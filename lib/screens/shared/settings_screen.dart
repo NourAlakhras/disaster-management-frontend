@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/services/user_api_service.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -18,6 +19,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final TextEditingController _userEmailController = TextEditingController();
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  bool isEmailValid = true;
+  bool isUsernameValid = true;
+  bool isPasswordValid = true;
+  bool isConfirmPasswordValid = true;
   bool _isEditing = false;
   bool _isLoading = false;
 
@@ -58,32 +66,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String label,
     required TextEditingController controller,
     required bool isEditing,
+    required Function(String) onChanged,
+    required String? errorText,
   }) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$label: ',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+        Row(
+          children: [
+            Text(
+              '$label: ',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: primaryTextColor,
+              ),
+            ),
+            Expanded(
+              child: isEditing
+                  ? TextFormField(
+                      controller: controller,
+                      style: const TextStyle(
+                        color: secondaryTextColor,
+                      ),
+                      onChanged: onChanged,
+                      decoration: InputDecoration(
+                        errorText: errorText,
+                        errorStyle: const TextStyle(color: errorColor),
+                      ),
+                    )
+                  : Text(
+                      controller.text,
+                      style: const TextStyle(
+                        color: secondaryTextColor,
+                      ),
+                    ),
+            ),
+          ],
+        ),
+        if (errorText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Text(
+              errorText!,
+              style: const TextStyle(color: errorColor),
+            ),
           ),
-        ),
-        Expanded(
-          child: isEditing
-              ? TextFormField(
-                  controller: controller,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                  ),
-                )
-              : Text(
-                  controller.text,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                  ),
-                ),
-        ),
       ],
     );
   }
@@ -91,35 +119,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        backgroundColor: const Color(0xff121417),
-        appBar: CustomUpperBar(
-          title: 'Settings',
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            color: const Color.fromARGB(255, 255, 255, 255),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.notifications),
-              color: const Color.fromARGB(255, 255, 255, 255),
-              onPressed: () {},
-            )
-          ],
+      appBar: CustomUpperBar(
+        title: 'Settings',
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          color: primaryTextColor,
+          onPressed: () {
+            Navigator.pop(context);
+          },
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            :Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            color: primaryTextColor,
+            onPressed: () {},
+          )
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     'Account Settings',
                     style: TextStyle(
-                      color: Colors.white54, // lighter text color
+                      color: secondaryTextColor,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -129,12 +156,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     label: 'Username',
                     controller: _userNameController,
                     isEditing: _isEditing,
+                    onChanged: (value) {
+                      setState(() {
+                        isUsernameValid = _validateUsername(value);
+                      });
+                    },
+                    errorText: isUsernameValid ? null : 'Invalid username',
                   ),
                   const SizedBox(height: 8),
                   _buildEditableField(
                     label: 'Email',
                     controller: _userEmailController,
                     isEditing: _isEditing,
+                    onChanged: (value) {
+                      setState(() {
+                        isEmailValid = _validateEmail(value);
+                      });
+                    },
+                    errorText: isEmailValid ? null : 'Invalid email',
                   ),
                   _buildEditButton(),
                   _buildChangePasswordButton(),
@@ -142,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Text(
                     'Log Out',
                     style: TextStyle(
-                      color: Colors.white54,
+                      color: secondaryTextColor,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -151,14 +190,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ListTile(
                     title: const Text(
                       'Log Out',
-                      style: TextStyle(
-                          color: Colors.white), // Set title color to white
+                      style: TextStyle(color: primaryTextColor),
                     ),
-                    leading: const Icon(Icons.logout, color: Colors.white54),
+                    leading:
+                        const Icon(Icons.logout, color: secondaryTextColor),
                     onTap: () => _logout(context),
                   ),
                 ],
-              )));
+              ),
+            ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _userEmailController.dispose();
+    _userNameController.dispose();
+    _newPasswordController.dispose();
+    _oldPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
   }
 
   Widget _buildEditButton() {
@@ -167,7 +218,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: ElevatedButton(
         onPressed: () {
           if (_isEditing) {
-            _saveChanges();
+            if (_validateForm()) {
+              _saveChanges();
+            }
           }
           setState(() {
             _isEditing = !_isEditing;
@@ -187,23 +240,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final String username = _userNameController.text;
       final String email = _userEmailController.text;
 
-      // Call updateuser API
       await UserApiService.updateUserInfo(username: username, email: email);
       await _fetchUserSettingsDetails();
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('user updated successfully'),
-          backgroundColor: Colors.green,
+          content: Text('User updated successfully'),
+          backgroundColor: successColor,
         ),
       );
     } catch (e) {
-      // Show error message if update fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update user: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     } finally {
@@ -225,7 +275,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Change Password'),
+          title: const Text('Change Password', style:TextStyle(color: accentColor)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -238,18 +288,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 controller: _newPasswordController,
                 decoration: const InputDecoration(labelText: 'New Password'),
                 obscureText: true,
+                onChanged: (value) {
+                  setState(() {
+                    isPasswordValid = _validatePassword(value);
+                  });
+                },
               ),
+              if (!isPasswordValid)
+                const Text(
+                  'Invalid password',
+                  style: TextStyle(color: errorColor),
+                ),
+              TextField(
+                controller: _confirmPasswordController,
+                decoration:
+                    const InputDecoration(labelText: 'Confirm Password'),
+                obscureText: true,
+                onChanged: (value) {
+                  setState(() {
+                    isConfirmPasswordValid = _validateConfirmPassword(
+                        _newPasswordController.text, value);
+                  });
+                },
+              ),
+              if (!isConfirmPasswordValid)
+                const Text(
+                  'Passwords do not match',
+                  style: TextStyle(color: errorColor),
+                ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('Cancel', style:TextStyle(color: accentColor)),
             ),
             ElevatedButton(
               onPressed: () {
-                _changePassword();
-                Navigator.of(context).pop();
+                if (isPasswordValid && isConfirmPasswordValid) {
+                  _changePassword();
+                  Navigator.of(context).pop();
+                }
               },
               child: const Text('Change'),
             ),
@@ -262,21 +341,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _changePassword() async {
     String oldPassword = _oldPasswordController.text;
     String newPassword = _newPasswordController.text;
-
-    if (oldPassword.isEmpty || newPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter both passwords'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
       await UserApiService.updatePassword(
         oldPassword: oldPassword,
@@ -285,22 +349,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Password changed successfully'),
-          backgroundColor: Colors.green,
+          backgroundColor: successColor,
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to change password: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
-    } finally {
+    }
+  }
+
+  bool _validateForm() {
+    bool isValid = true;
+
+    if (!_validateEmail(_userEmailController.text)) {
+      isValid = false;
       setState(() {
-        _isLoading = false;
-        _oldPasswordController.clear();
-        _newPasswordController.clear();
+        isEmailValid = false;
       });
     }
+
+    if (!_validateUsername(_userNameController.text)) {
+      isValid = false;
+      setState(() {
+        isUsernameValid = false;
+      });
+    }
+
+    return isValid;
+  }
+
+  bool _validateEmail(String value) {
+    const emailRegex = r'^[^@\s]+@[^@\s]+\.[^@\s]+$';
+    return RegExp(emailRegex).hasMatch(value);
+  }
+
+  bool _validateUsername(String value) {
+    return value.isNotEmpty;
+  }
+
+  bool _validatePassword(String value) {
+    // Add your password validation logic here
+    return value.length >= 6;
+  }
+
+  bool _validateConfirmPassword(String password, String confirmPassword) {
+    return password == confirmPassword;
   }
 }

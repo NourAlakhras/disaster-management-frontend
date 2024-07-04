@@ -6,6 +6,7 @@ import 'package:flutter_3/widgets/custom_text_field.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_3/services/user_api_service.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -29,6 +30,8 @@ class _SignupScreenState extends State<SignupScreen> {
   bool isUsernameValid = true;
   bool isPasswordValid = true;
   bool isConfirmPasswordValid = true;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
@@ -99,11 +102,16 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   bool _validateUsername(String value) {
-    return value.isNotEmpty && value.length >= 2;
+    return value.isNotEmpty && value.length >= 3 && value.length <= 20;
   }
 
   bool _validatePassword(String value) {
-    return value.isNotEmpty && value.length >= 8;
+    return value.isNotEmpty &&
+        value.length >= 8 &&
+        RegExp(r'[A-Z]').hasMatch(value) && // Uppercase letter
+        RegExp(r'[a-z]').hasMatch(value) && // Lowercase letter
+        RegExp(r'[0-9]').hasMatch(value) && // Digit
+        RegExp(r'[!@#\$&*~]').hasMatch(value); // Special character
   }
 
   bool _validateConfirmPassword(String password, String confirmPassword) {
@@ -113,12 +121,11 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: 'Sign Up',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: const Color.fromARGB(255, 255, 255, 255),
+          color: primaryTextColor,
           onPressed: () {
             Navigator.pushNamed(context, '/');
           },
@@ -139,7 +146,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     alignment: Alignment.topCenter,
                     child: Text(
                       "Create your account",
-                      style: TextStyle(fontSize: 24.0, color: Colors.white),
+                      style: TextStyle(fontSize: 24.0, color: primaryTextColor),
                     ),
                   ),
                   const Gap(40),
@@ -171,7 +178,19 @@ class _SignupScreenState extends State<SignupScreen> {
                     hintText: "Password",
                     prefixIcon: Icons.lock,
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: !_isPasswordVisible,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
                     onChanged: (value) {
                       setState(() {
                         isPasswordValid = _validatePassword(value);
@@ -184,7 +203,20 @@ class _SignupScreenState extends State<SignupScreen> {
                     hintText: "Confirm Password",
                     prefixIcon: Icons.lock,
                     controller: _confirmPasswordController,
-                    obscureText: true,
+                    obscureText: !_isConfirmPasswordVisible,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isConfirmPasswordVisible
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
+                        });
+                      },
+                    ),
                     onChanged: (value) {
                       setState(() {
                         isConfirmPasswordValid =
@@ -202,12 +234,12 @@ class _SignupScreenState extends State<SignupScreen> {
                       children: [
                         TextSpan(
                           text: "By continuing, you agree to the ",
-                          style: TextStyle(color: Colors.white54),
+                          style: TextStyle(color: secondaryTextColor),
                         ),
                         TextSpan(
                           text: "Terms of Use",
                           style: TextStyle(
-                            color: Colors.white,
+                            color: primaryTextColor,
                             decoration: TextDecoration.underline,
                           ),
                         ),
@@ -230,14 +262,14 @@ class _SignupScreenState extends State<SignupScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     const Text("Already have an account?",
-                        style: TextStyle(color: Colors.white54)),
+                        style: TextStyle(color: secondaryTextColor)),
                     TextButton(
                         onPressed: () {
                           Navigator.pushNamed(context, '/login');
                         },
                         child: const Text(
                           "Login",
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: primaryTextColor),
                         ))
                   ],
                 ),

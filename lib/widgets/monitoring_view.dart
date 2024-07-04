@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-// import 'package:flutter_map/flutter_map.dart';
-// import 'package:latlong2/latlong.dart';
+import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class MonitoringView extends StatefulWidget {
-  final String deviceId;
+  final Device device;
   final MQTTClientWrapper mqttClient;
 
   const MonitoringView({
     super.key,
-    required this.deviceId,
+    required this.device,
     required this.mqttClient,
   });
 
@@ -35,10 +35,10 @@ class _MonitoringViewState extends State<MonitoringView> {
     widget.mqttClient.onDataReceived = _onDataReceived;
     widget.mqttClient.subscribeToMultipleTopics([
       'test-ugv/sensor_data',
-      '${widget.deviceId}/gps',//cloud/reg/<broker_name>/<device_name>/gps:
-      '${widget.deviceId}/sensor_data',//cloud/reg/<broker_name>/<device_name>/sensor-data:
-      '${widget.deviceId}/connectivity',
-      '${widget.deviceId}/battery',
+      '${widget.device.name}/gps', //cloud/reg/<broker_name>/<device_name>/gps:
+      '${widget.device.name}/sensor_data', //cloud/reg/<broker_name>/<device_name>/sensor-data:
+      '${widget.device.name}/connectivity',
+      '${widget.device.name}/battery',
     ]);
     widget.mqttClient.setupMessageListener();
   }
@@ -56,12 +56,10 @@ class _MonitoringViewState extends State<MonitoringView> {
         _updateMarker(_deviceLocation);
       });
     } else if (data.containsKey('wifi')) {
-      setState(() {
-      });
+      setState(() {});
     } else if (data.containsKey('battery')) {
       final batteryLevel = data['battery'] ?? 0.0;
-      setState(() {
-      });
+      setState(() {});
     } else {
       // Handle other sensor data here
       data.forEach((key, value) {
@@ -74,7 +72,7 @@ class _MonitoringViewState extends State<MonitoringView> {
 
   void _updateCameraPosition(LatLng target) {
     _controller.animateCamera(CameraUpdate.newLatLng(target));
-    }
+  }
 
   void _updateMarker(LatLng location) {
     _markers.clear();
@@ -137,13 +135,13 @@ class _MonitoringViewState extends State<MonitoringView> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: const Color(0xff293038),
+                    color: barColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Center(
                     child: Icon(
                       icon,
-                      color: Colors.white,
+                      color: primaryTextColor,
                     ),
                   ),
                 ),
@@ -151,7 +149,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                   key,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: primaryTextColor,
                   ),
                 ),
               ),
@@ -174,12 +172,11 @@ class _MonitoringViewState extends State<MonitoringView> {
                         () => HorizontalDragGestureRecognizer()))
                     ..add(Factory<LongPressGestureRecognizer>(
                         () => LongPressGestureRecognizer())),
-                    
+
                   compassEnabled: true,
                   buildingsEnabled: true,
-                  indoorViewEnabled: true, 
-                  myLocationButtonEnabled:
-                      true, 
+                  indoorViewEnabled: true,
+                  myLocationButtonEnabled: true,
                   rotateGesturesEnabled: true, // Respond to rotate gestures
                   tiltGesturesEnabled: true, // Respond to tilt gestures
                   zoomControlsEnabled: true, // Show zoom controls
@@ -204,13 +201,13 @@ class _MonitoringViewState extends State<MonitoringView> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: const Color(0xff293038),
+                color: barColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
                 child: Icon(
                   icon,
-                  color: Colors.white,
+                  color: primaryTextColor,
                 ),
               ),
             ),
@@ -218,13 +215,13 @@ class _MonitoringViewState extends State<MonitoringView> {
               key,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: primaryTextColor,
               ),
             ),
             subtitle: Text(
               value.toString(),
               style: const TextStyle(
-                color: Colors.white70,
+                color: secondaryTextColor,
               ),
             ),
           );
@@ -237,10 +234,10 @@ class _MonitoringViewState extends State<MonitoringView> {
   void dispose() {
     widget.mqttClient.unsubscribeFromMultipleTopics([
       'test-ugv/sensor_data',
-      '${widget.deviceId}/gps',
-      '${widget.deviceId}/sensor_data',
-      '${widget.deviceId}/connectivity',
-      '${widget.deviceId}/battery',
+      '${widget.device.name}/gps',
+      '${widget.device.name}/sensor_data',
+      '${widget.device.name}/connectivity',
+      '${widget.device.name}/battery',
     ]);
     super.dispose();
   }

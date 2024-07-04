@@ -10,7 +10,7 @@ import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/screens/admin/devices_list_screen.dart';
 import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
-
+import 'package:flutter_3/utils/app_colors.dart';
 import 'package:flutter_3/models/mission.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -29,9 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Mission> usermissions = [];
   @override
   void initState() {
-      super.initState();
+    super.initState();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -39,32 +38,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final adminItems = [
       const CurvedNavigationBarItem(
-          child: Icon(Icons.dashboard, color: Colors.white),
+          child: Icon(Icons.dashboard, color: primaryTextColor),
           label: 'Dashboard',
-          labelStyle: TextStyle(color: Colors.white)),
+          labelStyle: TextStyle(color: primaryTextColor)),
       const CurvedNavigationBarItem(
-          child: Icon(Icons.account_circle, color: Colors.white),
+          child: Icon(Icons.account_circle, color: primaryTextColor),
           label: 'Users',
-          labelStyle: TextStyle(color: Colors.white)),
+          labelStyle: TextStyle(color: primaryTextColor)),
       const CurvedNavigationBarItem(
-          child: Icon(Icons.access_alarm_outlined, color: Colors.white),
+          child: Icon(Icons.access_alarm_outlined, color: primaryTextColor),
           label: 'Missions',
-          labelStyle: TextStyle(color: Colors.white)),
+          labelStyle: TextStyle(color: primaryTextColor)),
       const CurvedNavigationBarItem(
-          child: Icon(Icons.android, color: Colors.white),
+          child: Icon(Icons.android, color: primaryTextColor),
           label: 'Devices',
-          labelStyle: TextStyle(color: Colors.white)),
+          labelStyle: TextStyle(color: primaryTextColor)),
     ];
 
     final userItems = [
       const CurvedNavigationBarItem(
-          child: Icon(Icons.dashboard, color: Colors.white),
+          child: Icon(Icons.dashboard, color: primaryTextColor),
           label: 'Dashboard',
-          labelStyle: TextStyle(color: Colors.white)),
+          labelStyle: TextStyle(color: primaryTextColor)),
       const CurvedNavigationBarItem(
-          child: Icon(Icons.access_alarm_outlined, color: Colors.white),
+          child: Icon(Icons.access_alarm_outlined, color: primaryTextColor),
           label: 'Missions',
-          labelStyle: TextStyle(color: Colors.white)),
+          labelStyle: TextStyle(color: primaryTextColor)),
     ];
 
     return PopScope(
@@ -74,9 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
           key: _bottomNavigationKey,
           index: 0,
           items: userType == UserType.ADMIN ? adminItems : userItems,
-          color: const Color(0xff293038),
-          buttonBackgroundColor: const Color(0xff293038),
-          backgroundColor: const Color(0xff121417),
+
           animationCurve: Curves.easeInOut,
           animationDuration: const Duration(milliseconds: 600),
           onTap: (index) {
@@ -88,12 +85,20 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           },
           letIndexChange: (index) => true,
+          backgroundColor:
+              Colors.transparent,// Background color of the navigation bar
+          color: barColor, // Color of the icons and text
+          buttonBackgroundColor:
+              barColor, // Background color of the selected item  
+
         ),
         body: PageView(
           controller: _pageController,
           onPageChanged: (index) {
             setState(() {});
           },
+          physics: NeverScrollableScrollPhysics(), // Disable default swipe
+
           children: userType == UserType.ADMIN
               ? [
                   Center(child: DashboardScreen(mqttClient: widget.mqttClient)),

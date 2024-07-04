@@ -23,7 +23,7 @@ class DeviceApiService {
 
       print('types from getAllDevices: $types');
 
-      const String baseUrl = Constants.baseUrl;
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
 
       // Convert enums to their corresponding integer values
       final List<int>? typeValues =
@@ -84,7 +84,7 @@ class DeviceApiService {
       // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
 
-      final Uri url = Uri.parse('$baseUrl/api/devices/all?$queryStringJoined');
+      final Uri url = Uri.parse('$webServerBaseUrl/api/devices/all?$queryStringJoined');
 
       // Print out the generated URL
       print('URL: $url');
@@ -137,8 +137,8 @@ class DeviceApiService {
   static Future<Device> getDeviceDetails(String deviceId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/devices/$deviceId');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
 
       final response = await http.get(
         url,
@@ -174,17 +174,16 @@ class DeviceApiService {
   static Future<void> updateDevice({
     required String deviceId,
     String? name,
-    List<String>? missionIds,
+
     String? oldPassword,
     String? newPassword,
   }) async {
-      const String baseUrl = Constants.baseUrl;
-    final Uri url = Uri.parse('$baseUrl/api/devices/$deviceId');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+    final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
 
     // Dynamically build the request body
     final Map<String, dynamic> requestBody = {};
     if (name != null) requestBody['name'] = name;
-    if (missionIds != null) requestBody['missionIds'] = missionIds;
     if (oldPassword != null) requestBody['old_password'] = oldPassword;
     if (newPassword != null) requestBody['new_password'] = newPassword;
 
@@ -226,11 +225,63 @@ class DeviceApiService {
     }
   }
 
+
+  static Future<void> verifyPassword({
+    required String deviceId,
+    required String password,
+  }) async {
+    const String webServerBaseUrl = Constants.webServerBaseUrl;
+    final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
+
+    // Dynamically build the request body
+    final Map<String, dynamic> requestBody = {};
+    requestBody['old_password'] = password;
+
+
+    print('verifyPassword url $url');
+    print('verifyPassword requestBody $requestBody');
+
+    try {
+      String? token = await AuthApiService.getAuthToken();
+
+      final response = await http.put(
+        url,
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        // Device updated successfully, no need to return anything
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ForbiddenException();
+      } else if (response.statusCode == 404) {
+        throw NotFoundException();
+      } else if (response.statusCode == 409) {
+        throw ConflictException();
+      } else if (response.statusCode == 500) {
+        throw InternalServerErrorException();
+      } else {
+        throw Exception(
+            'Unexpected response from server: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to update device: $e');
+    }
+  }
+
+
   static Future<Device> deleteDevice(String deviceId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/devices/$deviceId');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
 
       final response = await http.delete(
         url,

@@ -10,6 +10,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:math' show Random, atan2, cos, log, pi, sin, sqrt;
+import 'package:flutter_3/utils/app_colors.dart';
 
 class DevicesMapView extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -66,7 +67,7 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       _isLoading = true;
     });
     try {
-       final missionResponse = await MissionApiService.getAllMissions(
+      final missionResponse = await MissionApiService.getAllMissions(
         pageNumber: _pageNumber,
         pageSize: _pageSize,
         statuses: statuses,
@@ -74,7 +75,6 @@ class _DevicesMapViewState extends State<DevicesMapView> {
       );
       setState(() {
         _filteredMissions = missionResponse.items;
-
       });
       print('_filteredMissions $_filteredMissions');
 
@@ -327,7 +327,6 @@ class _DevicesMapViewState extends State<DevicesMapView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       body: Padding(
           padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 00),
           child: Column(
@@ -347,7 +346,7 @@ class _DevicesMapViewState extends State<DevicesMapView> {
                 const Center(
                   child: Text(
                     'No devices available',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: primaryTextColor),
                   ),
                 )
               else

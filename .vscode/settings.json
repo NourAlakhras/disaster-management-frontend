@@ -5,6 +5,7 @@
         "latlong",
         "LTRB",
         "mqtt",
+        "RTMP",
         "vsync"
     ]
 }

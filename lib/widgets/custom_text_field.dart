@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class CustomTextField extends StatelessWidget {
   final String hintText;
@@ -6,7 +7,8 @@ class CustomTextField extends StatelessWidget {
   final TextEditingController? controller;
   final bool? obscureText;
   final String? errorText;
-  final ValueChanged<String>? onChanged; // Define onChanged parameter
+  final ValueChanged<String>? onChanged;
+  final Widget? suffixIcon; // Add a suffixIcon parameter
 
   const CustomTextField({
     required this.hintText,
@@ -14,7 +16,8 @@ class CustomTextField extends StatelessWidget {
     this.controller,
     this.obscureText,
     this.errorText,
-    this.onChanged, // Add onChanged parameter
+    this.onChanged,
+    this.suffixIcon, // Add suffixIcon to the constructor
     super.key,
   });
 
@@ -24,20 +27,21 @@ class CustomTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextField(
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: primaryTextColor),
           controller: controller,
           obscureText: obscureText ?? false,
-          onChanged: onChanged, // Pass onChanged callback to TextField
+          onChanged: onChanged,
           decoration: InputDecoration(
             hintText: hintText,
-            hintStyle: const TextStyle(color: Colors.white70),
+            hintStyle: const TextStyle(color: secondaryTextColor),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
               borderSide: BorderSide.none,
             ),
-            fillColor: const Color(0xff293038),
+            fillColor: cardColor,
             filled: true,
-            prefixIcon: Icon(prefixIcon, color: Colors.white70),
+            prefixIcon: Icon(prefixIcon, color: secondaryTextColor),
+            suffixIcon: suffixIcon, // Add the suffix icon here
           ),
         ),
         if (errorText != null)
@@ -45,7 +49,7 @@ class CustomTextField extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               errorText!,
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(color: errorColor),
             ),
           ),
       ],

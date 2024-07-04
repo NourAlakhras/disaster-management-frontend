@@ -11,6 +11,7 @@ import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
 import 'package:flutter_3/screens/admin/user_profile.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class UsersListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -97,12 +98,11 @@ class _UsersListScreenState extends State<UsersListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: "Users' List",
         leading: IconButton(
             icon: const Icon(Icons.settings),
-            color: Colors.white,
+            color: primaryTextColor,
             onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -112,7 +112,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
             onPressed: () {},
           )
         ],
@@ -133,7 +133,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
               const Center(
                 child: Text(
                   'No users available',
-                  style: TextStyle(color: Colors.white), // White text color
+                  style: TextStyle(color: primaryTextColor), // White text color
                 ),
               )
             else
@@ -150,7 +150,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                       Container(
                         decoration: const BoxDecoration(
                             border: Border(
-                          bottom: BorderSide(color: Colors.grey),
+                          bottom: BorderSide(color: accentColor),
                         )),
                         height: 60,
                         child: const Row(
@@ -161,7 +161,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                      color: Colors.white)),
+                                      color: primaryTextColor)),
                             ),
                             Expanded(
                               flex: 3,
@@ -169,7 +169,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                      color: Colors.white)),
+                                      color: primaryTextColor)),
                             ),
                             Expanded(
                               flex: 3,
@@ -177,7 +177,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                      color: Colors.white)),
+                                      color: primaryTextColor)),
                             ),
                             Expanded(
                               flex: 2,
@@ -203,7 +203,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                             decoration: const BoxDecoration(
                               border: Border(
                                   bottom: BorderSide(
-                                color: Color(0xff293038),
+                                color: barColor,
                               )),
                             ),
                             height: 70,
@@ -215,7 +215,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                     user.username,
                                     style: const TextStyle(
                                       fontSize: 17,
-                                      color: Colors.white70,
+                                      color: secondaryTextColor,
                                     ),
                                   ),
                                 ),
@@ -229,7 +229,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                         .toLowerCase(),
                                     style: const TextStyle(
                                       fontSize: 17,
-                                      color: Colors.white70,
+                                      color: secondaryTextColor,
                                     ),
                                   ),
                                 ),
@@ -243,7 +243,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                         .toLowerCase(),
                                     style: const TextStyle(
                                       fontSize: 17,
-                                      color: Colors.white70,
+                                      color: secondaryTextColor,
                                     ),
                                   ),
                                 ),
@@ -272,8 +272,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   ElevatedButton(
                     onPressed: _hasPrev ? _previousPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0,
                       shape: const CircleBorder(),
                     ),
@@ -282,8 +282,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   ElevatedButton(
                     onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0, // No shadow
                       shape: const CircleBorder(),
                     ),
@@ -400,7 +400,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
     if (user.status == UserStatus.PENDING) {
       return [
         PopupMenuButton<int>(
-          icon: const Icon(Icons.more_vert, color: Colors.white70),
+          icon: const Icon(Icons.more_vert, color: secondaryTextColor),
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 1,
@@ -423,7 +423,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
     } else if (user.status == UserStatus.REJECTED) {
       return [
         PopupMenuButton<int>(
-          icon: const Icon(Icons.more_vert, color: Colors.white70),
+          icon: const Icon(Icons.more_vert, color: secondaryTextColor),
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 1,
@@ -442,7 +442,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
     } else {
       return [
         PopupMenuButton<int>(
-          icon: const Icon(Icons.more_vert, color: Colors.white70),
+          icon: const Icon(Icons.more_vert, color: secondaryTextColor),
           itemBuilder: (context) => [
             const PopupMenuItem(
               value: 1,

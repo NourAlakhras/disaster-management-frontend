@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class CustomSearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -17,11 +18,11 @@ class CustomSearchBar extends StatelessWidget {
     return Container(
       height: 60,
       decoration: BoxDecoration(
-        color: const Color.fromARGB(144, 41, 48, 56),
+        color: cardColor,
         borderRadius: BorderRadius.circular(8.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.white.withOpacity(0.009),
+            color: primaryTextColor.withOpacity(0.009),
             spreadRadius: 2,
             blurRadius: 2,
             offset: const Offset(0, 1),
@@ -36,23 +37,23 @@ class CustomSearchBar extends StatelessWidget {
               onChanged: onChanged,
               decoration: const InputDecoration(
                 labelText: 'Search',
-                prefixIcon: Icon(Icons.search, color: Colors.white),
+                prefixIcon: Icon(Icons.search, color: primaryTextColor),
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
-                hintStyle: TextStyle(color: Colors.white70),
-                labelStyle: TextStyle(color: Colors.white),
+                hintStyle: TextStyle(color: secondaryTextColor),
+                labelStyle: TextStyle(color: primaryTextColor),
               ),
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: primaryTextColor),
             ),
           ),
           if (controller.text.isNotEmpty)
             IconButton(
-              icon: Icon(Icons.clear, color: Colors.white),
+              icon: Icon(Icons.clear, color: primaryTextColor),
               onPressed: onClear,
             ),
           IconButton(
-              icon: const Icon(Icons.filter_list, color: Colors.white),
+              icon: const Icon(Icons.filter_list, color: primaryTextColor),
               onPressed: () {
                 // Open the drawer when filter icon is clicked
                 Scaffold.of(context).openEndDrawer();

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/services/rtmp_client_service.dart';
+import 'package:flutter_3/widgets/controlling_view.dart';
 import 'package:flutter_3/widgets/monitoring_view.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
+import 'dart:async';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class DeviceDetailedScreen extends StatefulWidget {
   final Device device;
@@ -21,35 +25,44 @@ class DeviceDetailedScreen extends StatefulWidget {
 }
 
 class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
-  late VlcPlayerController _videoPlayerController;
+  final RTMPClientService _rtmpClientService = RTMPClientService();
+  late Timer _reconnectTimer;
+  bool _isPlayerInitialized = false;
 
   @override
   void initState() {
     super.initState();
     _initializePlayer();
+    _startReconnectTimer();
   }
 
   Future<void> _initializePlayer() async {
-    _videoPlayerController = VlcPlayerController.network(
-      'rtmp://192.168.68.126/live/test',
-      autoPlay: true,
-      
-      onRendererHandler: (eventType, id, event) {
-        switch (eventType) {
-          case VlcRendererEventType.attached:
-            print('Renderer attached: $event');
-            break;
-          case VlcRendererEventType.detached:
-            print('Renderer detached: $event');
-            break;
-          case VlcRendererEventType.unknown:
-            print('Unknown renderer event: $event');
-            break;
-        }
-      },
+    await _rtmpClientService.initializePlayer(
+      deviceId: widget.device.device_id,
+      deviceName: widget.device.name,
     );
+    setState(() {
+      _isPlayerInitialized = true;
+    });
   }
 
+  void _startReconnectTimer() {
+    _reconnectTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      if (!_rtmpClientService
+          .getController(widget.device.device_id)
+          .value
+          .isInitialized) {
+        _initializePlayer();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _rtmpClientService.disposeController(widget.device.device_id);
+    _reconnectTimer.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,11 +74,10 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
     // Calculate the height based on the aspect ratio
 
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: const Color.fromARGB(255, 255, 255, 255),
+          color: primaryTextColor,
           onPressed: () {
             Navigator.pop(context);
           },
@@ -74,17 +86,31 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
             onPressed: () {},
           )
         ],
       ),
       body: Column(
         children: [
-          VlcPlayer(
-            controller: _videoPlayerController,
-            aspectRatio: aspectRatio,
-            placeholder: const Center(child: CircularProgressIndicator()),
+          Container(
+            width: screenWidth,
+            height: videoHeight,
+            color: secondaryTextColor,
+            child: Center(
+              child: _isPlayerInitialized
+                  ? VlcPlayer(
+                      controller: _rtmpClientService
+                          .getController(widget.device.device_id),
+                      aspectRatio: aspectRatio,
+                      placeholder: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    )
+                  : const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+            ),
           ),
           Expanded(
             child: TabbedView(
@@ -101,13 +127,16 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
                 Container(
                   padding: const EdgeInsets.only(top: 10),
                   child: MonitoringView(
-                    deviceId: widget.device.device_id,
+                    device: widget.device,
                     mqttClient: widget.mqttClient,
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.only(top: 10),
-                  child: const Text('Controlling'),
+                  child: ControllingView(
+                    device: widget.device,
+                    mqttClient: widget.mqttClient,
+                  ),
                 ),
               ],
             ),

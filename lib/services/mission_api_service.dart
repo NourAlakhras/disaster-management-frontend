@@ -14,8 +14,8 @@ class MissionApiService {
     required List<String> userIds,
     required String brokerId,
   }) async {
-    const String baseUrl = Constants.baseUrl;
-    final Uri url = Uri.parse('$baseUrl/api/missions/');
+    const String webServerBaseUrl = Constants.webServerBaseUrl;
+    final Uri url = Uri.parse('$webServerBaseUrl/api/missions/');
 
     final Map<String, dynamic> requestBody = {
       'name': name,
@@ -73,8 +73,8 @@ class MissionApiService {
     List<String>? userIds,
     String? brokerId,
   }) async {
-    const String baseUrl = Constants.baseUrl;
-    final Uri url = Uri.parse('$baseUrl/api/missions/$missionId');
+    const String webServerBaseUrl = Constants.webServerBaseUrl;
+    final Uri url = Uri.parse('$webServerBaseUrl/api/missions/$missionId');
 
     final Map<String, dynamic> requestBody = {};
     if (name != null) requestBody['name'] = name;
@@ -127,7 +127,7 @@ class MissionApiService {
     List<MissionStatus>? statuses,
     String? name,
   }) async {
-    const String baseUrl = Constants.baseUrl;
+    const String webServerBaseUrl = Constants.webServerBaseUrl;
 
     // Convert enums to their corresponding integer values
     final List<int>? _missionStatusValues =
@@ -165,7 +165,7 @@ class MissionApiService {
 // Join query parameters with '&' to form the final query string
     final String queryStringJoined = queryString.join('&');
 
-    final Uri url = Uri.parse('$baseUrl/api/missions/all?$queryStringJoined');
+    final Uri url = Uri.parse('$webServerBaseUrl/api/missions/all?$queryStringJoined');
 
 // Print out the generated URL
     print('URL: $url');
@@ -214,8 +214,8 @@ class MissionApiService {
       String missionId, String command) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/missions/$missionId/$command');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/missions/$missionId/$command');
       print('url $url');
 
       final response = await http.put(
@@ -255,8 +255,8 @@ class MissionApiService {
   static Future<Mission> getMissionDetails(String missionId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
-      const String baseUrl = Constants.baseUrl;
-      final Uri url = Uri.parse('$baseUrl/api/missions/$missionId');
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url = Uri.parse('$webServerBaseUrl/api/missions/$missionId');
 
       final response = await http.get(
         url,

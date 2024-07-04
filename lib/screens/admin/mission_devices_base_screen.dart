@@ -10,6 +10,7 @@ import 'package:flutter_3/widgets/mission_devices_map_tab.dart';
 import 'package:flutter_3/widgets/mission_devices_thumbnails_tab.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionDevicesListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -42,12 +43,11 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: 'Mission: ${widget.mission.name}',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: const Color.fromARGB(255, 255, 255, 255),
+          color: primaryTextColor,
           onPressed: () {
             Navigator.pop(context);
           },
@@ -55,7 +55,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
             onPressed: () {},
           )
         ],
@@ -98,7 +98,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                   else
                     const Center(
                       child: Text('No devices available',
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: primaryTextColor)),
                     ),
                   // Content for Tab 2
                   if (_filteredDevices.isNotEmpty)
@@ -109,7 +109,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                   else
                     const Center(
                       child: Text('No devices available',
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: primaryTextColor)),
                     ),
                   // Content for Tab 3
                   if (_filteredDevices.isNotEmpty)
@@ -120,7 +120,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                   else
                     const Center(
                       child: Text('No devices available',
-                          style: TextStyle(color: Colors.white)),
+                          style: TextStyle(color: primaryTextColor)),
                     ),
                 ],
               ),

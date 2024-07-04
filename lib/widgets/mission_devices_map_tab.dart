@@ -6,6 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:math' show atan2, cos, pi, sin, sqrt, log;
+import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionDevicesMapTab extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -89,10 +90,10 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
 
   // Define a list of colors to use for markers
   final List<Color> _markerColors = [
-    Colors.red,
+    errorColor,
     Colors.blue,
-    Colors.green,
-    Colors.orange,
+    successColor,
+    warningColor,
     Colors.purple,
     // Add more colors as needed
   ];

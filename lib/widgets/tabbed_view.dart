@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class TabbedView extends StatelessWidget {
   const TabbedView({
@@ -6,17 +7,14 @@ class TabbedView extends StatelessWidget {
     required this.length,
     required this.tabs,
     required this.tabContents,
-    this.tabBarColor = Colors.white,
-    this.indicatorColor = Colors.white, // Specify the default indicator color
-    this.iconColor = Colors.white60, // Specify the default icon color
-    this.selectedIconColor =
-        Colors.white, // Specify the default selected icon color
+    this.indicatorColor = accentColor,
+    this.iconColor = secondaryTextColor,
+    this.selectedIconColor = primaryTextColor,
   });
 
   final int length;
   final List<Widget> tabs;
   final List<Widget> tabContents;
-  final Color tabBarColor;
   final Color indicatorColor;
   final Color iconColor;
   final Color selectedIconColor;
@@ -26,30 +24,41 @@ class TabbedView extends StatelessWidget {
     return DefaultTabController(
       length: length,
       child: Scaffold(
-        backgroundColor: const Color(0xff121417),
         appBar: PreferredSize(
           preferredSize: const Size.fromHeight(48),
-          // preferredSize: const Size.fromHeight(74),
           child: AppBar(
             automaticallyImplyLeading: false,
-            backgroundColor: const Color(0xff121417),
+            backgroundColor: Colors.transparent,
             bottom: TabBar(
-              tabs: tabs,
+              tabs: tabs.map((tab) {
+                return Tab(
+                  child: SizedBox.expand(
+                    child: Center(child: tab),
+                  ),
+                );
+              }).toList(),
               labelColor: selectedIconColor,
               unselectedLabelColor: iconColor,
               indicator: BoxDecoration(
-                color: const Color(0xff121417),
+                color: Colors.transparent,
                 border: Border(
                   bottom: BorderSide(
-                      color: indicatorColor,
-                      width: 5.0), // Customize the underline color and width
+                    color: indicatorColor,
+                    width: 5.0,
+                  ),
                 ),
               ),
             ),
           ),
         ),
-        body: TabBarView(
-          children: tabContents, 
+        body: GestureDetector(
+          onPanUpdate: (details) {
+            // Do nothing, thus disabling full-screen swipe
+          },
+          child: TabBarView(
+            physics: NeverScrollableScrollPhysics(), // Disable default swipe
+            children: tabContents,
+          ),
         ),
       ),
     );

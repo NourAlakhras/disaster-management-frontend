@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class FilterDrawerWidget extends StatefulWidget {
   final Function(Map<String, List<dynamic>> selectedCriteria) onFilterApplied;
@@ -33,7 +33,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
   Widget build(BuildContext context) {
     return Drawer(
       child: Container(
-        color: const Color.fromARGB(255, 39, 44, 50),
+        color: cardColor,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
@@ -44,7 +44,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                 title: Text(
                   'Filter Options',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: primaryTextColor,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -63,7 +63,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: primaryTextColor,
                     ),
                   ),
                   children: criterion.options
@@ -72,7 +72,7 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                           title: Text(
                             option.toString().split('.').last.toLowerCase(),
                             style: const TextStyle(
-                              color: Colors.white70,
+                              color: secondaryTextColor,
                               fontSize: 14,
                             ),
                           ),

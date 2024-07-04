@@ -5,6 +5,7 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/selection_widget.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class EditUsersScreen extends StatefulWidget {
   final List<User>? preselectedUsers;
@@ -80,12 +81,11 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: 'Select Users',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: const Color.fromARGB(255, 255, 255, 255),
+          color: primaryTextColor,
           onPressed: () {
             Navigator.pop(context);
           },
@@ -93,7 +93,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.check),
-            color: Colors.white,
+            color: primaryTextColor,
             onPressed: () {
               Navigator.pop<List<User>>(context, _selectedUsers);
             },
@@ -109,7 +109,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
             Container(
               decoration: const BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.grey),
+                  bottom: BorderSide(color: secondaryTextColor),
                 ),
               ),
               height: 60,
@@ -121,7 +121,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Colors.white)),
+                            color: primaryTextColor)),
                   ),
                   Expanded(
                     flex: 3,
@@ -129,7 +129,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Colors.white)),
+                            color: primaryTextColor)),
                   ),
                   Expanded(
                     flex: 3,
@@ -137,7 +137,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Colors.white)),
+                            color: primaryTextColor)),
                   ),
                   Expanded(
                     flex: 2,
@@ -161,7 +161,8 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                         });
                       },
                       itemBuilder: (user, isSelected) =>
-                          _buildUserTile(user, isSelected), singleSelection: false,
+                          _buildUserTile(user, isSelected),
+                      singleSelection: false,
                     ),
             ),
             // Pagination Controls
@@ -173,8 +174,8 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                   ElevatedButton(
                     onPressed: _hasPrev ? _previousPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0,
                       shape: const CircleBorder(),
                     ),
@@ -183,8 +184,8 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                   ElevatedButton(
                     onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0,
                       shape: const CircleBorder(),
                     ),
@@ -203,7 +204,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
     return Container(
       decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Color(0xff293038)),
+          bottom: BorderSide(color: barColor),
         ),
       ),
       height: 70,
@@ -213,21 +214,21 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
             flex: 5,
             child: Text(
               user.username,
-              style: const TextStyle(fontSize: 17, color: Colors.white70),
+              style: const TextStyle(fontSize: 17, color: secondaryTextColor),
             ),
           ),
           Expanded(
             flex: 3,
             child: Text(
               user.type.toString().split('.').last.toLowerCase(),
-              style: const TextStyle(fontSize: 17, color: Colors.white70),
+              style: const TextStyle(fontSize: 17, color: secondaryTextColor),
             ),
           ),
           Expanded(
             flex: 3,
             child: Text(
               user.activeMissionCount.toString(),
-              style: const TextStyle(fontSize: 17, color: Colors.white70),
+              style: const TextStyle(fontSize: 17, color: secondaryTextColor),
             ),
           ),
           Checkbox(

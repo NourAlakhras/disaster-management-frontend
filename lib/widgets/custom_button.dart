@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
-  final Color backgroundColor;
+  final Color ButtonBackgroundColor;
   final Color textColor;
 
   const CustomButton({
     required this.text,
     required this.onPressed,
-    this.backgroundColor = Colors.white70,
-    this.textColor = const Color(0xff293038),
+    this.ButtonBackgroundColor = accentColor,
+    this.textColor = secondaryTextColor,
     super.key,
   });
 
@@ -18,16 +19,39 @@ class CustomButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: MediaQuery.of(context).size.width,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          // shape:  RoundedRectangleBorder( borderRadius: BorderRadius.circular(15),),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          backgroundColor: backgroundColor,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              // ignore: unnecessary_this
+              cardColor,
+              ButtonBackgroundColor,
+            ], // Replace with your gradient colors
+          ),
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.07),
+              spreadRadius: 2,
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: 20, color: textColor),
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors
+                .transparent, // Transparent background to see the gradient
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            elevation: 0, // No shadow
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          ),
+          child: Text(
+            text,
+            style: TextStyle(fontSize: 20, color: textColor),
+          ),
         ),
       ),
     );

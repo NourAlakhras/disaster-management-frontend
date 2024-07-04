@@ -7,6 +7,7 @@ import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/screens/user/device_detailed_screen.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class DeviceProfileScreen extends StatefulWidget {
   final Device device;
@@ -36,12 +37,11 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(144, 41, 48, 56),
       appBar: CustomUpperBar(
         title: 'Device Profile',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: const Color.fromARGB(255, 255, 255, 255),
+          color: primaryTextColor,
           onPressed: () {
             Navigator.pop(context);
           },
@@ -49,11 +49,10 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
             onPressed: () {},
           )
         ],
-        backgroundColor: const Color.fromARGB(144, 41, 48, 56),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -68,6 +67,17 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                     isEditing: _isEditing,
                   ),
                   const SizedBox(height: 8),
+                  if (_isEditing)
+                    Column(
+                      children: [
+                        _buildEditableField(
+                          label: 'New Password',
+                          controller: _newPasswordController,
+                          isEditing: _isEditing,
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                    ),
                   if (widget.device.mac != null)
                     Row(
                       children: [
@@ -76,13 +86,13 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(255, 255, 255, 255),
+                            color: primaryTextColor,
                           ),
                         ),
                         Text(
                           widget.device.mac.toString(),
                           style: const TextStyle(
-                            color: Colors.white70,
+                            color: secondaryTextColor,
                           ),
                         ),
                       ],
@@ -98,7 +108,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 255, 255, 255),
+                              color: primaryTextColor,
                             ),
                           ),
                           Text(
@@ -108,7 +118,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                                 .last
                                 .toLowerCase(),
                             style: const TextStyle(
-                              color: Colors.white70,
+                              color: secondaryTextColor,
                             ),
                           ),
                         ],
@@ -125,7 +135,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 255, 255, 255),
+                          color: primaryTextColor,
                         ),
                       ),
                       Text(
@@ -135,7 +145,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                             .last
                             .toLowerCase(),
                         style: const TextStyle(
-                          color: Colors.white70,
+                          color: secondaryTextColor,
                         ),
                       ),
                     ],
@@ -150,18 +160,18 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Color.fromARGB(255, 255, 255, 255),
+                                color: primaryTextColor,
                               ),
                             ),
                             Text(
                               widget.device.broker!.name,
                               style: const TextStyle(
-                                color: Colors.white70,
+                                color: secondaryTextColor,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   _isEditing
@@ -170,7 +180,6 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                   const SizedBox(height: 20),
                   _buildEditButton(),
                   _buildMonitorButton(),
-                  _buildChangePasswordButton(),
                 ],
               ),
             ),
@@ -191,7 +200,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
 
   Widget _buildNonEditableMissionSelection() {
     if (widget.device.status != DeviceStatus.ASSIGNED) {
-      return const SizedBox(); // Show nothing if the device is not assigned
+      return const SizedBox();
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +210,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         _selectedMissions.isEmpty
@@ -209,7 +218,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                 'No missions assigned',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white70,
+                  color: secondaryTextColor,
                 ),
               )
             : Column(
@@ -217,7 +226,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                   return ListTile(
                     title: Text(
                       mission.name,
-                      style: const TextStyle(color: Colors.white70),
+                      style: const TextStyle(color: secondaryTextColor),
                     ),
                     trailing: (mission.status == MissionStatus.ONGOING)
                         ? ElevatedButton(
@@ -244,6 +253,9 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   }
 
   Widget _buildEditableMissionSelection() {
+    if (widget.device.status != DeviceStatus.ASSIGNED) {
+      return const SizedBox();
+    }
     return Column(
       children: [
         const Text(
@@ -251,7 +263,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         Column(
@@ -259,7 +271,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
             return ListTile(
               title: Text(
                 mission.name,
-                style: const TextStyle(color: Colors.white70),
+                style: const TextStyle(color: secondaryTextColor),
               ),
             );
           }).toList(),
@@ -280,7 +292,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         Expanded(
@@ -288,13 +300,13 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
               ? TextFormField(
                   controller: controller,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: secondaryTextColor,
                   ),
                 )
               : Text(
                   controller.text,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: secondaryTextColor,
                   ),
                 ),
         ),
@@ -307,17 +319,15 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
       if (widget.device.status == DeviceStatus.INACTIVE) {
         return const SizedBox();
       } else {
-        // Otherwise, return the edit button
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 20.0),
           child: ElevatedButton(
             onPressed: () {
               if (_isEditing) {
                 _saveChanges();
+              } else {
+                _showPasswordDialog();
               }
-              setState(() {
-                _isEditing = !_isEditing;
-              });
             },
             child: Text(_isEditing ? 'Save' : 'Edit'),
           ),
@@ -334,7 +344,6 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
         widget.device.mission?.status == MissionStatus.ONGOING) {
       return ElevatedButton(
         onPressed: () {
-          // Navigate to the device monitoring screen
           Navigator.push(
               context,
               MaterialPageRoute(
@@ -378,14 +387,14 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Device deleted successfully'),
-          backgroundColor: Colors.green,
+          backgroundColor: successColor,
         ),
       );
     }).catchError((error) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to delete device: $error'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     });
@@ -397,75 +406,73 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
     });
 
     try {
-      // Extract device details
       final String deviceId = widget.device.device_id;
-      final String deviceName = _deviceNameController.text;
-      final List<String> missionIds =
-          _selectedMissions.map((mission) => mission.id).toList();
+      final String? deviceName =
+          _deviceNameController.text != widget.device.name
+              ? _deviceNameController.text
+              : null;
+      final String? oldPassword = widget.device.password;
+      String? newPassword = _newPasswordController.text.isNotEmpty
+          ? _newPasswordController.text
+          : null;
 
-      print('save missions : $missionIds');
-      // Call updateDevice API
+      // Check if the new password is the same as the old password
+      if (newPassword == null && deviceName == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Nothing has been updated'),
+            backgroundColor: warningColor,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      if (newPassword == oldPassword) {
+        newPassword = null;
+      }
       await DeviceApiService.updateDevice(
         deviceId: deviceId,
         name: deviceName,
-        // missionIds: missionIds,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
       );
       await fetchDeviceDetails();
 
-      // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Device updated successfully'),
-          backgroundColor: Colors.green,
+          backgroundColor: successColor,
         ),
       );
     } catch (e) {
-      // Show error message if update fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update device: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     } finally {
       setState(() {
         _isLoading = false;
+        _isEditing = false; // Exit editing mode after saving
       });
     }
   }
 
-  Widget _buildChangePasswordButton() {
-    if (UserCredentials().getUserType() == UserType.ADMIN) {
-      if (widget.device.status == DeviceStatus.INACTIVE) {
-        return const SizedBox();
-      } else {
-        return ElevatedButton(
-          onPressed: () => _showChangePasswordDialog(),
-          child: const Text('Change Password'),
-        );
-      }
-    } else {
-      return SizedBox();
-    }
-  }
-
-  void _showChangePasswordDialog() {
+  void _showPasswordDialog() {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Change Password'),
+          title: const Text('Enter the Device Password'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: _oldPasswordController,
-                decoration: const InputDecoration(labelText: 'Old Password'),
-                obscureText: true,
-              ),
-              TextField(
-                controller: _newPasswordController,
-                decoration: const InputDecoration(labelText: 'New Password'),
+                decoration: const InputDecoration(labelText: 'Password'),
                 obscureText: true,
               ),
             ],
@@ -477,10 +484,10 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                _changePassword();
+                _checkPassword();
                 Navigator.of(context).pop();
               },
-              child: const Text('Change'),
+              child: const Text('Submit'),
             ),
           ],
         );
@@ -488,15 +495,14 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
     );
   }
 
-  Future<void> _changePassword() async {
+  Future<void> _checkPassword() async {
     String oldPassword = _oldPasswordController.text;
-    String newPassword = _newPasswordController.text;
 
-    if (oldPassword.isEmpty || newPassword.isEmpty) {
+    if (oldPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter both passwords'),
-          backgroundColor: Colors.red,
+          content: Text('Please enter the device password'),
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -507,29 +513,31 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
     });
 
     try {
-      await DeviceApiService.updateDevice(
+      await DeviceApiService.verifyPassword(
         deviceId: widget.device.device_id,
-        oldPassword: oldPassword,
-        newPassword: newPassword,
+        password: oldPassword,
       );
+      setState(() {
+        _isEditing = true;
+        widget.device.password = oldPassword;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password changed successfully'),
-          backgroundColor: Colors.green,
+          content: Text('Password verified successfully'),
+          backgroundColor: successColor,
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to change password: $e'),
-          backgroundColor: Colors.red,
+          content: Text('Incorrect password: $e'),
+          backgroundColor: errorColor,
         ),
       );
     } finally {
       setState(() {
         _isLoading = false;
         _oldPasswordController.clear();
-        _newPasswordController.clear();
       });
     }
   }

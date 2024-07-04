@@ -12,6 +12,7 @@ class Device {
   DeviceStatus? status;
   Mission? mission;
   Device? broker;
+  String? password;
   Device(
       {required this.device_id,
       required this.name,

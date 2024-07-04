@@ -8,6 +8,7 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class DevicesListScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -60,7 +61,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     pageNumber ??= _pageNumber;
     pageSize ??= _pageSize;
     name ??= _name;
-    
+
     if (!mounted) return;
     setState(() {
       _isLoading = true;
@@ -92,12 +93,11 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: 'Devices',
         leading: IconButton(
             icon: const Icon(Icons.settings),
-            color: Colors.white,
+            color: primaryTextColor,
             onPressed: () => Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -111,7 +111,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
             onPressed: () {},
           )
         ],
@@ -132,7 +132,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               const Center(
                 child: Text(
                   'No devices available',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: primaryTextColor),
                 ),
               )
             else
@@ -149,7 +149,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                       Container(
                         decoration: const BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: Colors.grey),
+                            bottom: BorderSide(color: accentColor),
                           ),
                         ),
                         height: 60,
@@ -161,7 +161,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                      color: Colors.white)),
+                                      color: primaryTextColor)),
                             ),
                             Expanded(
                               flex: 3,
@@ -169,7 +169,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                      color: Colors.white)), // Light text color
+                                      color:
+                                          primaryTextColor)), // Light text color
                             ),
                             Expanded(
                               flex: 3,
@@ -177,7 +178,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 18,
-                                      color: Colors.white)), // Light text color
+                                      color:
+                                          primaryTextColor)), // Light text color
                             ),
                             Expanded(
                               flex: 2,
@@ -207,7 +209,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                             decoration: const BoxDecoration(
                               border: Border(
                                   bottom: BorderSide(
-                                color: Color(0xff293038),
+                                color: barColor,
                               )),
                             ),
                             height: 70,
@@ -218,8 +220,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                   child: Text(device.name,
                                       style: const TextStyle(
                                           fontSize: 17,
-                                          color: Colors
-                                              .white70)), // Light text color
+                                          color:
+                                              secondaryTextColor)), // Light text color
                                 ),
                                 Expanded(
                                   flex: 3,
@@ -231,8 +233,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                           .toLowerCase(),
                                       style: const TextStyle(
                                           fontSize: 17,
-                                          color: Colors
-                                              .white70)), // Light text color
+                                          color:
+                                              secondaryTextColor)), // Light text color
                                 ),
                                 Expanded(
                                   flex: 3,
@@ -244,8 +246,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                           .toLowerCase(),
                                       style: const TextStyle(
                                           fontSize: 17,
-                                          color: Colors
-                                              .white70)), // Light text color
+                                          color:
+                                              secondaryTextColor)), // Light text color
                                 ),
                                 Expanded(
                                   flex: 2,
@@ -272,8 +274,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                   ElevatedButton(
                     onPressed: _hasPrev ? _previousPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
@@ -282,8 +284,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                   ElevatedButton(
                     onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0, // No shadow
                       shape: const CircleBorder(), // Circular button shape
                     ),
@@ -360,7 +362,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     return (device.status != DeviceStatus.INACTIVE)
         ? [
             PopupMenuButton<int>(
-              icon: const Icon(Icons.more_vert, color: Colors.white70),
+              icon: const Icon(Icons.more_vert, color: secondaryTextColor),
               itemBuilder: (context) => [
                 const PopupMenuItem(
                   value: 1,
@@ -383,7 +385,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("You're not allowed to delete an assigned broker"),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
       return;
@@ -393,7 +395,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Device deleted successfully'),
-          backgroundColor: Colors.green,
+          backgroundColor: successColor,
         ),
       );
       _fetchDevices(); // Fetch the updated list of devices
@@ -401,7 +403,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to delete device: $error'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     });

@@ -6,6 +6,7 @@ import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final User user;
@@ -34,12 +35,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(144, 41, 48, 56),
       appBar: CustomUpperBar(
         title: 'User Profile',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: const Color.fromARGB(255, 255, 255, 255),
+          color: primaryTextColor,
           onPressed: () {
             Navigator.pop(context);
           },
@@ -47,11 +47,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
-            color: const Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
             onPressed: () {},
           )
         ],
-        backgroundColor: const Color.fromARGB(144, 41, 48, 56),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -67,14 +66,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color.fromARGB(255, 255, 255, 255),
+                          color: primaryTextColor,
                         ),
                       ),
                       Expanded(
                         child: Text(
                           widget.user.username,
                           style: const TextStyle(
-                            color: Colors.white70,
+                            color: secondaryTextColor,
                           ),
                         ),
                       ),
@@ -97,7 +96,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 255, 255, 255),
+                              color: primaryTextColor,
                             ),
                           ),
                           Text(
@@ -107,7 +106,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 .last
                                 .toLowerCase(),
                             style: const TextStyle(
-                              color: Colors.white70,
+                              color: secondaryTextColor,
                             ),
                           ),
                         ],
@@ -127,7 +126,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color.fromARGB(255, 255, 255, 255),
+                              color: primaryTextColor,
                             ),
                           ),
                           Text(
@@ -137,7 +136,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 .last
                                 .toLowerCase(),
                             style: const TextStyle(
-                              color: Colors.white70,
+                              color: secondaryTextColor,
                             ),
                           ),
                         ],
@@ -194,7 +193,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         _userMissions.isEmpty
@@ -202,7 +201,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 'No missions assigned',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white70,
+                  color: secondaryTextColor,
                 ),
               )
             : Column(
@@ -210,7 +209,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   return ListTile(
                     title: Text(
                       mission.name,
-                      style: const TextStyle(color: Colors.white70),
+                      style: const TextStyle(color: secondaryTextColor),
                     ),
                     trailing: (widget.user.status == UserStatus.ASSIGNED) &&
                             !_isEditing
@@ -355,7 +354,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Color.fromARGB(255, 255, 255, 255),
+            color: primaryTextColor,
           ),
         ),
         Expanded(
@@ -363,13 +362,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               ? TextFormField(
                   controller: controller,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: secondaryTextColor,
                   ),
                 )
               : Text(
                   controller.text,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: secondaryTextColor,
                   ),
                 ),
         ),
@@ -431,7 +430,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('User updated successfully'),
-            backgroundColor: Colors.green,
+            backgroundColor: successColor,
           ),
         );
       } else {
@@ -439,7 +438,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('No changes to update'),
-            backgroundColor: Colors.orange,
+            backgroundColor: warningColor,
           ),
         );
       }
@@ -448,7 +447,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update user: $e'),
-          backgroundColor: Colors.red,
+          backgroundColor: errorColor,
         ),
       );
     } finally {

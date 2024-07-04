@@ -4,6 +4,7 @@ import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/selection_widget.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class EditBrokersScreen extends StatefulWidget {
   final Device? preselectedBroker;
@@ -83,12 +84,11 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xff121417),
       appBar: CustomUpperBar(
         title: 'Select Broker',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          color: const Color.fromARGB(255, 255, 255, 255),
+          color: primaryTextColor,
           onPressed: () {
             Navigator.pop(context);
           },
@@ -96,7 +96,7 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
         actions: <Widget>[
           IconButton(
             icon: const Icon(Icons.check),
-            color: Colors.white,
+            color: primaryTextColor,
             onPressed: () {
               Navigator.pop<Device>(context, _selectedBroker);
             },
@@ -112,7 +112,7 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
             Container(
               decoration: const BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: Colors.grey),
+                  bottom: BorderSide(color: secondaryTextColor),
                 ),
               ),
               height: 60,
@@ -124,7 +124,7 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: Colors.white)),
+                            color: primaryTextColor)),
                   ),
                   Expanded(
                     flex: 2,
@@ -149,7 +149,6 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
                       },
                       itemBuilder: (broker, isSelected) =>
                           _buildBrokerTile(broker, isSelected),
-
                       singleSelection: widget.singleSelection,
                     ),
             ),
@@ -162,8 +161,8 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
                   ElevatedButton(
                     onPressed: _hasPrev ? _previousPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0,
                       shape: const CircleBorder(),
                     ),
@@ -172,8 +171,8 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
                   ElevatedButton(
                     onPressed: _hasNext ? _nextPage : null,
                     style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
+                      foregroundColor: accentColor,
+                      backgroundColor: secondaryTextColor,
                       elevation: 0,
                       shape: const CircleBorder(),
                     ),
@@ -192,7 +191,7 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
     return Container(
       decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Color(0xff293038)),
+          bottom: BorderSide(color: barColor),
         ),
       ),
       height: 70,
@@ -202,10 +201,9 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
             flex: 5,
             child: Text(
               broker.name,
-              style: const TextStyle(fontSize: 17, color: Colors.white70),
+              style: const TextStyle(fontSize: 17, color: secondaryTextColor),
             ),
           ),
-
           Checkbox(
             value: isSelected,
             onChanged: (bool? value) {},

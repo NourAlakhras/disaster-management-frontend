@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionAnalyticsTab extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
@@ -38,10 +39,10 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
     setState(() {
       // Extract device name from topic
       String topic = data['topic'];
-String deviceName =
+      String deviceName =
           topic.split('/')[3]; // This will get "Device16" from the topic
       print('deviceName $deviceName');
-            print('topic $topic');
+      print('topic $topic');
       // Initialize sensor data map for this device if not already present
       _deviceSensorData.putIfAbsent(deviceName, () => {});
 
@@ -114,14 +115,14 @@ String deviceName =
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(
           title,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              color: accentColor, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         Card(
           // color:Colors.transparent,
           margin: const EdgeInsets.all(8.0),
-          child: 
-          Container(
-            height: 400,
+          child: Container(
+            height: 1000,
             padding: const EdgeInsets.all(8.0),
             child: BarChart(
               BarChartData(

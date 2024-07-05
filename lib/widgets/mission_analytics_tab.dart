@@ -21,28 +21,28 @@ class MissionAnalyticsTab extends StatefulWidget {
 class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
   final Map<String, Map<String, double>> _deviceSensorData = {};
   late final List<String> topics;
+
   @override
   void initState() {
     super.initState();
-    final topics = widget.devices.map((device) =>
-        'cloud/reg/${device.broker?.name ?? 'default'}/${device.name ?? 'default'}/sensor_data');
+    topics = widget.devices
+        .map((device) =>
+            'cloud/reg/${device.broker?.name ?? 'default'}/${device.name ?? 'default'}/sensor_data')
+        .toList();
     _subscribeToSensorData(topics);
   }
 
-  void _subscribeToSensorData(topics) {
-    widget.mqttClient.subscribeToMultipleTopics(topics.toList());
+  void _subscribeToSensorData(List<String> topics) {
+    widget.mqttClient.subscribeToMultipleTopics(topics);
     widget.mqttClient.onDataReceived = _onDataReceived;
   }
 
   void _onDataReceived(Map<String, dynamic> data) {
-    print('_onDataReceived data $data');
     setState(() {
       // Extract device name from topic
       String topic = data['topic'];
-      String deviceName =
-          topic.split('/')[3]; // This will get "Device16" from the topic
-      print('deviceName $deviceName');
-      print('topic $topic');
+      String deviceName = topic.split('/')[3]; // Get "Device16" from the topic
+
       // Initialize sensor data map for this device if not already present
       _deviceSensorData.putIfAbsent(deviceName, () => {});
 
@@ -70,11 +70,6 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
     widget.devices.forEach((device) {
       String deviceName = device.name ?? 'Unknown';
       double sensorValue = _deviceSensorData[deviceName]?[sensorType] ?? 0.0;
-      print("_deviceSensorData $_deviceSensorData");
-      print('deviceName ${[deviceName]}');
-      print('sensorValue ${[sensorValue]}');
-      print(
-          '_deviceSensorData[deviceName]?[sensorType] ${_deviceSensorData[deviceName]?[sensorType]}');
       barGroups.add(BarChartGroupData(
         x: widget.devices.indexOf(device),
         barRods: [
@@ -93,14 +88,11 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      padding: const EdgeInsets.all(16.0),
       children: [
-        // Example for Temperature bar chart
         _buildSensorBarChart('Temperature', _createBarChartData('temperature')),
-        // Example for Humidity bar chart
         _buildSensorBarChart('Humidity', _createBarChartData('humidity')),
-        // Example for Distance bar chart
         _buildSensorBarChart('Distance', _createBarChartData('distance')),
-        // Example for Light bar chart
         _buildSensorBarChart('Light', _createBarChartData('light')),
         // Add more charts for other sensor types similarly
       ],
@@ -109,42 +101,109 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
 
   Widget _buildSensorBarChart(
       String title, List<BarChartGroupData> barChartData) {
-    print('barChartData $barChartData');
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(
-          title,
-          style: const TextStyle(
-              color: accentColor, fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        Card(
-          // color:Colors.transparent,
-          margin: const EdgeInsets.all(8.0),
-          child: Container(
-            height: 1000,
-            padding: const EdgeInsets.all(8.0),
-            child: BarChart(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: accentColor,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8.0),
+          Container(
+              // decoration: BoxDecoration(
+              //   gradient: LinearGradient(
+              //     colors: [cardColor, barColor],
+              //     begin: Alignment.topLeft,
+              //     end: Alignment.bottomRight,
+              //   ),
+              //   borderRadius: BorderRadius.circular(8.0),
+              // ),
+              height: 400, // Adjust height as needed
+              padding: const EdgeInsets.all(10.0),
+               child: BarChart(
               BarChartData(
+                backgroundColor: Colors.transparent,
+                minY: 0,
+                maxY: 500,
                 barGroups: barChartData,
                 titlesData: FlTitlesData(
-                  show: true,
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, _) {
-                          return Text(
-                              widget.devices[value.toInt()].name ?? 'Unknown');
-                        }),
+                      showTitles: true,
+                      getTitlesWidget: (value, _) {
+                        return Text(
+                          widget.devices[value.toInt()].name,
+                          style: const TextStyle(
+                            color: secondaryTextColor,
+                            fontWeight: FontWeight.normal,
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  leftTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: true)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, _) {
+                        return Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(
+                            color: secondaryTextColor, // Set your desired color here
+                            fontWeight: FontWeight.normal,
+                          ),
+                        );
+                      },
+                      reservedSize: 40, // Adjust the margin value as needed
+                    ),
+                  ),
+                ),
+                  
+                  gridData: const FlGridData(show: true),
+                  borderData: FlBorderData(show: false),
+                  barTouchData: BarTouchData(
+                    handleBuiltInTouches: true,
+                    touchTooltipData: BarTouchTooltipData(
+                      tooltipPadding: const EdgeInsets.all(8),
+                      tooltipMargin: 8,
+                      tooltipRoundedRadius: 8,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final deviceName = widget.devices[group.x.toInt()].name;
+                        return BarTooltipItem(
+                          textAlign: TextAlign.left,
+                          '$deviceName\n',
+                          const TextStyle(
+                            color: accentColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          children: <TextSpan>[
+                            TextSpan(
+                              text: '${rod.toY}',
+                              style: const TextStyle(
+                                color: barColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                      getTooltipColor: (group) => secondaryTextColor,
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: false,
+                      direction: TooltipDirection.auto,
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ]),
+          
+        ],
+      ),
     );
   }
 

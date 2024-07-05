@@ -5,6 +5,7 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
+import 'package:flutter_3/widgets/mission_analytics_tab.dart';
 import 'package:flutter_3/widgets/mission_devices_list_tab.dart';
 import 'package:flutter_3/widgets/mission_devices_map_tab.dart';
 import 'package:flutter_3/widgets/mission_devices_thumbnails_tab.dart';
@@ -76,13 +77,16 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
             ),
             Expanded(
               child: TabbedView(
-                length: 3,
+                length: 4,
                 tabs: const <Widget>[
                   Tab(
                     child: Icon(Icons.list),
                   ),
                   Tab(
-                    child: Icon(Icons.grid_view_rounded),
+                    child: Icon(Icons.analytics_outlined),
+                  ),
+                  Tab(
+                    child: Icon(Icons.photo_camera_front),
                   ),
                   Tab(
                     icon: Icon(Icons.map_outlined),
@@ -102,7 +106,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                     ),
                   // Content for Tab 2
                   if (_filteredDevices.isNotEmpty)
-                    MissionDevicesThumbnailsTab(
+                    MissionAnalyticsTab(
                       mqttClient: widget.mqttClient,
                       devices: _filteredDevices,
                     )
@@ -112,6 +116,17 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                           style: TextStyle(color: primaryTextColor)),
                     ),
                   // Content for Tab 3
+                  if (_filteredDevices.isNotEmpty)
+                    MissionDevicesThumbnailsTab(
+                      mqttClient: widget.mqttClient,
+                      devices: _filteredDevices,
+                    )
+                  else
+                    const Center(
+                      child: Text('No devices available',
+                          style: TextStyle(color: primaryTextColor)),
+                    ),
+                  // Content for Tab 4
                   if (_filteredDevices.isNotEmpty)
                     MissionDevicesMapTab(
                       mqttClient: widget.mqttClient,

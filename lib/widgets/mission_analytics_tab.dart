@@ -99,8 +99,7 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
             data['earthquake detection'];
       }
       if (data.containsKey('sound level')) {
-        _deviceSensorData[deviceName]!['sound level'] =
-            data['sound level'];
+        _deviceSensorData[deviceName]!['sound level'] = data['sound level'];
       }
       if (data.containsKey('radiation level')) {
         _deviceSensorData[deviceName]!['radiation level'] =
@@ -109,7 +108,6 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
       // Add handling for other sensor types similarly
     });
   }
-
 
   Color _generateColor(int index) {
     final double hue =
@@ -147,13 +145,17 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
         _buildSensorBarChart('Temperature', _createBarChartData('temperature')),
         _buildSensorBarChart('Humidity', _createBarChartData('humidity')),
         _buildSensorBarChart('Distance', _createBarChartData('distance')),
-        _buildSensorBarChart('gas concentration', _createBarChartData('gas concentration')),
-        _buildSensorBarChart('air quality', _createBarChartData('air quality')),
-        _buildSensorBarChart('smoke detection', _createBarChartData('smoke detection')),
-        _buildSensorBarChart('earthquake detection', _createBarChartData('earthquake detection')),
-        _buildSensorBarChart('radiation level', _createBarChartData('radiation level')),
-        _buildSensorBarChart('light', _createBarChartData('light')),
-        _buildSensorBarChart('sound level', _createBarChartData('sound level')),
+        _buildSensorBarChart(
+            'Gas Concentration', _createBarChartData('gas concentration')),
+        _buildSensorBarChart('Air Quality', _createBarChartData('air quality')),
+        _buildSensorBarChart(
+            'Smoke Detection', _createBarChartData('smoke detection')),
+        _buildSensorBarChart('Earthquake Detection',
+            _createBarChartData('earthquake detection')),
+        _buildSensorBarChart(
+            'Radiation Level', _createBarChartData('radiation level')),
+        _buildSensorBarChart('Light', _createBarChartData('light')),
+        _buildSensorBarChart('Sound Level', _createBarChartData('sound level')),
         // Add more charts for other sensor types similarly
       ],
     );
@@ -164,8 +166,12 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
     double minY = thresholds[title.toLowerCase()]?['low'] ?? 0.0;
     double maxY = thresholds[title.toLowerCase()]?['high'] ?? 100.0;
 
+    // Define labels for the thresholds
+    String minLabel = 'Min: $minY';
+    String maxLabel = 'Max: $maxY';
+
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
+      padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -181,8 +187,16 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
             ),
           ),
           Container(
-            height: 250, // Adjust height as needed
-            padding: const EdgeInsets.symmetric(horizontal: 3.0),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: secondaryTextColor, // Choose your border color here
+                  width: 0.1, // Adjust the border thickness
+                ),
+              ),
+            ),
+            height: 300, // Adjust height as needed
+            padding: const EdgeInsets.fromLTRB(3, 0, 3, 20),
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceEvenly,
@@ -219,6 +233,22 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
                       reservedSize: 40, // Adjust the margin value as needed
                     ),
                   ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, _) {
+                        if (value == minY) {
+                          return Text(minLabel);
+                        } else if (value == maxY) {
+                          return Text(maxLabel);
+                        } else {
+                          return const Text('');
+                        }
+                      },
+                      interval: (maxY - minY) /
+                          2, // Adjust interval based on your data range                      reservedSize: 40, // Adjust the margin value as needed
+                    ),
+                  ),
                 ),
                 gridData: const FlGridData(show: true),
                 borderData: FlBorderData(show: false),
@@ -253,6 +283,40 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
                     fitInsideVertically: false,
                     direction: TooltipDirection.auto,
                   ),
+                ),
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    HorizontalLine(
+                      y: minY,
+                      color: Colors.green,
+                      strokeWidth: 1,
+                      dashArray: [5, 5],
+                      label: HorizontalLineLabel(
+                        alignment: Alignment.topRight,
+                        style: const TextStyle(
+                          color: Colors.green,
+                          fontSize: 12,
+                        ),
+                        labelResolver: (_) => 'low: $minY',
+                        show: true,
+                      ),
+                    ),
+                    HorizontalLine(
+                      y: maxY,
+                      color: Colors.red,
+                      strokeWidth: 1,
+                      dashArray: [5, 5],
+                      label: HorizontalLineLabel(
+                        alignment: Alignment.topRight,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontSize: 12,
+                        ),
+                        labelResolver: (_) => 'high: $maxY',
+                        show: true,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

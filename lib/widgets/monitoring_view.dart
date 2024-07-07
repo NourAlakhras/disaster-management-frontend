@@ -10,11 +10,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class MonitoringView extends StatefulWidget {
   final Device device;
   final MQTTClientWrapper mqttClient;
-
+  final Device? broker;
   const MonitoringView({
     super.key,
     required this.device,
     required this.mqttClient,
+    required this.broker
   });
 
   @override
@@ -36,10 +37,10 @@ class _MonitoringViewState extends State<MonitoringView> {
 
     mqttTopics = [
       'test-ugv/sensor_data',
-      'cloud/reg/${widget.device.broker}/${widget.device.name}/gps',
-      'cloud/reg/${widget.device.broker}/${widget.device.name}/sensor-data',
-      'cloud/reg/${widget.device.broker}/${widget.device.name}/connectivity',
-      'cloud/reg/${widget.device.broker}/${widget.device.name}/battery',
+      'cloud/reg/${widget.broker?.name}/${widget.device.name}/gps',
+      'cloud/reg/${widget.broker?.name}/${widget.device.name}/sensor-data',
+      'cloud/reg/${widget.broker?.name}/${widget.device.name}/connectivity',
+      'cloud/reg/${widget.broker?.name}/${widget.device.name}/battery',
     ];
 
     widget.mqttClient.onDataReceived = _onDataReceived;

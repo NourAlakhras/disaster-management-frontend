@@ -12,11 +12,12 @@ import 'package:flutter_3/utils/app_colors.dart';
 class MissionDevicesThumbnailsTab extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
   final List<Device> devices;
+    final Device? broker;
 
   const MissionDevicesThumbnailsTab({
     super.key,
     required this.mqttClient,
-    required this.devices,
+    required this.devices, required this.broker,
   });
   @override
   State<MissionDevicesThumbnailsTab> createState() =>
@@ -115,6 +116,8 @@ class _MissionDevicesThumbnailsTabState
                         builder: (context) => DeviceDetailedScreen(
                           mqttClient: widget.mqttClient,
                           device: device,
+                                                broker: widget.broker,
+
                         ),
                       ),
                     );

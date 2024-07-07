@@ -350,6 +350,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                 builder: (context) => DeviceDetailedScreen(
                   device: widget.device,
                   mqttClient: widget.mqttClient,
+                   broker: widget.device.broker,
                 ),
               )).then((_) {
             setState(() {

@@ -8,11 +8,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class MissionAnalyticsTab extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
   final List<Device> devices;
+  final Device? broker;
 
   const MissionAnalyticsTab({
     Key? key,
     required this.mqttClient,
     required this.devices,
+    required this.broker,
   }) : super(key: key);
 
   @override
@@ -23,7 +25,7 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
   int _currentSensorIndex = 0; // Track current sensor index
 
   // Define sensor types in the order you want to display
-  List<String> _sensorTypes = [
+  final List<String> _sensorTypes = [
     'Temperature',
     'Humidity',
     'Distance',
@@ -56,6 +58,7 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
       _updateCurrentSensorIndex(_currentSensorIndex - 1);
     }
   }
+
   final Map<String, Map<String, double>> _deviceSensorData = {};
   late final List<String> topics;
   Map<String, Map<String, double>> thresholds = {};
@@ -63,9 +66,13 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
   @override
   void initState() {
     super.initState();
+    for (Device d in widget.devices) {
+      print({d.mission});
+    }
+
     topics = widget.devices
         .map((device) =>
-            'cloud/reg/${device.broker?.name ?? 'default'}/${device.name ?? 'default'}/sensor_data')
+            'cloud/reg/${widget.broker?.name ?? 'default'}/${device.name}/sensor_data')
         .toList();
     _subscribeToSensorData(topics);
     _loadThresholds();

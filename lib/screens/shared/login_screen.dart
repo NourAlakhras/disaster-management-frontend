@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-// Helper method to convert integer type to UserType enum
+  // Helper method to convert integer type to UserType enum
   UserType _getUserType(int typeValue) {
     return userTypeValues.entries
         .firstWhere((entry) => entry.value == typeValue,
@@ -81,10 +81,9 @@ class _LoginScreenState extends State<LoginScreen> {
       // Set user credentials globally
       final credentials = UserCredentials();
 
-      // credentials.setUserCredentials(username, password,userType);
+      // credentials.setUserCredentials(username, password, userType);
       credentials.setUserCredentials(
           'test-mobile-app', 'Test-mobile12', userType);
-
       // Connect to MQTT broker
       await _mqttClient.prepareMqttClient();
 
@@ -96,69 +95,16 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
-      String errorMessage = 'Login failed: ${e.toString()}';
-      if (e is BadRequestException) {
-        errorMessage = e.message;
-      } else if (e is UnauthorizedException) {
-        errorMessage = e.message;
-      } else if (e is ForbiddenException) {
-        errorMessage = e.message;
-      } else if (e is InternalServerErrorException) {
-        errorMessage = e.message;
-      } else if (e is NotFoundException) {
-        errorMessage = e.message;
-      } else if (e is ConflictException) {
-        errorMessage = e.message;
-      } else if (e.toString().contains('No internet connection')) {
-        errorMessage =
-            'No internet connection. Please check your connection and try again.';
-      }
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(errorMessage)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Login failed: $e'),
+        backgroundColor: errorColor,
+      ));
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
   }
-
-  // Future<void> _login(BuildContext context) async {
-  //   try {
-  //     final Map<String, dynamic> responseData =
-  //         await UserApiService.login(emailOrUsername, password);
-  //     final String username = responseData['username'];
-  //     // final bool isAdmin = responseData['admin'] ?? false; // Get admin status
-
-  //     // Set user credentials globally
-  //     final credentials = UserCredentials();
-  //     credentials.setUserCredentials(username, password);
-
-  //     // Connect to MQTT broker
-  //     await _mqttClient.prepareMqttClient();
-
-  //     // Navigate to the appropriate screen based on admin status
-  //     if (isAdmin) {
-  //       Navigator.pushReplacement(
-  //         context,
-  //         MaterialPageRoute(
-  //           builder: (context) =>
-  //               AdminHomeScreen(), // Redirect to AdminHomeScreen
-  //         ),
-  //       );
-  //     } else {
-  //       Navigator.pushReplacement(
-  //         context,
-  //         MaterialPageRoute(
-  //           builder: (context) => HomeScreen(mqttClient: _mqttClient),
-  //         ),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context)
-  //         .showSnackBar(SnackBar(content: Text('Login failed: $e')));
-  //   }
-  // }
 
   bool _validateForm() {
     return isEmailOrUsernameValid && isPasswordValid;
@@ -185,94 +131,103 @@ class _LoginScreenState extends State<LoginScreen> {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          height: MediaQuery.of(context).size.height,
-          width: double.infinity,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Column(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              height: MediaQuery.of(context).size.height,
+              width: double.infinity,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  const Align(
-                    alignment: Alignment.topCenter,
-                    child: Text(
-                      "Welcome back!",
-                      style: TextStyle(fontSize: 24.0, color: primaryTextColor),
-                    ),
-                  ),
-                  const Gap(40),
-                  CustomTextField(
-                    hintText: "Email or Username",
-                    prefixIcon: Icons.email,
-                    controller: _emailOrUsernameController,
-                    onChanged: (value) {
-                      setState(() {
-                        isEmailOrUsernameValid =
-                            _validateEmailOrUsername(value);
-                      });
-                    },
-                    errorText: isEmailOrUsernameValid
-                        ? null
-                        : 'Empty Email or Username',
-                  ),
-                  const Gap(20),
-                  CustomTextField(
-                    hintText: "Password",
-                    prefixIcon: Icons.lock,
-                    controller: _passwordController,
-                    obscureText: !_isPasswordVisible,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                  Column(
+                    children: <Widget>[
+                      const Align(
+                        alignment: Alignment.topCenter,
+                        child: Text(
+                          "Welcome back!",
+                          style: TextStyle(
+                              fontSize: 24.0, color: primaryTextColor),
+                        ),
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        isPasswordValid = _validatePassword(value);
-                      });
-                    },
-                    errorText: isPasswordValid ? null : 'Invalid password',
+                      const Gap(40),
+                      CustomTextField(
+                        hintText: "Email or Username",
+                        prefixIcon: Icons.email,
+                        controller: _emailOrUsernameController,
+                        onChanged: (value) {
+                          setState(() {
+                            isEmailOrUsernameValid =
+                                _validateEmailOrUsername(value);
+                          });
+                        },
+                        errorText: isEmailOrUsernameValid
+                            ? null
+                            : 'Empty Email or Username',
+                      ),
+                      const Gap(20),
+                      CustomTextField(
+                        hintText: "Password",
+                        prefixIcon: Icons.lock,
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            isPasswordValid = _validatePassword(value);
+                          });
+                        },
+                        errorText: isPasswordValid ? null : 'Invalid password',
+                      ),
+                      const Gap(40),
+                      CustomButton(
+                        text: "Login",
+                        onPressed: () {
+                          if (_validateForm()) {
+                            _login(context);
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                  const Gap(40),
-                  CustomButton(
-                    text: "Login",
-                    onPressed: () {
-                      if (_validateForm()) {
-                        _login(context);
-                      }
-                    },
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const Text("Don't have an account?",
+                          style: TextStyle(color: secondaryTextColor)),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/signup');
+                        },
+                        child: const Text(
+                          "Sign Up",
+                          style: TextStyle(color: primaryTextColor),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Text("Don't have an account?",
-                      style: TextStyle(color: secondaryTextColor)),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/signup');
-                    },
-                    child: const Text(
-                      "Sign Up",
-                      style: TextStyle(color: primaryTextColor),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+          if (_isLoading)
+            Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
       ),
     );
   }

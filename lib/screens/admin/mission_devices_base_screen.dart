@@ -109,6 +109,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                     MissionAnalyticsTab(
                       mqttClient: widget.mqttClient,
                       devices: _filteredDevices,
+                      broker: widget.mission.broker,
                     )
                   else
                     const Center(
@@ -120,6 +121,8 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                     MissionDevicesThumbnailsTab(
                       mqttClient: widget.mqttClient,
                       devices: _filteredDevices,
+                                            broker: widget.mission.broker,
+
                     )
                   else
                     const Center(
@@ -131,6 +134,8 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                     MissionDevicesMapTab(
                       mqttClient: widget.mqttClient,
                       devices: _filteredDevices, // Use devices from mission
+                                            broker: widget.mission.broker,
+
                     )
                   else
                     const Center(

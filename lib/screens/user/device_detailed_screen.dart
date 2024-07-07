@@ -13,11 +13,12 @@ import 'package:flutter_3/utils/app_colors.dart';
 class DeviceDetailedScreen extends StatefulWidget {
   final Device device;
   final MQTTClientWrapper mqttClient;
+  final Device? broker;
 
   const DeviceDetailedScreen({
     super.key,
     required this.device,
-    required this.mqttClient,
+    required this.mqttClient, required this.broker,
   });
 
   @override
@@ -129,13 +130,14 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
                   child: MonitoringView(
                     device: widget.device,
                     mqttClient: widget.mqttClient,
+                    broker: widget.broker,
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.only(top: 10),
                   child: ControllingView(
                     device: widget.device,
-                    mqttClient: widget.mqttClient,
+                    mqttClient: widget.mqttClient, broker: widget.broker,
                   ),
                 ),
               ],

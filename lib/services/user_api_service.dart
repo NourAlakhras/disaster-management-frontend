@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_3/models/paginated_response.dart';
 import 'package:flutter_3/models/user.dart';
@@ -25,13 +26,15 @@ class UserApiService {
         'signUp loooooooooooooooooooooooooooooooooooooooooooooooooooooooooo ${url}');
 
     try {
-      final response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestBody),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonEncode(requestBody),
+          )
+          .timeout(Duration(seconds: 10));
 
       final responseBody = jsonDecode(response.body);
 
@@ -48,6 +51,8 @@ class UserApiService {
       } else {
         throw Exception('Failed to create user');
       }
+    } on TimeoutException {
+      throw TimeoutException('The connection has timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
@@ -65,13 +70,15 @@ class UserApiService {
     };
     print(url);
     try {
-      final response = await http.post(
-        url,
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestBody),
-      );
+      final response = await http
+          .post(
+            url,
+            headers: <String, String>{
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonEncode(requestBody),
+          )
+          .timeout(Duration(seconds: 5));
 
       final responseBody = jsonDecode(response.body);
 
@@ -82,18 +89,23 @@ class UserApiService {
         // Return response data
         return responseBody;
       } else if (response.statusCode == 400) {
-        throw BadRequestException();
+        throw BadRequestException(message: responseBody['message']);
       } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
+        throw UnauthorizedException(message: responseBody['message']);
       } else if (response.statusCode == 403) {
-        throw ForbiddenException();
+        throw ForbiddenException(message: responseBody['message']);
+      } else if (response.statusCode == 404) {
+        throw NotFoundException(message: responseBody['message']);
+      } else if (response.statusCode == 409) {
+        throw ConflictException(message: responseBody['message']);
       } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+        throw InternalServerErrorException(message: responseBody['message']);
       } else {
         throw Exception('Failed to login');
       }
+    } on TimeoutException {
+      throw TimeoutException('The connection has timed out. Please try again.');
     } catch (e) {
-      print('Error: $e');
       rethrow;
     }
   }
@@ -130,12 +142,15 @@ class UserApiService {
       } else {
         throw Exception('Failed to logout');
       }
+    } on TimeoutException {
+      throw TimeoutException('The connection has timed out. Please try again.');
     } catch (e) {
       rethrow;
     }
   }
 
   static Future<User> getUserInfo() async {
+        try {
     String? token = await AuthApiService.getAuthToken();
     final Uri url = Uri.parse('$webServerBaseUrl/api/users/');
     final response = await http.get(
@@ -155,6 +170,11 @@ class UserApiService {
       throw Exception('Internal Server Error');
     } else {
       throw Exception('Failed to fetch user info');
+}
+    } on TimeoutException {
+      throw TimeoutException('The connection has timed out. Please try again.');
+    } catch (e) {
+      rethrow;
     }
   }
 

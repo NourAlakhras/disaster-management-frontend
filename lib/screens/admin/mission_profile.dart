@@ -254,6 +254,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                                   builder: (context) => DeviceDetailedScreen(
                                     device: device,
                                     mqttClient: widget.mqttClient,
+                                    broker: widget.mission.broker,
                                   ),
                                 ),
                               ).then((_) {
@@ -306,6 +307,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                               builder: (context) => DeviceDetailedScreen(
                                 device: _selectedBroker!,
                                 mqttClient: widget.mqttClient,
+                                broker: widget.mission.broker,
                               ),
                             ),
                           ).then((_) {

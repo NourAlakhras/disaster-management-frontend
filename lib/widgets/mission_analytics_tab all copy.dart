@@ -24,7 +24,7 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
   void initState() {
     super.initState();
     final topics = widget.devices.map((device) =>
-        'cloud/reg/${device.broker?.name ?? 'default'}/${device.name ?? 'default'}/sensor_data');
+        'cloud/reg/${device.broker?.name ?? 'default'}/${device.name ?? 'default'}/sensor-data');
     _subscribeToSensorData(topics);
   }
 

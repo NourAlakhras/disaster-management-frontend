@@ -102,7 +102,7 @@ class Mission {
       devices = missionDetails.devices;
       users = missionDetails.users;
       broker = missionDetails.broker;
-
+      print(missionDetails);
       setStateCallback(); // Notify the widget that loading is complete
     } catch (e) {
       print('Error fetching mission info: $e');

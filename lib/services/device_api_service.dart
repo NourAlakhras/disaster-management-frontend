@@ -84,7 +84,8 @@ class DeviceApiService {
       // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
 
-      final Uri url = Uri.parse('$webServerBaseUrl/api/devices/all?$queryStringJoined');
+      final Uri url =
+          Uri.parse('$webServerBaseUrl/api/devices/all?$queryStringJoined');
 
       // Print out the generated URL
       print('URL: $url');
@@ -104,7 +105,7 @@ class DeviceApiService {
 
       final responseBody = jsonDecode(response.body);
       print('getAllDevices responseBody: $responseBody');
- 
+
       if (response.statusCode == 200) {
         final paginatedResponse = PaginatedResponse<Device>.fromJson(
             responseBody, (json) => Device.fromJson(json));
@@ -174,11 +175,10 @@ class DeviceApiService {
   static Future<void> updateDevice({
     required String deviceId,
     String? name,
-
     String? oldPassword,
     String? newPassword,
   }) async {
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
+    const String webServerBaseUrl = Constants.webServerBaseUrl;
     final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
 
     // Dynamically build the request body
@@ -225,7 +225,6 @@ class DeviceApiService {
     }
   }
 
-
   static Future<void> verifyPassword({
     required String deviceId,
     required String password,
@@ -236,7 +235,6 @@ class DeviceApiService {
     // Dynamically build the request body
     final Map<String, dynamic> requestBody = {};
     requestBody['old_password'] = password;
-
 
     print('verifyPassword url $url');
     print('verifyPassword requestBody $requestBody');
@@ -276,7 +274,6 @@ class DeviceApiService {
     }
   }
 
-
   static Future<Device> deleteDevice(String deviceId) async {
     try {
       String? token = await AuthApiService.getAuthToken();
@@ -311,6 +308,53 @@ class DeviceApiService {
     } catch (e) {
       // Handle errors
       throw Exception('Failed to retrieve device details: $e');
+    }
+  }
+
+  static Future<void> updateDeviceState({
+    required String deviceId,
+    required String newState,
+  }) async {
+    try {
+      const String webServerBaseUrl = Constants.webServerBaseUrl;
+      final Uri url =
+          Uri.parse('$webServerBaseUrl/api/devices/$deviceId/state');
+
+      final Map<String, dynamic> requestBody = {
+        'state': newState,
+      };
+
+      String? token = await AuthApiService.getAuthToken();
+
+      final response = await http.put(
+        url,
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      if (response.statusCode == 200) {
+        // Device state updated successfully
+      } else if (response.statusCode == 400) {
+        throw BadRequestException();
+      } else if (response.statusCode == 401) {
+        throw UnauthorizedException();
+      } else if (response.statusCode == 403) {
+        throw ForbiddenException();
+      } else if (response.statusCode == 404) {
+        throw NotFoundException();
+      } else if (response.statusCode == 409) {
+        throw ConflictException();
+      } else if (response.statusCode == 500) {
+        throw InternalServerErrorException();
+      } else {
+        throw Exception(
+            'Unexpected response from server: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to update device state: $e');
     }
   }
 }

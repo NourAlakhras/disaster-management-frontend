@@ -193,7 +193,7 @@ class MQTTClientWrapper {
     builder.addString(message);
 
     print('Publishing message "$message" to topic $topic');
-    client.publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
+    client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
   }
 
   void _onSubscribed(String topic) {
@@ -223,4 +223,6 @@ class MQTTClientWrapper {
     connectionState = MqttCurrentConnectionState.CONNECTED;
     print('OnConnected client callback - Client connection was successful');
   }
+
+  MqttCurrentConnectionState get connectionStatus => connectionState;
 }

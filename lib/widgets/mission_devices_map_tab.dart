@@ -11,9 +11,12 @@ import 'package:flutter_3/utils/app_colors.dart';
 class MissionDevicesMapTab extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
   final List<Device> devices;
-
+  final Device? broker;
   const MissionDevicesMapTab(
-      {super.key, required this.mqttClient, required this.devices});
+      {super.key,
+      required this.mqttClient,
+      required this.devices,
+      required this.broker});
 
   @override
   State<MissionDevicesMapTab> createState() => _MissionDevicesMapTabState();
@@ -37,16 +40,16 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
 
   void _subscribeToTopics() {
     for (var device in widget.devices) {
-      String mqttTopic = '${device.device_id}/gps';
+      String mqttTopic = 'cloud/reg/${widget.broker?.name}/${device.name}/gps';
       widget.mqttClient.subscribeToTopic(mqttTopic);
     }
 
-    widget.mqttClient.subscribeToMultipleTopics([
-      'test-ugv/sensor_data',
-      "test-ugv1/gps",
-      "test-ugv0/gps",
-      "test-ugv2/gps"
-    ]);
+    // widget.mqttClient.subscribeToMultipleTopics([
+    //   'test-ugv/sensor_data',
+    //   "test-ugv1/gps",
+    //   "test-ugv0/gps",
+    //   "test-ugv2/gps"
+    // ]);
   }
 
   void _onDataReceived(Map<String, dynamic> message) {
@@ -245,33 +248,36 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-        child: GoogleMap(
-      gestureRecognizers: {}
-        ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
-        ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
-        ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))
-        ..add(Factory<VerticalDragGestureRecognizer>(
-            () => VerticalDragGestureRecognizer()))
-        ..add(Factory<HorizontalDragGestureRecognizer>(
-            () => HorizontalDragGestureRecognizer()))
-        ..add(Factory<LongPressGestureRecognizer>(
-            () => LongPressGestureRecognizer())),
+    return Scaffold(
+        body: Column(children: [
+      Expanded(
+          child: GoogleMap(
+        gestureRecognizers: {}
+          ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
+          ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
+          ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))
+          ..add(Factory<VerticalDragGestureRecognizer>(
+              () => VerticalDragGestureRecognizer()))
+          ..add(Factory<HorizontalDragGestureRecognizer>(
+              () => HorizontalDragGestureRecognizer()))
+          ..add(Factory<LongPressGestureRecognizer>(
+              () => LongPressGestureRecognizer())),
 
-      compassEnabled: true,
-      rotateGesturesEnabled: true, // Respond to rotate gestures
-      tiltGesturesEnabled: true, // Respond to tilt gestures
-      zoomControlsEnabled: true, // Show zoom controls
-      zoomGesturesEnabled: true, // Respond to zoom gestures
-      onMapCreated: (controller) {
-        _mapController = controller;
-      },
-      initialCameraPosition: const CameraPosition(
-        target: LatLng(0.0, 0.0),
-        zoom: 50,
-      ),
-      markers: _markers,
-    ));
+        compassEnabled: true,
+        rotateGesturesEnabled: true, // Respond to rotate gestures
+        tiltGesturesEnabled: true, // Respond to tilt gestures
+        zoomControlsEnabled: true, // Show zoom controls
+        zoomGesturesEnabled: true, // Respond to zoom gestures
+        onMapCreated: (controller) {
+          _mapController = controller;
+        },
+        initialCameraPosition: const CameraPosition(
+          target: LatLng(0.0, 0.0),
+          zoom: 50,
+        ),
+        markers: _markers,
+      ))
+    ]));
   }
 
   @override

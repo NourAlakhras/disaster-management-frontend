@@ -32,6 +32,7 @@ class _SignupScreenState extends State<SignupScreen> {
   bool isConfirmPasswordValid = true;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -52,6 +53,9 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _signUp(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       await UserApiService.signUp(email, password, username);
 
@@ -83,8 +87,14 @@ class _SignupScreenState extends State<SignupScreen> {
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Signup failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Signup failed: $e'),
+        backgroundColor: errorColor,
+      ));
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -131,152 +141,161 @@ class _SignupScreenState extends State<SignupScreen> {
           },
         ),
       ),
-      body: SingleChildScrollView(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          height: MediaQuery.of(context).size.height,
-          // width: double.infinity,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Column(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
+              height: MediaQuery.of(context).size.height,
+              // width: double.infinity,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  const Align(
-                    alignment: Alignment.topCenter,
-                    child: Text(
-                      "Create your account",
-                      style: TextStyle(fontSize: 24.0, color: primaryTextColor),
-                    ),
-                  ),
-                  const Gap(40),
-                  CustomTextField(
-                    hintText: "Email",
-                    prefixIcon: Icons.email,
-                    controller: _emailController,
-                    onChanged: (value) {
-                      setState(() {
-                        isEmailValid = _validateEmail(value);
-                      });
-                    },
-                    errorText: isEmailValid ? null : 'Invalid email',
-                  ),
-                  const Gap(20),
-                  CustomTextField(
-                    hintText: "Username",
-                    prefixIcon: Icons.account_circle,
-                    controller: _usernameController,
-                    onChanged: (value) {
-                      setState(() {
-                        isUsernameValid = _validateUsername(value);
-                      });
-                    },
-                    errorText: isUsernameValid ? null : 'Invalid username',
-                  ),
-                  const Gap(20),
-                  CustomTextField(
-                    hintText: "Password",
-                    prefixIcon: Icons.lock,
-                    controller: _passwordController,
-                    obscureText: !_isPasswordVisible,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
-                      },
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        isPasswordValid = _validatePassword(value);
-                      });
-                    },
-                    errorText: isPasswordValid ? null : 'Invalid password',
-                  ),
-                  const Gap(20),
-                  CustomTextField(
-                    hintText: "Confirm Password",
-                    prefixIcon: Icons.lock,
-                    controller: _confirmPasswordController,
-                    obscureText: !_isConfirmPasswordVisible,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isConfirmPasswordVisible
-                            ? Icons.visibility
-                            : Icons.visibility_off,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _isConfirmPasswordVisible =
-                              !_isConfirmPasswordVisible;
-                        });
-                      },
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        isConfirmPasswordValid =
-                            _validateConfirmPassword(password, value);
-                      });
-                    },
-                    errorText: isConfirmPasswordValid
-                        ? null
-                        : 'Passwords do not match',
-                  ),
-                  const Gap(40),
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: const TextSpan(
-                      children: [
-                        TextSpan(
-                          text: "By continuing, you agree to the ",
-                          style: TextStyle(color: secondaryTextColor),
-                        ),
-                        TextSpan(
-                          text: "Terms of Use",
+                  Column(
+                    children: <Widget>[
+                      const Align(
+                        alignment: Alignment.topCenter,
+                        child: Text(
+                          "Create your account",
                           style: TextStyle(
-                            color: primaryTextColor,
-                            decoration: TextDecoration.underline,
-                          ),
+                              fontSize: 24.0, color: primaryTextColor),
                         ),
+                      ),
+                      const Gap(40),
+                      CustomTextField(
+                        hintText: "Email",
+                        prefixIcon: Icons.email,
+                        controller: _emailController,
+                        onChanged: (value) {
+                          setState(() {
+                            isEmailValid = _validateEmail(value);
+                          });
+                        },
+                        errorText: isEmailValid ? null : 'Invalid email',
+                      ),
+                      const Gap(20),
+                      CustomTextField(
+                        hintText: "Username",
+                        prefixIcon: Icons.account_circle,
+                        controller: _usernameController,
+                        onChanged: (value) {
+                          setState(() {
+                            isUsernameValid = _validateUsername(value);
+                          });
+                        },
+                        errorText: isUsernameValid ? null : 'Invalid username',
+                      ),
+                      const Gap(20),
+                      CustomTextField(
+                        hintText: "Password",
+                        prefixIcon: Icons.lock,
+                        controller: _passwordController,
+                        obscureText: !_isPasswordVisible,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            isPasswordValid = _validatePassword(value);
+                          });
+                        },
+                        errorText: isPasswordValid ? null : 'Invalid password',
+                      ),
+                      const Gap(20),
+                      CustomTextField(
+                        hintText: "Confirm Password",
+                        prefixIcon: Icons.lock,
+                        controller: _confirmPasswordController,
+                        obscureText: !_isConfirmPasswordVisible,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isConfirmPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isConfirmPasswordVisible =
+                                  !_isConfirmPasswordVisible;
+                            });
+                          },
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            isConfirmPasswordValid =
+                                _validateConfirmPassword(password, value);
+                          });
+                        },
+                        errorText: isConfirmPasswordValid
+                            ? null
+                            : 'Passwords do not match',
+                      ),
+                      const Gap(40),
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: const TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "By continuing, you agree to the ",
+                              style: TextStyle(color: secondaryTextColor),
+                            ),
+                            TextSpan(
+                              text: "Terms of Use",
+                              style: TextStyle(
+                                color: primaryTextColor,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Gap(15),
+                      CustomButton(
+                        text: "Sign up",
+                        onPressed: () {
+                          if (_validateForm()) {
+                            _signUp(context);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                  Container(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        const Text("Already have an account?",
+                            style: TextStyle(color: secondaryTextColor)),
+                        TextButton(
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/login');
+                            },
+                            child: const Text(
+                              "Login",
+                              style: TextStyle(color: primaryTextColor),
+                            ))
                       ],
                     ),
-                  ),
-                  const Gap(15),
-                  CustomButton(
-                    text: "Sign up",
-                    onPressed: () {
-                      if (_validateForm()) {
-                        _signUp(context);
-                      }
-                    },
-                  ),
+                  )
                 ],
               ),
-              Container(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    const Text("Already have an account?",
-                        style: TextStyle(color: secondaryTextColor)),
-                    TextButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/login');
-                        },
-                        child: const Text(
-                          "Login",
-                          style: TextStyle(color: primaryTextColor),
-                        ))
-                  ],
-                ),
-              )
-            ],
+            ),
           ),
-        ),
+          if (_isLoading)
+            Center(
+              child: CircularProgressIndicator(),
+            ),
+        ],
       ),
     );
   }

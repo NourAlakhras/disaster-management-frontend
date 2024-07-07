@@ -20,6 +20,42 @@ class MissionAnalyticsTab extends StatefulWidget {
 }
 
 class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
+  int _currentSensorIndex = 0; // Track current sensor index
+
+  // Define sensor types in the order you want to display
+  List<String> _sensorTypes = [
+    'Temperature',
+    'Humidity',
+    'Distance',
+    'Gas Concentration',
+    'Air Quality',
+    'Smoke Detection',
+    'Earthquake Detection',
+    'Radiation Level',
+    'Light',
+    'Sound Level',
+  ];
+
+  // Method to update current sensor index
+  void _updateCurrentSensorIndex(int newIndex) {
+    setState(() {
+      _currentSensorIndex = newIndex;
+    });
+  }
+
+  // Method to go to next sensor
+  void _nextSensor() {
+    if (_currentSensorIndex < _sensorTypes.length - 1) {
+      _updateCurrentSensorIndex(_currentSensorIndex + 1);
+    }
+  }
+
+  // Method to go to previous sensor
+  void _prevSensor() {
+    if (_currentSensorIndex > 0) {
+      _updateCurrentSensorIndex(_currentSensorIndex - 1);
+    }
+  }
   final Map<String, Map<String, double>> _deviceSensorData = {};
   late final List<String> topics;
   Map<String, Map<String, double>> thresholds = {};

@@ -18,7 +18,8 @@ class DeviceDetailedScreen extends StatefulWidget {
   const DeviceDetailedScreen({
     super.key,
     required this.device,
-    required this.mqttClient, required this.broker,
+    required this.mqttClient,
+    required this.broker,
   });
 
   @override
@@ -40,11 +41,14 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
   Future<void> _initializePlayer() async {
     await _rtmpClientService.initializePlayer(
       deviceId: widget.device.device_id,
-      deviceName: widget.device.name,
+      // deviceName: widget.device.name,
+            deviceName: 'test-dev',
+
     );
     setState(() {
       _isPlayerInitialized = true;
     });
+    print('Player initialized for device: ${widget.device.device_id}');
   }
 
   void _startReconnectTimer() {
@@ -53,6 +57,7 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
           .getController(widget.device.device_id)
           .value
           .isInitialized) {
+        print('Reconnecting player for device: ${widget.device.device_id}');
         _initializePlayer();
       }
     });
@@ -62,6 +67,7 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
   void dispose() {
     _rtmpClientService.disposeController(widget.device.device_id);
     _reconnectTimer.cancel();
+    print('DeviceDetailedScreen disposed');
     super.dispose();
   }
 

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_3/models/paginated_response.dart';
 import 'package:flutter_3/models/user.dart';
+import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';

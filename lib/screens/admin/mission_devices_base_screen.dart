@@ -129,7 +129,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                       child: Text('No devices available',
                           style: TextStyle(color: primaryTextColor)),
                     ),
-                  // Content for Tab 4
+                  // // Content for Tab 4
                   if (_filteredDevices.isNotEmpty)
                     MissionDevicesMapTab(
                       mqttClient: widget.mqttClient,

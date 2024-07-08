@@ -1,50 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter_3/models/user_credentials.dart';
+import 'package:flutter_3/utils/constants.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:flutter_3/utils/enums.dart';
 
-class UserCredentials {
-  late String username;
-  late String password;
-  late UserType userType;
-
-  // Singleton pattern to ensure only one instance of UserCredentials
-  static final UserCredentials _instance = UserCredentials._internal();
-
-  factory UserCredentials() {
-    return _instance;
-  }
-
-  UserCredentials._internal();
-
-  void setUserCredentials(String username, String password, UserType userType) {
-    this.username = username;
-    this.password = password;
-    this.userType = userType;
-  }
-
-  Future<void> clearUserCredentials() async {
-    username = '';
-    password = '';
-    userType = UserType.REGULAR;
-  }
-
-  UserType getUserType() {
-    return userType;
-  }
-}
-
-enum MqttCurrentConnectionState {
-  IDLE,
-  CONNECTING,
-  CONNECTED,
-  DISCONNECTED,
-  ERROR_WHEN_CONNECTING,
-  LOGGED_OUT,
-}
-
-enum MqttSubscriptionState { IDLE, SUBSCRIBED }
 
 typedef MqttDataCallback = void Function(Map<String, dynamic> data);
 
@@ -59,7 +20,7 @@ class MQTTClientWrapper {
     final credentials = UserCredentials();
     final username = credentials.username;
     final password = credentials.password;
-    _setupMqttClient();
+    _setupMqttClient(username);
     await _connectClient(username, password);
     setupMessageListener();
   }
@@ -123,13 +84,13 @@ class MQTTClientWrapper {
     }
   }
 
-  void _setupMqttClient() {
+  void _setupMqttClient(String username) {
     client = MqttServerClient.withPort(
-        'df29475dfed14680a1a57a1c8e98b400.s2.eu.hivemq.cloud',
-        'test-mobile-app',
-        8883);
+        Constants.mqttBrokerUrl,
+        username,
+        1883);
     print('setup');
-    client.secure = true;
+    client.secure = false;
     client.securityContext = SecurityContext.defaultContext;
     client.keepAlivePeriod = 20;
     client.onDisconnected = _onDisconnected;

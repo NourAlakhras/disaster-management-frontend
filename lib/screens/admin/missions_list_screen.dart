@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/admin/create_mission_screen.dart';
 import 'package:flutter_3/screens/admin/mission_profile.dart';
 import 'package:flutter_3/screens/shared/settings_screen.dart';

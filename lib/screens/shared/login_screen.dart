@@ -11,6 +11,7 @@ import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_3/utils/app_colors.dart';
+import 'package:flutter_3/models/user_credentials.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -81,9 +82,8 @@ class _LoginScreenState extends State<LoginScreen> {
       // Set user credentials globally
       final credentials = UserCredentials();
 
-      // credentials.setUserCredentials(username, password, userType);
-      credentials.setUserCredentials(
-          'test-mobile-app', 'Test-mobile12', userType);
+      credentials.setUserCredentials(username, password, userType);
+
       // Connect to MQTT broker
       await _mqttClient.prepareMqttClient();
 

@@ -18,7 +18,8 @@ class MissionDevicesThumbnailsTab extends StatefulWidget {
     super.key,
     required this.mqttClient,
     required this.devices, required this.broker,
-  });
+  }); 
+
   @override
   State<MissionDevicesThumbnailsTab> createState() =>
       _MissionDevicesThumbnailsTabState();
@@ -34,6 +35,7 @@ class _MissionDevicesThumbnailsTabState
   late Timer _reconnectTimer;
   late Map<String, bool> _isPlayerInitializedMap =
       {}; // Map to track player initialization state for each device
+  late List<String> mqttTopics;
 
   @override
   void initState() {
@@ -55,24 +57,25 @@ class _MissionDevicesThumbnailsTabState
   }
 
   void _startReconnectTimer() {
-    for (var device in widget.devices) {
-      _reconnectTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-        if (!_rtmpClientService
-            .getController(device.device_id)
-            .value
-            .isInitialized) {
+    _reconnectTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      for (var device in widget.devices) {
+        var controller = _rtmpClientService.getController(device.device_id);
+        if (controller == null || !controller.value.isInitialized) {
           _initializePlayer();
         }
-      });
-    }
+      }
+    });
   }
 
   void _subscribeToTopics() {
     for (var device in widget.devices) {
-      List<String> mqttTopics = [
-        '${device.device_id}/battery',
-        '${device.device_id}/connectivity',
+      mqttTopics = [
+        'test-ugv/sensor_data',
+        'cloud/reg/${widget.broker?.name}/${device.name}/gps',
+        'cloud/reg/${widget.broker?.name}/${device.name}/connectivity',
+        'cloud/reg/${widget.broker?.name}/${device.name}/battery',
       ];
+
 
       widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
     }
@@ -274,11 +277,8 @@ class _MissionDevicesThumbnailsTabState
 
   @override
   void dispose() {
+        _reconnectTimer.cancel();
     for (var device in widget.devices) {
-      List<String> mqttTopics = [
-        '${device.device_id}/battery',
-        '${device.device_id}/connectivity',
-      ];
       widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
       _rtmpClientService.disposeController(device.device_id);
     }

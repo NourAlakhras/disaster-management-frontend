@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/admin/missions_list_screen.dart';
 import 'package:flutter_3/screens/admin/dashboard_screen.dart';
 import 'package:flutter_3/screens/admin/users_list_screen.dart';
@@ -86,11 +87,10 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           letIndexChange: (index) => true,
           backgroundColor:
-              Colors.transparent,// Background color of the navigation bar
+              Colors.transparent, // Background color of the navigation bar
           color: barColor, // Color of the icons and text
           buttonBackgroundColor:
-              barColor, // Background color of the selected item  
-
+              barColor, // Background color of the selected item
         ),
         body: PageView(
           controller: _pageController,

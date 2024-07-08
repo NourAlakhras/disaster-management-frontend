@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/shared/settings_screen.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/user_api_service.dart';

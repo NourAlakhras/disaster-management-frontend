@@ -29,6 +29,8 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     southwest: const LatLng(0, 0), // First corner (e.g., (0, 0))
     northeast: const LatLng(0, 0), // Second corner (e.g., (0, 0))
   );
+  // List to store subscribed MQTT topics
+  List<String> _mqttTopics = [];
 
   @override
   void initState() {
@@ -37,48 +39,49 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     _subscribeToTopics();
     widget.mqttClient.setupMessageListener();
   }
-
   void _subscribeToTopics() {
     for (var device in widget.devices) {
       String mqttTopic = 'cloud/reg/${widget.broker?.name}/${device.name}/gps';
       widget.mqttClient.subscribeToTopic(mqttTopic);
+      _mqttTopics.add(mqttTopic); // Add topic to the list
     }
-
-    // widget.mqttClient.subscribeToMultipleTopics([
-    //   'test-ugv/sensor_data',
-    //   "test-ugv1/gps",
-    //   "test-ugv0/gps",
-    //   "test-ugv2/gps"
-    // ]);
+  }
+  void _unsubscribeFromTopics() {
+    widget.mqttClient.unsubscribeFromMultipleTopics(_mqttTopics);
   }
 
   void _onDataReceived(Map<String, dynamic> message) {
-    String deviceId =
-        message['topic'].substring(0, message['topic'].length - 4);
-    print('from map this is my topic $deviceId');
-    _updateMarkers(deviceId, message);
+    // Extract the topic string
+    String topic = message['topic'];
+
+    // Extract the device name from the topic string
+    List<String> topicParts = topic.split('/');
+    String deviceName = topicParts[topicParts.length - 2];
+
+    print('from map this is my topic $topic');
+    _updateMarkers(deviceName, message);
   }
 
-  void _updateMarkers(String deviceId, Map<String, dynamic> gpsData) {
+  void _updateMarkers(String deviceName, Map<String, dynamic> gpsData) {
     if (gpsData.containsKey('lat') && gpsData.containsKey('long')) {
       double lat = gpsData['lat'];
       double long = gpsData['long'];
       LatLng position = LatLng(lat, long);
-      _markers.removeWhere((marker) => marker.markerId.value == deviceId);
+      _markers.removeWhere((marker) => marker.markerId.value == deviceName);
 
-      // Get marker color based on the device's ID
-      Color color = _getMarkerColor(deviceId);
-      String deviceName = _getDeviceName(deviceId); // Get the device's name
+      // Get marker color based on the device's name
+      Color color = _generateColor(widget.devices.indexOf(
+          widget.devices.firstWhere((device) => device.name == deviceName)));
 
-      // Add marker with custom color
+      // Add marker with custom color and device name
       _markers.add(
         Marker(
-          markerId: MarkerId(deviceId),
+          markerId: MarkerId(deviceName),
           position: position,
           icon: BitmapDescriptor.defaultMarkerWithHue(
             _getColorHue(color),
           ),
-          infoWindow: InfoWindow(title: deviceId), // Set the info window
+          infoWindow: InfoWindow(title: deviceName), // Set the device name
         ),
       );
 
@@ -91,21 +94,12 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     }
   }
 
-  // Define a list of colors to use for markers
-  final List<Color> _markerColors = [
-    errorColor,
-    Colors.blue,
-    successColor,
-    warningColor,
-    Colors.purple,
-    // Add more colors as needed
-  ];
-
-  Color _getMarkerColor(String deviceId) {
-    // Choose a color based on the modified device's ID
-    int index = deviceId.hashCode % _markerColors.length;
-    return _markerColors[index];
+  Color _generateColor(int index) {
+    final double hue =
+        (index * 137.508) % 360; // Use golden angle approximation
+    return HSVColor.fromAHSV(1.0, hue, 0.5, 0.9).toColor();
   }
+
 
   double _getColorHue(Color color) {
     // Calculate hue from color
@@ -113,18 +107,6 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     return hsvColor.hue;
   }
 
-  String _getDeviceName(String deviceId) {
-    // Find the device object by its ID and return its name
-    Device device = widget.devices.firstWhere(
-      (device) => device.device_id == deviceId,
-      orElse: () => Device(
-          device_id: deviceId,
-          name: 'Unknown',
-          type: DeviceType.UGV,
-          status: DeviceStatus.AVAILABLE),
-    );
-    return device.name;
-  }
 
   void _adjustBounds(LatLng position) {
     double minLat = _bounds.southwest.latitude;
@@ -280,14 +262,9 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     ]));
   }
 
-  @override
+   @override
   void dispose() {
-    widget.mqttClient.unsubscribeFromMultipleTopics([
-      'test-ugv/sensor_data',
-      "test-ugv1/gps",
-      "test-ugv0/gps",
-      "test-ugv2/gps"
-    ]);
+    _unsubscribeFromTopics(); // Unsubscribe from MQTT topics
     super.dispose();
   }
 }

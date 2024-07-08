@@ -78,3 +78,14 @@ final missionStatusValues = {
   MissionStatus.CANCELED: 4,
   MissionStatus.FINISHED: 5,
 };
+
+enum MqttCurrentConnectionState {
+  IDLE,
+  CONNECTING,
+  CONNECTED,
+  DISCONNECTED,
+  ERROR_WHEN_CONNECTING,
+  LOGGED_OUT,
+}
+
+enum MqttSubscriptionState { IDLE, SUBSCRIBED }

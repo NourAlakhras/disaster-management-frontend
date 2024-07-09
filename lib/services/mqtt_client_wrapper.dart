@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/utils/constants.dart';
 import 'package:mqtt_client/mqtt_client.dart';
@@ -12,13 +14,30 @@ class MQTTClientWrapper {
   late MqttServerClient client;
   late MqttDataCallback onDataReceived;
   Timer? _statusTimer;
+  bool _showingDialog = false;
 
   Set<String> subscribedTopics = {};
 
   void _startStatusTimer() {
+    const timeoutDuration = Duration(seconds: 5); // Initial 5 seconds
+    int elapsedTimeInSeconds = 0;
+
     _statusTimer?.cancel();
-    _statusTimer = Timer.periodic(const Duration(seconds: 7), (timer) {
-      print('MQTT Connection Status: ${client.connectionStatus}');
+    _statusTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      elapsedTimeInSeconds++;
+      final status = client.connectionStatus;
+      print(
+          'MQTT Connection Status ${status?.state} , returnCode: ${status?.returnCode}');
+      _connectionStatusController.add(status!.state);
+
+      if (status.state != MqttConnectionState.connected &&
+          elapsedTimeInSeconds >= 5) {
+        _onDisconnected(); // Show dialog after 5 seconds if still connecting
+      }
+
+      if (status.state == MqttConnectionState.connected) {
+        _statusTimer?.cancel(); // Cancel timer once connected
+      }
     });
   }
 
@@ -32,6 +51,8 @@ class MQTTClientWrapper {
 
       setupMessageListener();
       _startStatusTimer();
+      _listenToConnectionStatus();
+      _listenToConnectivityChanges();
     } catch (e, stackTrace) {
       print('Error in prepareMqttClient: $e');
       print('Stack trace: $stackTrace');
@@ -74,11 +95,12 @@ class MQTTClientWrapper {
       );
       client.secure = false;
       client.securityContext = SecurityContext.defaultContext;
-      client.keepAlivePeriod = 20;
+      client.keepAlivePeriod = 5;
       client.autoReconnect = true;
       client.onDisconnected = _onDisconnected;
       client.onConnected = _onConnected;
       client.onSubscribed = _onSubscribed;
+      client.onAutoReconnect = _onAutoReconnect;
     } catch (e, stackTrace) {
       print('Error in _setupMqttClient: $e');
       print('Stack trace: $stackTrace');
@@ -207,11 +229,49 @@ class MQTTClientWrapper {
   void _onConnected() {
     try {
       print('Connected to MQTT broker');
+
+      // Dismiss reconnect dialogs if shown
+      if (_showingDialog) {
+        _showingDialog = false;
+        Navigator.of(Constants.navigatorKey.currentState!.overlay!.context)
+            .pop();
+      }
+
+      // Any other actions needed upon successful connection
     } catch (e, stackTrace) {
       print('Error in _onConnected: $e');
       print('Stack trace: $stackTrace');
       // Handle error as needed
     }
+  }
+
+  final StreamController<MqttConnectionState> _connectionStatusController =
+      StreamController<MqttConnectionState>.broadcast();
+
+  void _listenToConnectionStatus() {
+    _connectionStatusController.stream.listen((MqttConnectionState state) {
+      if (state == MqttConnectionState.connecting) {
+        _onAutoReconnect();
+      }
+    });
+  }
+
+  Connectivity _connectivity = Connectivity();
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  void _listenToConnectivityChanges() {
+    _connectivitySubscription
+        ?.cancel(); // Cancel previous subscription if exists
+    _connectivitySubscription = _connectivity.onConnectivityChanged
+        .listen((List<ConnectivityResult> event) {
+      // Note: 'event' is actually a single item list in this context
+      ConnectivityResult result =
+          event.isNotEmpty ? event[0] : ConnectivityResult.none;
+      print('Connectivity changed to $result');
+      if (result == ConnectivityResult.none) {
+        _onDisconnected();
+      }
+    });
   }
 
   void logout() {
@@ -226,11 +286,95 @@ class MQTTClientWrapper {
       _statusTimer?.cancel();
 
       // Clear subscribed topics
-      subscribedTopics.clear();
+      if (subscribedTopics.isNotEmpty) {
+        MQTTClientWrapper()
+            .unsubscribeFromMultipleTopics(subscribedTopics.toList());
+        subscribedTopics.clear();
+      }
+
+      // Close connection status controller
+      _connectionStatusController.close();
+
+      // Cancel connectivity subscription
+      _connectivitySubscription?.cancel(); // Restart the app
     } catch (e, stackTrace) {
       print('Error in logout: $e');
       print('Stack trace: $stackTrace');
       // Handle error as needed
+    }
+  }
+
+  void _onAutoReconnect() {
+    if (!_showingDialog) {
+      _showingDialog = true;
+      final BuildContext? context =
+          Constants.navigatorKey.currentState?.overlay?.context;
+
+      if (context == null) {
+        print('Error: navigatorKey context is null');
+        _showingDialog = false;
+        return;
+      }
+
+      int elapsedTimeInSeconds = 0;
+      Timer? reconnectTimer;
+
+      // Show initial transparent dialog with progress indicator for the first 5 seconds
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            backgroundColor: Colors.transparent,
+            content: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+      );
+
+      // Start timer to switch to full dialog after 5 seconds
+      reconnectTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        elapsedTimeInSeconds++;
+        final status = client.connectionStatus;
+
+        if (status?.state != MqttConnectionState.connected &&
+            elapsedTimeInSeconds >= 5) {
+          // Cancel the initial transparent dialog
+          Navigator.of(context).pop();
+
+          // Show the full reconnect dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Connection Lost'),
+                content: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text('Attempting to reconnect to MQTT...'),
+                    SizedBox(height: 16),
+                    CircularProgressIndicator(), // Add circular progress indicator
+                  ],
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Logout'),
+                    onPressed: () {
+                      logout();
+                      Navigator.of(context)
+                          .pushNamedAndRemoveUntil('/', (route) => false);
+                    },
+                  ),
+                ],
+              );
+            },
+          ).then((value) => _showingDialog = false);
+
+          reconnectTimer?.cancel();
+        }
+      });
     }
   }
 }

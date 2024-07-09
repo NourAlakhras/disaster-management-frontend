@@ -1,0 +1,41 @@
+[33mdcb941a[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m mqtt , rtmp in detailed screen are working
+[33m93a7a30[m mqtt robot controlling is done
+[33m1511424[m pub to mqtt>robot controlling screen
+[33m45ea78d[m bar charts are done
+[33m2a4ba8e[m barchart with different bar colors
+[33m2296979[m bar charts fix appearance
+[33md22355a[m bar charts with titles
+[33m8670731[m initial bar charts without titles
+[33m641cbfd[m mqtt name s , cache thresholds
+[33m5352049[m thresholds editing
+[33m40de5b8[m color changing icons for sensor data
+[33me88cd9d[m theme
+[33me837bcc[m missions profile
+[33m70b4a24[m dashboard is done for both user levels
+[33m6893d82[m create mission with pagination done
+[33me015aa4[m selections for mission>not finished
+[33mb834de8[m reg user level is done except dashboard
+[33me28032d[m mission's monitoring tabs
+[33mc38b83e[m devices maps : restrict  devices ongoing missions
+[33md4122b8[m devices main tabs
+[33m3ecfa35[m User profile (done fo now)
+[33m81e9205[m missions are done
+[33mb741250[m working on missions list
+[33m04d3509[m devices tab with thumbnails -  change robot to device
+[33m99c7c5a[m admin settings - initial
+[33mc0afb59[m mission profile
+[33m1b64465[m update status for the Mission
+[33m624656d[m missions filtration
+[33maf48ebf[m users list filtration drawer
+[33m46f16d7[m fix user filtration and pagination
+[33ma15ce90[m admin's dashboard
+[33m3cc53d4[m admin interfaces
+[33mb79ec60[m The Settings Screen with backend
+[33m2e2cebd[m fixing error handling
+[33md5da949[m fixing error handling
+[33m84f874a[m user authentication + broker connection
+[33mdd443dc[m using google maps
+[33m23ed87c[m fixing the topic subscription -2
+[33m2c18c9e[m fixing the topic subscription -1
+[33m44beba9[m map view
+[33m0a668ec[m Initial commit

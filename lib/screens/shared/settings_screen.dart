@@ -50,7 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _logout(BuildContext context) async {
     try {
-      await widget.mqttClient.logout();
+      widget.mqttClient.logout();
       await UserApiService.logout();
       Navigator.pushNamedAndRemoveUntil(
         context,

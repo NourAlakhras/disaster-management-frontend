@@ -133,7 +133,6 @@ class UserApiService {
         // Successfully logged out, clear the cached token
         await AuthApiService.clearToken();
         UserCredentials().clearUserCredentials();
-        // Update MQTT client state to LOGGED_OUT
       } else if (response.statusCode == 400) {
         throw BadRequestException();
       } else if (response.statusCode == 404) {

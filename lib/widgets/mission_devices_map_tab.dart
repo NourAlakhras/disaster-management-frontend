@@ -1,112 +1,101 @@
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
-import 'package:flutter_3/services/mqtt_client_wrapper.dart';
-import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/models/gps_data.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
-import 'package:flutter/foundation.dart';
-import 'dart:math' show atan2, cos, pi, sin, sqrt, log;
-import 'package:flutter_3/utils/app_colors.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_3/providers/sensor_data_provider.dart';
 
 class MissionDevicesMapTab extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
   final List<Device> devices;
   final Device? broker;
-  const MissionDevicesMapTab(
-      {super.key,
-      required this.mqttClient,
-      required this.devices,
-      required this.broker});
+
+  const MissionDevicesMapTab({
+    super.key,
+    required this.devices,
+    required this.broker,
+  });
 
   @override
   State<MissionDevicesMapTab> createState() => _MissionDevicesMapTabState();
 }
 
 class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
-  late GoogleMapController _mapController;
+  GoogleMapController? _mapController;
   final Set<Marker> _markers = {};
   LatLngBounds _bounds = LatLngBounds(
-    southwest: const LatLng(0, 0), // First corner (e.g., (0, 0))
-    northeast: const LatLng(0, 0), // Second corner (e.g., (0, 0))
+    southwest: const LatLng(0, 0),
+    northeast: const LatLng(0, 0),
   );
-  // List to store subscribed MQTT topics
-  List<String> _mqttTopics = [];
 
   @override
   void initState() {
     super.initState();
-    widget.mqttClient.onDataReceived = _onDataReceived;
-    _subscribeToTopics();
-    widget.mqttClient.setupMessageListener();
+    print(
+        'MissionDevicesMapTab initialized with ${widget.devices.length} devices and broker ${widget.broker}');
   }
-  void _subscribeToTopics() {
-    for (var device in widget.devices) {
-      String mqttTopic = 'cloud/reg/${widget.broker?.name}/${device.name}/gps';
-      widget.mqttClient.subscribeToTopic(mqttTopic);
-      _mqttTopics.add(mqttTopic); // Add topic to the list
+void _updateMarkers(String deviceName, GPSData gpsData) {
+    String cleanedDeviceName = deviceName.replaceAll('/gps', '');
+    print('Updating markers for device: $cleanedDeviceName');
+
+    double lat = gpsData.lat ?? 0.0;
+    double long = gpsData.long ?? 0.0;
+    LatLng position = LatLng(lat, long);
+    print('Received GPS data for $cleanedDeviceName: lat=$lat, long=$long');
+
+    // Remove existing marker for the device
+    _markers
+        .removeWhere((marker) => marker.markerId.value == cleanedDeviceName);
+
+    // Get marker color based on the device's name
+    int deviceIndex =
+        widget.devices.indexWhere((device) => device.name == cleanedDeviceName);
+    if (deviceIndex == -1) {
+      print('Device $cleanedDeviceName not found in the list');
+      return; // Exit if device is not found
     }
+
+    Color color = _generateColor(deviceIndex);
+    print('Generated color for $cleanedDeviceName: $color');
+
+    _markers.add(
+      Marker(
+        markerId: MarkerId(cleanedDeviceName),
+        position: position,
+        icon: BitmapDescriptor.defaultMarkerWithHue(_getColorHue(color)),
+        infoWindow: InfoWindow(title: cleanedDeviceName),
+      ),
+    );
+    print('Added new marker for $cleanedDeviceName at position: $position');
+
+    _adjustBounds(position);
+    print('Adjusted bounds with position: $position');
+
+    // Schedule to fit bounds after the build is completed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_mapController != null) {
+        _fitBounds();
+      } else {
+        print('Map controller not yet initialized when fitting bounds');
+      }
+    });
   }
-  void _unsubscribeFromTopics() {
-    widget.mqttClient.unsubscribeFromMultipleTopics(_mqttTopics);
-  }
 
-  void _onDataReceived(Map<String, dynamic> message) {
-    // Extract the topic string
-    String topic = message['topic'];
-
-    // Extract the device name from the topic string
-    List<String> topicParts = topic.split('/');
-    String deviceName = topicParts[topicParts.length - 2];
-
-    print('from map this is my topic $topic');
-    _updateMarkers(deviceName, message);
-  }
-
-  void _updateMarkers(String deviceName, Map<String, dynamic> gpsData) {
-    if (gpsData.containsKey('lat') && gpsData.containsKey('long')) {
-      double lat = gpsData['lat'];
-      double long = gpsData['long'];
-      LatLng position = LatLng(lat, long);
-      _markers.removeWhere((marker) => marker.markerId.value == deviceName);
-
-      // Get marker color based on the device's name
-      Color color = _generateColor(widget.devices.indexOf(
-          widget.devices.firstWhere((device) => device.name == deviceName)));
-
-      // Add marker with custom color and device name
-      _markers.add(
-        Marker(
-          markerId: MarkerId(deviceName),
-          position: position,
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-            _getColorHue(color),
-          ),
-          infoWindow: InfoWindow(title: deviceName), // Set the device name
-        ),
-      );
-
-      _adjustBounds(position);
-
-      // Update camera position to show all markers
-      _fitBounds();
-
-      setState(() {});
-    }
-  }
 
   Color _generateColor(int index) {
-    final double hue =
-        (index * 137.508) % 360; // Use golden angle approximation
+    final double hue = (index * 137.508) % 360;
+    print('Generating color for index $index: hue=$hue');
     return HSVColor.fromAHSV(1.0, hue, 0.5, 0.9).toColor();
   }
 
-
   double _getColorHue(Color color) {
-    // Calculate hue from color
-    HSVColor hsvColor = HSVColor.fromColor(color);
-    return hsvColor.hue;
+    double hue = HSVColor.fromColor(color).hue;
+    print('Extracted hue $hue from color $color');
+    return hue;
   }
-
 
   void _adjustBounds(LatLng position) {
     double minLat = _bounds.southwest.latitude;
@@ -114,34 +103,41 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     double maxLat = _bounds.northeast.latitude;
     double maxLong = _bounds.northeast.longitude;
 
-    if (position.latitude < minLat) minLat = position.latitude;
-    if (position.longitude < minLong) minLong = position.longitude;
-    if (position.latitude > maxLat) maxLat = position.latitude;
-    if (position.longitude > maxLong) maxLong = position.longitude;
+    minLat = min(minLat, position.latitude);
+    minLong = min(minLong, position.longitude);
+    maxLat = max(maxLat, position.latitude);
+    maxLong = max(maxLong, position.longitude);
 
     _bounds = LatLngBounds(
       southwest: LatLng(minLat, minLong),
       northeast: LatLng(maxLat, maxLong),
     );
+
+    print(
+        'Updated map bounds: Southwest: $minLat, $minLong; Northeast: $maxLat, $maxLong');
   }
 
   void _fitBounds() {
-    if (_markers.isNotEmpty) {
+    if (_mapController != null && _markers.isNotEmpty) {
       LatLngBounds bounds = _bounds;
-
-      // Calculate center point based on markers
       LatLng centerPoint = _calculateCenterPoint(
           _markers.map((marker) => marker.position).toList());
+      print('Calculated center point: $centerPoint');
 
-      // Adjust zoom level to fit all markers
       double zoomLevel = _calculateZoomLevel(bounds, centerPoint);
+      print('Calculated zoom level: $zoomLevel');
 
-      _mapController.animateCamera(CameraUpdate.newCameraPosition(
+      _mapController!.animateCamera(CameraUpdate.newCameraPosition(
         CameraPosition(
           target: centerPoint,
           zoom: zoomLevel,
         ),
       ));
+      print(
+          'Animated camera to center point: $centerPoint with zoom level: $zoomLevel');
+    } else {
+      print(
+          'No markers available or map controller not initialized to fit bounds');
     }
   }
 
@@ -160,7 +156,6 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     }
 
     int total = positions.length;
-
     sumX /= total;
     sumY /= total;
     sumZ /= total;
@@ -169,27 +164,28 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     double hyp = sqrt(sumX * sumX + sumY * sumY);
     double lat = atan2(sumZ, hyp);
 
-    return LatLng(lat * 180 / pi, lon * 180 / pi);
+    LatLng center = LatLng(lat * 180 / pi, lon * 180 / pi);
+    print('Calculated center point from positions: $center');
+    return center;
   }
 
   double _calculateZoomLevel(LatLngBounds bounds, LatLng center) {
-    const double maxZoom = 20.0;
-    const double minZoom = 10.0;
-    const double padding = 50.0;
-    double zoom = minZoom;
+    const double maxZoom = 0.0;
+    const double minZoom = 0.0;
+    const double padding = 0.0;
 
     double angle = _calculateAngleFromCenter(bounds, center);
-
     double cameraSize = _calculateCameraSize(bounds, center);
-
     double scale = MediaQuery.of(context).devicePixelRatio;
 
-    // Adjust zoom level based on camera size and angle
-    zoom = maxZoom -
+    double zoom = maxZoom -
         (log(angle) / log(2)) +
         (log(cameraSize / (256 * scale * padding)) / log(2));
+    zoom = zoom.clamp(minZoom, maxZoom);
 
-    return zoom.clamp(minZoom, maxZoom);
+    print(
+        'Calculated zoom level: $zoom (angle: $angle, camera size: $cameraSize, scale: $scale)');
+    return zoom;
   }
 
   double _calculateAngleFromCenter(LatLngBounds bounds, LatLng center) {
@@ -197,19 +193,19 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     LatLng southwest = bounds.southwest;
 
     double angle = _distanceBetweenLatLng(northeast, southwest);
-
+    print('Calculated angle from center: $angle');
     return angle;
   }
 
   double _calculateCameraSize(LatLngBounds bounds, LatLng center) {
     double cameraSize =
         _distanceBetweenLatLng(bounds.northeast, bounds.southwest);
-
+    print('Calculated camera size: $cameraSize');
     return cameraSize;
   }
 
   double _distanceBetweenLatLng(LatLng latLng1, LatLng latLng2) {
-    const double radius = 6371e3; // Earth's radius in meters
+    const double radius = 6371e3; // Earth radius in meters
 
     double lat1 = latLng1.latitude * pi / 180;
     double lon1 = latLng1.longitude * pi / 180;
@@ -224,47 +220,64 @@ class _MissionDevicesMapTabState extends State<MissionDevicesMapTab> {
     double c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
     double distance = radius * c;
-
+    print(
+        'Calculated distance between $latLng1 and $latLng2: $distance meters');
     return distance;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: Column(children: [
-      Expanded(
-          child: GoogleMap(
-        gestureRecognizers: {}
-          ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer()))
-          ..add(Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()))
-          ..add(Factory<TapGestureRecognizer>(() => TapGestureRecognizer()))
-          ..add(Factory<VerticalDragGestureRecognizer>(
-              () => VerticalDragGestureRecognizer()))
-          ..add(Factory<HorizontalDragGestureRecognizer>(
-              () => HorizontalDragGestureRecognizer()))
-          ..add(Factory<LongPressGestureRecognizer>(
-              () => LongPressGestureRecognizer())),
+    return Consumer<SensorDataProvider>(
+      builder: (context, sensorDataProvider, child) {
+        print(
+            'Building widget with sensor data: ${sensorDataProvider.gpsData}');
 
-        compassEnabled: true,
-        rotateGesturesEnabled: true, // Respond to rotate gestures
-        tiltGesturesEnabled: true, // Respond to tilt gestures
-        zoomControlsEnabled: true, // Show zoom controls
-        zoomGesturesEnabled: true, // Respond to zoom gestures
-        onMapCreated: (controller) {
-          _mapController = controller;
-        },
-        initialCameraPosition: const CameraPosition(
-          target: LatLng(0.0, 0.0),
-          zoom: 50,
-        ),
-        markers: _markers,
-      ))
-    ]));
+        // Update markers based on GPS data
+        sensorDataProvider.gpsData.forEach((deviceName, gpsData) {
+          print('Processing GPS data for device: $deviceName');
+          _updateMarkers(deviceName, gpsData);
+        });
+
+        return Scaffold(
+          body: GoogleMap(
+            gestureRecognizers: {
+              Factory<PanGestureRecognizer>(() => PanGestureRecognizer()),
+              Factory<ScaleGestureRecognizer>(() => ScaleGestureRecognizer()),
+              Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
+              Factory<VerticalDragGestureRecognizer>(
+                  () => VerticalDragGestureRecognizer()),
+              Factory<HorizontalDragGestureRecognizer>(
+                  () => HorizontalDragGestureRecognizer()),
+              Factory<LongPressGestureRecognizer>(
+                  () => LongPressGestureRecognizer()),
+            },
+            compassEnabled: true,
+            rotateGesturesEnabled: true,
+            tiltGesturesEnabled: true,
+            zoomControlsEnabled: true,
+            zoomGesturesEnabled: true,
+            onMapCreated: (controller) {
+              _mapController = controller;
+              print('Map controller created: $_mapController');
+              // Fit bounds after the map is created
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _fitBounds();
+              });
+            },
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(0.0, 0.0),
+              zoom: 10,
+            ),
+            markers: _markers,
+          ),
+        );
+      },
+    );
   }
 
-   @override
+  @override
   void dispose() {
-    _unsubscribeFromTopics(); // Unsubscribe from MQTT topics
     super.dispose();
+    print('MissionDevicesMapTab disposed');
   }
 }

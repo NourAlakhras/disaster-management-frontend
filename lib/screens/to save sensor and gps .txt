@@ -1,0 +1,442 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/models/sensor_data.dart';
+import 'package:flutter_3/providers/sensor_data_provider.dart';
+import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/widgets/custom_upper_bar.dart';
+import 'package:flutter_3/widgets/custom_search_bar.dart';
+import 'package:flutter_3/widgets/filter_drawer.dart';
+import 'package:flutter_3/widgets/mission_analytics_tab.dart';
+import 'package:flutter_3/widgets/mission_devices_list_tab.dart';
+import 'package:flutter_3/widgets/mission_devices_map_tab.dart';
+import 'package:flutter_3/widgets/mission_devices_thumbnails_tab.dart';
+import 'package:flutter_3/widgets/tabbed_view.dart';
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/utils/app_colors.dart';
+import 'package:provider/provider.dart';
+
+class MissionDevicesBaseScreen extends StatefulWidget {
+  final MQTTClientWrapper mqttClient;
+  final Mission mission;
+
+  const MissionDevicesBaseScreen(
+      {required this.mqttClient, super.key, required this.mission});
+
+  @override
+  State<MissionDevicesBaseScreen> createState() =>
+      _MissionDevicesBaseScreenState();
+}
+
+class _MissionDevicesBaseScreenState extends State<MissionDevicesBaseScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<DeviceType>? _filteredTypes = DeviceType.values;
+  final criteriaList = [
+    FilterCriterion(name: 'Device Type', options: DeviceType.values.toList()),
+  ];
+  String? _name;
+  List<String> mqttTopics = [];
+  List<Device> _filteredDevices = [];
+  @override
+  void initState() {
+    super.initState();
+    fetchMissionDetails();
+    widget.mqttClient.onDataReceived = _onDataReceived; // Set the callback
+
+    _subscribeToTopics();
+  }
+
+  void _onDataReceived(Map<String, dynamic> data) {
+    print('Data received: $data'); // Log the entire data map
+
+    final sensorDataProvider =
+        Provider.of<SensorDataProvider>(context, listen: false);
+    final topic = data['topic'] as String;
+
+    data['topic'] = topic;
+    sensorDataProvider.handleIncomingData(
+        _extractDeviceNameFromTopic(topic), data);
+  }
+
+  String _extractDeviceNameFromTopic(String topic) {
+    final parts = topic.split('/');
+    final deviceName = parts.length > 3 ? parts[3] : 'unknown_device';
+    print(
+        'Extracted device name: $deviceName'); // Log the extracted device name
+    return deviceName;
+  }
+
+  void _subscribeToTopics() {
+    for (var device in _filteredDevices) {
+      mqttTopics.addAll([
+        'cloud/reg/${widget.mission.broker?.name}/${device.name}/sensor-data',
+        'cloud/reg/${widget.mission.broker?.name}/${device.name}/gps',
+        'cloud/reg/${widget.mission.broker?.name}/${device.name}/connectivity',
+      ]);
+    }
+    widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
+    widget.mqttClient.setupMessageListener();
+  }
+
+  void _unsubscribeFromTopics() {
+    widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromTopics();
+    super.dispose();
+  }
+
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     appBar: CustomUpperBar(
+  //       title: 'Mission: ${widget.mission.name}',
+  //       leading: IconButton(
+  //         icon: const Icon(Icons.arrow_back),
+  //         color: primaryTextColor,
+  //         onPressed: () {
+  //           Navigator.pop(context);
+  //         },
+  //       ),
+  //       actions: [
+  //         IconButton(
+  //           icon: const Icon(Icons.notifications),
+  //           color: primaryTextColor,
+  //           onPressed: () {},
+  //         )
+  //       ],
+  //     ),
+  //     body: SizedBox(
+  //       height: MediaQuery.of(context).size.height,
+  //       width: double.infinity,
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.stretch,
+  //         children: <Widget>[
+  //           Padding(
+  //             padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 00),
+  //             child: CustomSearchBar(
+  //               controller: _searchController,
+  //               onChanged: _filterDevices,
+  //               onClear: _clearSearch,
+  //             ),
+  //           ),
+  //           Expanded(
+  //             child: TabbedView(
+  //               length: 4,
+  //               tabs: const <Widget>[
+  //                 Tab(
+  //                   child: Icon(Icons.list),
+  //                 ),
+  //                 Tab(
+  //                   child: Icon(Icons.analytics_outlined),
+  //                 ),
+  //                 Tab(
+  //                   child: Icon(Icons.photo_camera_front),
+  //                 ),
+  //                 Tab(
+  //                   icon: Icon(Icons.map_outlined),
+  //                 ),
+  //               ],
+  //               tabContents: <Widget>[
+  //                 // Content for Tab 1
+  //                 if (_filteredDevices.isNotEmpty)
+  //                   MissionDevicesListTab(
+  //                     mqttClient: widget.mqttClient,
+  //                     devices: _filteredDevices,
+  //                   )
+  //                 else
+  //                   const Center(
+  //                     child: Text('No devices available',
+  //                         style: TextStyle(color: primaryTextColor)),
+  //                   ),
+  //                 // Content for Tab 2
+  //                 if (_filteredDevices.isNotEmpty)
+  //                   MissionAnalyticsTab(
+  //                     mqttClient: widget.mqttClient,
+  //                     devices: _filteredDevices,
+  //                     broker: widget.mission.broker,
+  //                   )
+  //                 else
+  //                   const Center(
+  //                     child: Text('No devices available',
+  //                         style: TextStyle(color: primaryTextColor)),
+  //                   ),
+  //                 // Content for Tab 3
+  //                 if (_filteredDevices.isNotEmpty)
+  //                   MissionDevicesThumbnailsTab(
+  //                     mqttClient: widget.mqttClient,
+  //                     devices: _filteredDevices,
+  //                     broker: widget.mission.broker,
+  //                   )
+  //                 else
+  //                   const Center(
+  //                     child: Text('No devices available',
+  //                         style: TextStyle(color: primaryTextColor)),
+  //                   ),
+  //                 // // Content for Tab 4
+  //                 if (_filteredDevices.isNotEmpty)
+  //                   MissionDevicesMapTab(
+  //                     mqttClient: widget.mqttClient,
+  //                     devices: _filteredDevices, // Use devices from mission
+  //                     broker: widget.mission.broker,
+  //                   )
+  //                 else
+  //                   const Center(
+  //                     child: Text('No devices available',
+  //                         style: TextStyle(color: primaryTextColor)),
+  //                   ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //     endDrawer: FilterDrawerWidget(
+  //       onFilterApplied: (selectedCriteria) {
+  //         final List<DeviceType> selectedTypes =
+  //             (selectedCriteria['Device Type'] as List<dynamic>)
+  //                 .cast<DeviceType>();
+
+  //         setState(() {
+  //           _filteredTypes =
+  //               selectedTypes.isNotEmpty ? selectedTypes : DeviceType.values;
+  //         });
+  //         _filterDevices(_searchController.text);
+  //       },
+  //       criteriaList: criteriaList,
+  //       title: 'Filter Options',
+  //     ),
+  //   );
+  // }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Mission: ${widget.mission.name}'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: Consumer<SensorDataProvider>(
+              builder: (context, provider, child) {
+                if (provider.sensorData.isEmpty && provider.gpsData.isEmpty) {
+                  return const Center(
+                    child: Text('No data available'),
+                  );
+                }
+
+                return ListView(
+                  children: <Widget>[
+                    if (provider.sensorData.isNotEmpty)
+                      ...provider.sensorData.values.map((sensorReading) {
+                        final valueDisplay = sensorReading.value
+                                is List<dynamic>
+                            ? (sensorReading.value as List<dynamic>).join(', ')
+                            : sensorReading.value.toString();
+
+                        return ListTile(
+                          title: Text(
+                            '${sensorReading.sensor}: $valueDisplay ${sensorReading.unit}',
+                            style: const TextStyle(color: Colors.amber),
+                          ),
+                        );
+                      }).toList(),
+                    if (provider.gpsData.isNotEmpty)
+                      ...provider.gpsData.values.map((gpsData) {
+                        return ListTile(
+                          title: Text(
+                            'GPS - Lat: ${gpsData.lat}, Long: ${gpsData.long}',
+                            style: const TextStyle(color: Colors.green),
+                          ),
+                        );
+                      }).toList(),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _filterDevices(String query) {
+    setState(() {
+      _name = query.isNotEmpty ? query.toLowerCase() : null;
+      _filteredDevices = widget.mission.devices!.where((device) {
+        final deviceNameLower = device.name.toLowerCase();
+        final matchesName = _name == null || deviceNameLower.contains(_name!);
+        final matchesType = _filteredTypes!.contains(device.type);
+        return matchesName && matchesType;
+      }).toList();
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _filterDevices('');
+  }
+
+  Future<void> fetchMissionDetails() async {
+    widget.mission.fetchMissionDetails(() {
+      if (mounted) {
+        setState(() {
+          _filteredDevices = widget.mission.devices!;
+        });
+      }
+    });
+  }
+}
+// __________________________________________
+import 'package:flutter/material.dart';
+import 'package:flutter_3/screens/edit_mission_users_screen.dart';
+import 'package:flutter_3/screens/welcome_screen.dart';
+import 'package:flutter_3/screens/login_screen.dart';
+import 'package:flutter_3/screens/signup_screen.dart';
+import 'package:flutter_3/providers/sensor_data_provider.dart';
+import 'package:flutter_3/theme.dart';
+import 'package:flutter_3/utils/constants.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+  WidgetsFlutterBinding
+      .ensureInitialized(); // Ensure Flutter is initialized before runApp()
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+     return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+            create: (_) => SensorDataProvider()), // Add your provider here
+        // Add other providers if needed
+      ],child: MaterialApp(
+      navigatorKey: Constants.navigatorKey,
+      theme: CustomTheme.darkTheme,
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const WelcomeScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/signup': (context) => const SignupScreen(),
+        '/edit_users': (context) => EditMissionUsersScreen(),
+          },
+      ),
+    );
+  }
+}
+// ________________________________
+class SensorData {
+  final String sensor;
+  final dynamic value;
+  final String unit;
+
+  SensorData({
+    required this.sensor,
+    required this.value,
+    required this.unit,
+  });
+
+  factory SensorData.fromJson(Map<String, dynamic> json) {
+    return SensorData(
+      sensor: json['sensor'],
+      value: json['value'],
+      unit: json['unit'],
+    );
+  }
+}
+// ___________________________________
+import 'dart:ffi';
+
+class GPSData {
+  final double lat;
+  final double long;
+
+  GPSData({required this.lat, required this.long});
+
+  factory GPSData.fromJson(Map<String, dynamic> json) {
+    return GPSData(
+      lat: json['lat'],
+      long: json['long'],
+    );
+  }
+}
+// _________________________________
+import 'package:flutter/material.dart';
+import 'package:flutter_3/models/gps_data.dart';
+import 'package:flutter_3/models/sensor_data.dart';
+
+class SensorDataProvider with ChangeNotifier {
+  Map<String, SensorData> _sensorData = {};
+  Map<String, GPSData> _gpsData = {}; // Add a map to store GPS data
+
+  Map<String, SensorData> get sensorData => _sensorData;
+  Map<String, GPSData> get gpsData => _gpsData;
+
+  void updateSensorData(String deviceName, SensorData sensorReading) {
+    final key = '$deviceName/${sensorReading.sensor}';
+    _sensorData[key] = sensorReading;
+    notifyListeners();
+  }
+
+  void updateGPSData(String deviceName, GPSData gpsData) {
+    final key = '$deviceName/gps';
+    _gpsData[key] = gpsData;
+    notifyListeners();
+  }
+
+  void handleIncomingData(String deviceName, Map<String, dynamic> data) {
+    final topic = data['topic'] as String;
+    if (data.containsKey('sensor')) {
+      // Handle sensor data
+      String sensor = data['sensor'] ?? 'Unknown';
+      String unit = data['unit'] ?? '';
+      var value = data['value'];
+
+      if (value == null) {
+        throw ArgumentError('Value cannot be null');
+      }
+
+      if (value is List<dynamic>) {
+        for (var item in value) {
+          if (item is num) {
+            final sensorReading = SensorData(
+              sensor: sensor,
+              value: item,
+              unit: unit,
+            );
+            updateSensorData(deviceName, sensorReading);
+          } else {
+            print('Received item in list is not a num: $item');
+          }
+        }
+      } else if (value is num) {
+        final sensorReading = SensorData(
+          sensor: sensor,
+          value: value,
+          unit: unit,
+        );
+        updateSensorData(deviceName, sensorReading);
+      } else {
+        print('Received value is not a num or List<num>: $value');
+      }
+    } else if (data.containsKey('lat') && data.containsKey('long')) {
+      // Handle GPS data
+      double lat = data['lat']?.toDouble() ?? 0.0;
+      double long = data['long']?.toDouble() ?? 0.0;
+
+      final gpsData = GPSData(lat: lat, long: long);
+      updateGPSData(deviceName, gpsData);
+    } else {
+      print('Received data does not match any expected format: $data');
+    }
+  }
+}

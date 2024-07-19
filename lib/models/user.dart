@@ -79,10 +79,43 @@ class User {
       setStateCallback(); // Notify the widget even in case of an error
     }
   }
+
+  Future<void> approve(bool isAdmin, VoidCallback setStateCallback) async {
+    try {
+      await AdminApiService.approveUser(user_id, isAdmin);
+      await fetchUserDetails(setStateCallback);
+    } catch (e) {
+      print('Failed to approve user: $e');
+      setStateCallback(); // Notify the widget even in case of an error
+    }
+  }
+
+  Future<void> reject(VoidCallback setStateCallback) async {
+    try {
+      await AdminApiService.rejectUser(user_id);
+      await fetchUserDetails(setStateCallback);
+    } catch (e) {
+      print('Failed to reject user: $e');
+      setStateCallback(); // Notify the widget even in case of an error
+    }
+  }
+
+  Future<void> delete(VoidCallback setStateCallback) async {
+    try {
+      await AdminApiService.deleteUser(user_id);
+      // Handle successful deletion, possibly notify the user or navigate away
+    } catch (e) {
+      print('Failed to delete user: $e');
+      setStateCallback(); // Notify the widget even in case of an error
+    }
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is User && runtimeType == other.runtimeType && user_id == other.user_id;
+      other is User &&
+          runtimeType == other.runtimeType &&
+          user_id == other.user_id;
 
   @override
   int get hashCode => user_id.hashCode;

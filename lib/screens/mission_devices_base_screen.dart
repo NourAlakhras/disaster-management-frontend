@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/models/sensor_data.dart';
+import 'package:flutter_3/providers/sensor_data_provider.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
@@ -12,33 +15,78 @@ import 'package:flutter_3/widgets/mission_devices_thumbnails_tab.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/app_colors.dart';
+import 'package:provider/provider.dart';
 
-class MissionDevicesListScreen extends StatefulWidget {
+class MissionDevicesBaseScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;
   final Mission mission;
 
-  const MissionDevicesListScreen(
+  const MissionDevicesBaseScreen(
       {required this.mqttClient, super.key, required this.mission});
 
   @override
-  State<MissionDevicesListScreen> createState() =>
-      _MissionDevicesListScreenState();
+  State<MissionDevicesBaseScreen> createState() =>
+      _MissionDevicesBaseScreenState();
 }
 
-class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
+class _MissionDevicesBaseScreenState extends State<MissionDevicesBaseScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<DeviceType>? _filteredTypes = DeviceType.values;
   final criteriaList = [
     FilterCriterion(name: 'Device Type', options: DeviceType.values.toList()),
   ];
   String? _name;
-
+  List<String> mqttTopics = [];
   List<Device> _filteredDevices = [];
-
   @override
   void initState() {
     super.initState();
     fetchMissionDetails();
+    widget.mqttClient.onDataReceived = _onDataReceived; // Set the callback
+
+    _subscribeToTopics();
+  }
+
+  void _onDataReceived(Map<String, dynamic> data) {
+    print('Data received: $data'); // Log the entire data map
+
+    final sensorDataProvider =
+        Provider.of<SensorDataProvider>(context, listen: false);
+    final topic = data['topic'] as String;
+
+    data['topic'] = topic;
+    sensorDataProvider.handleIncomingData(
+        _extractDeviceNameFromTopic(topic), data);
+  }
+
+  String _extractDeviceNameFromTopic(String topic) {
+    final parts = topic.split('/');
+    final deviceName = parts.length > 3 ? parts[3] : 'unknown_device';
+    print(
+        'Extracted device name: $deviceName'); // Log the extracted device name
+    return deviceName;
+  }
+
+  void _subscribeToTopics() {
+    for (var device in _filteredDevices) {
+      mqttTopics.addAll([
+        'cloud/reg/${widget.mission.broker?.name}/${device.name}/sensor-data',
+        'cloud/reg/${widget.mission.broker?.name}/${device.name}/gps',
+        'cloud/reg/${widget.mission.broker?.name}/${device.name}/connectivity',
+      ]);
+    }
+    widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
+    widget.mqttClient.setupMessageListener();
+  }
+
+  void _unsubscribeFromTopics() {
+    widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromTopics();
+    super.dispose();
   }
 
   @override
@@ -107,7 +155,6 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                   // Content for Tab 2
                   if (_filteredDevices.isNotEmpty)
                     MissionAnalyticsTab(
-                      mqttClient: widget.mqttClient,
                       devices: _filteredDevices,
                       broker: widget.mission.broker,
                     )
@@ -121,8 +168,7 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                     MissionDevicesThumbnailsTab(
                       mqttClient: widget.mqttClient,
                       devices: _filteredDevices,
-                                            broker: widget.mission.broker,
-
+                      broker: widget.mission.broker,
                     )
                   else
                     const Center(
@@ -132,10 +178,8 @@ class _MissionDevicesListScreenState extends State<MissionDevicesListScreen> {
                   // // Content for Tab 4
                   if (_filteredDevices.isNotEmpty)
                     MissionDevicesMapTab(
-                      mqttClient: widget.mqttClient,
                       devices: _filteredDevices, // Use devices from mission
-                                            broker: widget.mission.broker,
-
+                      broker: widget.mission.broker,
                     )
                   else
                     const Center(

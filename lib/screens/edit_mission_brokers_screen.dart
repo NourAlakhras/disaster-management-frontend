@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_3/models/user.dart';
-import 'package:flutter_3/services/admin_api_service.dart';
+import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/selection_widget.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
-class EditUsersScreen extends StatefulWidget {
-  final List<User>? preselectedUsers;
+class EditMissionBrokerScreen extends StatefulWidget {
+  final Device? preselectedBroker;
   final String? missionId;
+  final bool singleSelection;
 
-  EditUsersScreen({this.preselectedUsers, this.missionId});
+  EditMissionBrokerScreen({
+    this.preselectedBroker,
+    this.missionId,
+    this.singleSelection = true,
+  });
 
   @override
-  _EditUsersScreenState createState() => _EditUsersScreenState();
+  _EditMissionBrokerScreenState createState() =>
+      _EditMissionBrokerScreenState();
 }
 
-class _EditUsersScreenState extends State<EditUsersScreen> {
-  late List<User> _userOptions = [];
-  late List<User> _selectedUsers = [];
+class _EditMissionBrokerScreenState extends State<EditMissionBrokerScreen> {
+  List<Device> _brokerOptions = [];
+  Device? _selectedBroker;
 
   bool _isLoading = false;
   int _pageNumber = 1;
@@ -29,32 +34,33 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedUsers = widget.preselectedUsers ?? [];
-    _fetchUsers();
+    _selectedBroker = widget.preselectedBroker;
+        print('EditMissionBrokerScreen _selectedItems $_selectedBroker');
+
+    _fetchBrokers();
   }
 
-  Future<void> _fetchUsers({int pageNumber = 1}) async {
+  Future<void> _fetchBrokers({int pageNumber = 1}) async {
     setState(() {
       _isLoading = true;
     });
     try {
-      final userResponse = await AdminApiService.getAllUsers(
+      final brokerResponse = await DeviceApiService.getAllDevices(
         pageNumber: pageNumber,
         pageSize: 5,
+        statuses: [DeviceStatus.AVAILABLE],
+        types: [DeviceType.BROKER],
         missionId: widget.missionId,
-        statuses: [
-          UserStatus.AVAILABLE,
-          UserStatus.ASSIGNED,
-        ],
       );
       if (!mounted) return;
 
       setState(() {
-        _userOptions = userResponse.items;
-        _pageNumber = userResponse.page;
-        _hasNext = userResponse.hasNext;
-        _hasPrev = userResponse.hasPrev;
+        _brokerOptions = brokerResponse.items;
+        _pageNumber = brokerResponse.page;
+        _hasNext = brokerResponse.hasNext;
+        _hasPrev = brokerResponse.hasPrev;
         _isLoading = false;
+        print('_brokerOptions $_brokerOptions');
       });
     } catch (e) {
       if (!mounted) return;
@@ -62,19 +68,19 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
       setState(() {
         _isLoading = false;
       });
-      throw Exception('Failed to fetch users: $e');
+      throw Exception('Failed to fetch brokers: $e');
     }
   }
 
   void _nextPage() {
     if (_hasNext) {
-      _fetchUsers(pageNumber: _pageNumber + 1);
+      _fetchBrokers(pageNumber: _pageNumber + 1);
     }
   }
 
   void _previousPage() {
     if (_hasPrev) {
-      _fetchUsers(pageNumber: _pageNumber - 1);
+      _fetchBrokers(pageNumber: _pageNumber - 1);
     }
   }
 
@@ -82,7 +88,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomUpperBar(
-        title: 'Select Users',
+        title: 'Select Broker',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           color: primaryTextColor,
@@ -95,7 +101,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
             icon: const Icon(Icons.check),
             color: primaryTextColor,
             onPressed: () {
-              Navigator.pop<List<User>>(context, _selectedUsers);
+              Navigator.pop<Device>(context, _selectedBroker);
             },
           ),
         ],
@@ -117,23 +123,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                 children: [
                   Expanded(
                     flex: 5,
-                    child: Text('Username',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: primaryTextColor)),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: Text('Type',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: primaryTextColor)),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: Text('Active Mission Count',
+                    child: Text("Broker's name",
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -145,24 +135,24 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
                   ),
                 ],
               ),
-            ),
-            // User List
+            ), // Broker List
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : SelectionWidget<User>(
-                      items: _userOptions,
-                      preselectedItems: _selectedUsers,
-                      onSelectionChanged: (selectedUsers) {
+                  : SelectionWidget<Device>(
+                      items: _brokerOptions,
+                      preselectedItems:
+                          _selectedBroker != null ? [_selectedBroker!] : [],
+                      onSelectionChanged: (selectedBrokers) {
                         setState(() {
-                          _selectedUsers = selectedUsers;
-                          print(
-                              'EditUsersScreen selectedUsers: $_selectedUsers');
+                          _selectedBroker = selectedBrokers.isNotEmpty
+                              ? selectedBrokers.first
+                              : null;
                         });
                       },
-                      itemBuilder: (user, isSelected) =>
-                          _buildUserTile(user, isSelected),
-                      singleSelection: false,
+                      itemBuilder: (broker, isSelected) =>
+                          _buildBrokerTile(broker, isSelected),
+                      singleSelection: widget.singleSelection,
                     ),
             ),
             // Pagination Controls
@@ -200,7 +190,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
     );
   }
 
-  Widget _buildUserTile(User user, bool isSelected) {
+  Widget _buildBrokerTile(Device broker, bool isSelected) {
     return Container(
       decoration: const BoxDecoration(
         border: Border(
@@ -213,21 +203,7 @@ class _EditUsersScreenState extends State<EditUsersScreen> {
           Expanded(
             flex: 5,
             child: Text(
-              user.username,
-              style: const TextStyle(fontSize: 17, color: secondaryTextColor),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              user.type.toString().split('.').last.toLowerCase(),
-              style: const TextStyle(fontSize: 17, color: secondaryTextColor),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              user.activeMissionCount.toString(),
+              broker.name,
               style: const TextStyle(fontSize: 17, color: secondaryTextColor),
             ),
           ),

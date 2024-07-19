@@ -1,15 +1,14 @@
 import 'dart:ui';
-
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/user.dart';
-import 'package:intl/intl.dart'; // Import the intl package
+import 'package:intl/intl.dart';
 
 class Mission {
   String id;
-  String name;
+  String _name;
   MissionStatus? status;
   DateTime? startDate;
   DateTime? endDate;
@@ -19,18 +18,31 @@ class Mission {
 
   Mission({
     required this.id,
-    required this.name,
+    required String name,
+    required this.broker,
     this.status,
     this.startDate,
     this.endDate,
     this.devices,
     this.users,
-    this.broker,
-  });
+  }) : _name = validateName(name) ? name : '';
 
+  static bool validateName(String name) {
+    return name.isNotEmpty && name.length >= 3 && name.length <= 20;
+  }
+
+  String get name => _name;
+
+  set name(String value) {
+    if (validateName(value)) {
+      _name = value;
+    } else {
+        throw ArgumentError('Mission name must be between 3 and 20 characters');
+    }
+  }
   factory Mission.fromJson(Map<String, dynamic> json) {
     List<Device> devices = [];
-    Device? brokerDevice; // Define a variable to hold the broker device
+    Device? brokerDevice;
 
     if (json['devices'] != null) {
       devices = List<Device>.from(
@@ -43,11 +55,13 @@ class Mission {
         device_id: json['broker']['broker_id'] as String? ?? '',
         name: json['broker']['broker_name'] as String? ?? '',
       );
-    }
+    } 
+
     List<User> users = [];
     if (json['users'] != null) {
       users = List<User>.from(
-          json['users'].map((userJson) => User.fromJson(userJson)));
+        json['users'].map((userJson) => User.fromJson(userJson)),
+      );
     }
 
     DateTime? startDate;
@@ -63,19 +77,55 @@ class Mission {
 
     return Mission(
       id: json['mission_id'] as String? ?? json['id'] as String? ?? '',
-      name: json['name'],
+      name: json['name'] as String? ?? '',
+      broker: brokerDevice,
       startDate: startDate,
       endDate: endDate,
       status: json.containsKey('status') ? _getStatus(json['status']) : null,
       devices: devices,
       users: users,
-      broker: brokerDevice,
     );
+  }
+
+  Future<void> fetchMissionDetails(VoidCallback setStateCallback) async {
+    setStateCallback();
+
+    try {
+      final missionDetails = await MissionApiService.getMissionDetails(id);
+
+      name = missionDetails.name;
+      startDate = missionDetails.startDate;
+      endDate = missionDetails.endDate;
+      status = missionDetails.status;
+      devices = missionDetails.devices;
+      users = missionDetails.users;
+      broker = missionDetails.broker;
+      print(missionDetails);
+    } catch (e) {
+      print('Error fetching mission info: $e');
+    } finally {
+      setStateCallback();
+    }
+  }
+
+  Future<void> fetchDetailedDeviceInfo() async {
+    if (devices != null) {
+      await Future.wait(devices!.map((device) async {
+        final detailedDevice =
+            await DeviceApiService.getDeviceDetails(device.device_id);
+        return detailedDevice;
+      }).toList())
+          .then((updatedDevices) {
+        devices = updatedDevices;
+      }).catchError((e) {
+        print('Error fetching device details: $e');
+      });
+    }
   }
 
   static MissionStatus? _getStatus(dynamic statusValue) {
     if (statusValue == null) {
-      return null; // Return null if statusValue is null
+      return null;
     } else if (statusValue is int) {
       return missionStatusValues.entries
           .firstWhere(
@@ -89,33 +139,53 @@ class Mission {
     }
   }
 
-  Future<void> fetchMissionDetails(VoidCallback setStateCallback) async {
-    setStateCallback(); // Notify the widget to start loading
-
+  Future<String?> createMission({
+    required String missionName,
+    required List<String> userIds,
+    required String brokerId,
+    required List<String> deviceIds,
+  }) async {
     try {
-      final missionDetails = await MissionApiService.getMissionDetails(id);
-
-      name = missionDetails.name;
-      startDate = missionDetails.startDate;
-      endDate = missionDetails.endDate;
-      status = missionDetails.status;
-      devices = missionDetails.devices;
-      users = missionDetails.users;
-      broker = missionDetails.broker;
-      print(missionDetails);
-      setStateCallback(); // Notify the widget that loading is complete
+      final String? missionId = await MissionApiService.createMission(
+        name: missionName,
+        deviceIds: deviceIds,
+        userIds: userIds,
+        brokerId: brokerId,
+      );
+      return missionId;
     } catch (e) {
-      print('Error fetching mission info: $e');
-      setStateCallback(); // Notify the widget even in case of an error
+      print('Failed to create mission: $e');
+      return null;
     }
   }
 
-  Future<void> fetchDetailedDeviceInfo() async {
-    if (devices != null) {
-      for (int i = 0; i < devices!.length; i++) {
-        devices![i] =
-            await DeviceApiService.getDeviceDetails(devices![i].device_id);
-      }
+  Future<void> start(VoidCallback updateState) async {
+    await _updateMissionStatus("start", updateState);
+  }
+
+  Future<void> pause(VoidCallback updateState) async {
+    await _updateMissionStatus("pause", updateState);
+  }
+
+  Future<void> end(VoidCallback updateState) async {
+    await _updateMissionStatus("end", updateState);
+  }
+
+  Future<void> cancel(VoidCallback updateState) async {
+    await _updateMissionStatus("cancel", updateState);
+  }
+
+  Future<void> resume(VoidCallback updateState) async {
+    await _updateMissionStatus("continue", updateState);
+  }
+
+  Future<void> _updateMissionStatus(
+      String command, VoidCallback updateState) async {
+    try {
+      await MissionApiService.updateMissionStatus(id, command);
+      await fetchMissionDetails(updateState);
+    } catch (error) {
+      print('Failed to update mission status: $error');
     }
   }
 
@@ -126,6 +196,7 @@ class Mission {
 
   @override
   int get hashCode => id.hashCode;
+
   @override
   String toString() {
     return 'Mission(id: $id, name: $name, status: $status, startDate: $startDate, endDate: $endDate, devices: $devices, broker: $broker, users: $users)';

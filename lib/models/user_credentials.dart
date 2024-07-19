@@ -1,6 +1,7 @@
 import 'package:flutter_3/utils/enums.dart';
 
 class UserCredentials {
+  late String userId;
   late String username;
   late String password;
   late UserType userType;
@@ -21,6 +22,7 @@ class UserCredentials {
   }
 
   Future<void> clearUserCredentials() async {
+    userId = '';
     username = '';
     password = '';
     userType = UserType.REGULAR;

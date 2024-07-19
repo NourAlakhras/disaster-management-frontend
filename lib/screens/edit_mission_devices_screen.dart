@@ -6,24 +6,24 @@ import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/selection_widget.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
-class EditBrokersScreen extends StatefulWidget {
-  final Device? preselectedBroker;
+class EditMissionDevicesScreen extends StatefulWidget {
+  final List<Device>? preselectedDevices;
   final String? missionId;
-  final bool singleSelection;
+  final String? brokerId; // Add brokerId parameter
 
-  EditBrokersScreen({
-    this.preselectedBroker,
+  EditMissionDevicesScreen({
+    this.preselectedDevices,
     this.missionId,
-    this.singleSelection = true,
-  });
-
+    this.brokerId,
+  }); // Modify constructor
   @override
-  _EditBrokersScreenState createState() => _EditBrokersScreenState();
+  _EditMissionDevicesScreenState createState() =>
+      _EditMissionDevicesScreenState();
 }
 
-class _EditBrokersScreenState extends State<EditBrokersScreen> {
-  List<Device> _brokerOptions = [];
-  Device? _selectedBroker;
+class _EditMissionDevicesScreenState extends State<EditMissionDevicesScreen> {
+  late List<Device> _deviceOptions;
+  late List<Device> _selectedDevices = [];
 
   bool _isLoading = false;
   int _pageNumber = 1;
@@ -33,59 +33,62 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedBroker = widget.preselectedBroker;
-    _fetchBrokers();
+    _selectedDevices = widget.preselectedDevices ?? [];
+    _fetchDevices();
   }
 
-  Future<void> _fetchBrokers({int pageNumber = 1}) async {
+  Future<void> _fetchDevices({int pageNumber = 1}) async {
     setState(() {
       _isLoading = true;
     });
     try {
-      final brokerResponse = await DeviceApiService.getAllDevices(
+      final typesToInclude =
+          DeviceType.values.where((type) => type != DeviceType.BROKER).toList();
+      final deviceResponse = await DeviceApiService.getAllDevices(
         pageNumber: pageNumber,
         pageSize: 5,
-        statuses: [DeviceStatus.AVAILABLE],
-        types: [DeviceType.BROKER],
-        missionId: widget.missionId,
+        statuses: [DeviceStatus.AVAILABLE, DeviceStatus.ASSIGNED],
+        types: typesToInclude,
+        brokerId: widget.brokerId, // Fetch devices by broker ID
       );
       if (!mounted) return;
 
       setState(() {
-        _brokerOptions = brokerResponse.items;
-        _pageNumber = brokerResponse.page;
-        _hasNext = brokerResponse.hasNext;
-        _hasPrev = brokerResponse.hasPrev;
+        _deviceOptions = deviceResponse.items;
+        _pageNumber = deviceResponse.page;
+        _hasNext = deviceResponse.hasNext;
+        _hasPrev = deviceResponse.hasPrev;
         _isLoading = false;
-        print('_brokerOptions $_brokerOptions');
+        print('_deviceOptions $_deviceOptions');
       });
+
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
-      throw Exception('Failed to fetch brokers: $e');
+      throw Exception('Failed to fetch devices: $e');
     }
   }
 
   void _nextPage() {
     if (_hasNext) {
-      _fetchBrokers(pageNumber: _pageNumber + 1);
+      _fetchDevices(pageNumber: _pageNumber + 1);
     }
   }
 
   void _previousPage() {
     if (_hasPrev) {
-      _fetchBrokers(pageNumber: _pageNumber - 1);
+      _fetchDevices(pageNumber: _pageNumber - 1);
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomUpperBar(
-        title: 'Select Broker',
+        title: 'Select Devices',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           color: primaryTextColor,
@@ -98,7 +101,7 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
             icon: const Icon(Icons.check),
             color: primaryTextColor,
             onPressed: () {
-              Navigator.pop<Device>(context, _selectedBroker);
+              Navigator.pop<List<Device>>(context, _selectedDevices);
             },
           ),
         ],
@@ -120,7 +123,15 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
                 children: [
                   Expanded(
                     flex: 5,
-                    child: Text("Broker's name",
+                    child: Text("Device's name",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: primaryTextColor)),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Text('Type',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -132,24 +143,23 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
                   ),
                 ],
               ),
-            ), // Broker List
+            ),
+            // Device List
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : SelectionWidget<Device>(
-                      items: _brokerOptions,
-                      preselectedItems:
-                          _selectedBroker != null ? [_selectedBroker!] : [],
-                      onSelectionChanged: (selectedBrokers) {
+                      items: _deviceOptions,
+                      preselectedItems: _selectedDevices,
+                      singleSelection: false,
+                      onSelectionChanged: (selectedDevices) {
                         setState(() {
-                          _selectedBroker = selectedBrokers.isNotEmpty
-                              ? selectedBrokers.first
-                              : null;
+                          _selectedDevices = selectedDevices;
+                          print('ho');
                         });
                       },
-                      itemBuilder: (broker, isSelected) =>
-                          _buildBrokerTile(broker, isSelected),
-                      singleSelection: widget.singleSelection,
+                      itemBuilder: (device, isSelected) =>
+                          _buildDeviceTile(device, isSelected),
                     ),
             ),
             // Pagination Controls
@@ -187,7 +197,7 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
     );
   }
 
-  Widget _buildBrokerTile(Device broker, bool isSelected) {
+  Widget _buildDeviceTile(Device device, bool isSelected) {
     return Container(
       decoration: const BoxDecoration(
         border: Border(
@@ -200,7 +210,14 @@ class _EditBrokersScreenState extends State<EditBrokersScreen> {
           Expanded(
             flex: 5,
             child: Text(
-              broker.name,
+              device.name,
+              style: const TextStyle(fontSize: 17, color: secondaryTextColor),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              device.type.toString().split('.').last.toLowerCase(),
               style: const TextStyle(fontSize: 17, color: secondaryTextColor),
             ),
           ),

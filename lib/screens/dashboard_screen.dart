@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user_credentials.dart';
-import 'package:flutter_3/screens/shared/settings_screen.dart';
+import 'package:flutter_3/screens/settings_screen.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/utils/app_colors.dart';
@@ -22,7 +22,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int allUsersCount = 0;
   int allMissionsCount = 0;
   int allDevicesCount = 0;
-  int userCurrentMissionsCount = 0; // For regular user's current missions
+  int userCurrentMissionsCount = 0;
   Map<String, int> combinedUserCounts = {};
   Map<MissionStatus, int> missionCountByStatus = {};
   Map<DeviceStatus, int> deviceCountByStatus = {};
@@ -60,11 +60,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         for (var type in UserType.values) {
           final count =
               await AdminApiService.getUserCount(type: [userTypeValues[type]!]);
-          combinedUserCounts[getUserTypeTitle(type)] = count;
+          combinedUserCounts[getuserTypeTitle(type)] = count;
         }
 
         for (var status in MissionStatus.values) {
-          if (status != MissionStatus.CANCELED) {
+          if (status != MissionStatus.CANCELLED) {
             missionCountByStatus[status] =
                 await AdminApiService.getMissionCount(
                     status: [missionStatusValues[status]!]);
@@ -83,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             await UserApiService.getCurrentMissionsCount();
 
         for (var status in MissionStatus.values) {
-          if (status != MissionStatus.CANCELED &&
+          if (status != MissionStatus.CANCELLED &&
               status != MissionStatus.FINISHED) {
             missionCountByStatus[status] =
                 await UserApiService.getCurrentMissionsCount(
@@ -105,14 +105,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final userType = UserCredentials().getUserType();
-
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
 
     if (userType == UserType.ADMIN) {
       return Scaffold(
@@ -140,22 +132,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
             )
           ],
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSection(
-                    'Users Statistics', combinedUserCounts, allUsersCount),
-                _buildSection('Missions Statistics', missionCountByStatus,
-                    allMissionsCount),
-                _buildSection(
-                    'Devices Statistics', deviceCountByStatus, allDevicesCount),
-              ],
-            ),
-          ),
-        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSection('Users Statistics', combinedUserCounts,
+                          allUsersCount),
+                      _buildSection('Missions Statistics', missionCountByStatus,
+                          allMissionsCount),
+                      _buildSection('Devices Statistics', deviceCountByStatus,
+                          allDevicesCount),
+                    ],
+                  ),
+                ),
+              ),
       );
     } else {
       return Scaffold(
@@ -183,18 +177,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
             )
           ],
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSection('My Missions Statistics', missionCountByStatus,
-                    userCurrentMissionsCount),
-              ],
-            ),
-          ),
-        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(15, 0, 15.0, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSection('My Missions Statistics',
+                          missionCountByStatus, userCurrentMissionsCount),
+                    ],
+                  ),
+                ),
+              ),
       );
     }
   }
@@ -222,7 +218,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(8.0),
-        
             ),
             child: ListTile(
               title: const Text(
@@ -284,7 +279,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  String getUserTypeTitle(UserType userType) {
+  String getuserTypeTitle(UserType userType) {
     return userType == UserType.REGULAR ? 'Regular Users' : 'Admin Users';
   }
 
@@ -297,7 +292,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
           // ignore: prefer_const_constructors
-          gradient:  LinearGradient(
+          gradient: LinearGradient(
             colors: [cardColor, barColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -344,7 +339,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (enumValue is UserStatus) {
       return getUserStatusTitle(enumValue);
     } else if (enumValue is UserType) {
-      return getUserTypeTitle(enumValue);
+      return getuserTypeTitle(enumValue);
     } else if (enumValue is MissionStatus) {
       return getMissionStatusTitle(enumValue);
     } else if (enumValue is DeviceStatus) {
@@ -361,8 +356,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return 'Ongoing Missions';
       case MissionStatus.PAUSED:
         return 'Paused Missions';
-      case MissionStatus.CANCELED:
-        return 'Canceled Missions';
+      case MissionStatus.CANCELLED:
+        return 'CANCELLED Missions';
       case MissionStatus.FINISHED:
         return 'Finished Missions';
       default:

@@ -1,6 +1,6 @@
 // lib\screens\signup_screen.dart
 import 'package:flutter/material.dart';
-import 'package:flutter_3/screens/shared/welcome_screen.dart';
+import 'package:flutter_3/screens/welcome_screen.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_text_field.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
@@ -121,7 +121,7 @@ class _SignupScreenState extends State<SignupScreen> {
         RegExp(r'[A-Z]').hasMatch(value) && // Uppercase letter
         RegExp(r'[a-z]').hasMatch(value) && // Lowercase letter
         RegExp(r'[0-9]').hasMatch(value) && // Digit
-        RegExp(r'[!@#\$&*~]').hasMatch(value); // Special character
+        RegExp(r'[!@#\$&*~_]').hasMatch(value); // Special character
   }
 
   bool _validateConfirmPassword(String password, String confirmPassword) {
@@ -141,26 +141,30 @@ class _SignupScreenState extends State<SignupScreen> {
           },
         ),
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              height: MediaQuery.of(context).size.height,
-              // width: double.infinity,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Column(
+       body: LayoutBuilder(
+        builder: (context, constraints) {
+          double screenHeight = constraints.maxHeight;
+          double screenWidth = constraints.maxWidth;
+
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: screenHeight,
+              ),
+              child: IntrinsicHeight(
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.08),
+                  width: double.infinity,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      const Align(
-                        alignment: Alignment.topCenter,
-                        child: Text(
-                          "Create your account",
-                          style: TextStyle(
-                              fontSize: 24.0, color: primaryTextColor),
-                        ),
+                      SizedBox(height: screenHeight * 0.05),
+                      const Text(
+                        "Create your account",
+                        style:
+                            TextStyle(fontSize: 24.0, color: primaryTextColor),
+                        textAlign: TextAlign.center,
                       ),
                       const Gap(40),
                       CustomTextField(
@@ -260,43 +264,46 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       const Gap(15),
-                      CustomButton(
-                        text: "Sign up",
-                        onPressed: () {
-                          if (_validateForm()) {
-                            _signUp(context);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  Container(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        const Text("Already have an account?",
-                            style: TextStyle(color: secondaryTextColor)),
-                        TextButton(
+                    CustomButton(
+                      text: "Sign up",
+                      onPressed: () {
+                        if (_validateForm()) {
+                          _signUp(context);
+                        }
+                      },
+                    ),
+                      const Gap(20),
+                      if (_isLoading)
+                        const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                    Container(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Text(
+                            "Already have an account?",
+                            style: TextStyle(color: secondaryTextColor),
+                          ),
+                          TextButton(
                             onPressed: () {
                               Navigator.pushNamed(context, '/login');
                             },
                             child: const Text(
                               "Login",
                               style: TextStyle(color: primaryTextColor),
-                            ))
-                      ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  )
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-          if (_isLoading)
-            Center(
-              child: CircularProgressIndicator(),
-            ),
-        ],
-      ),
-    );
-  }
-}
+        );
+      },
+    ),
+  );
+}}

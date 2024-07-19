@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_3/models/paginated_response.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/models/user_credentials.dart';
+import 'package:flutter_3/utils/app_colors.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
@@ -10,6 +12,7 @@ import 'package:flutter_3/services/auth_api_service.dart';
 import 'package:flutter_3/utils/constants.dart';
 import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/utils/error_handler.dart';
 
 class UserApiService {
   static const String webServerBaseUrl = Constants.webServerBaseUrl;
@@ -35,7 +38,7 @@ class UserApiService {
             },
             body: jsonEncode(requestBody),
           )
-          .timeout(Duration(seconds: 10));
+          .timeout(const Duration(seconds: 10));
 
       final responseBody = jsonDecode(response.body);
 
@@ -60,10 +63,9 @@ class UserApiService {
   }
 
   static Future<Map<String, dynamic>> login(
-      String emailOrUsername, String password) async {
-    print(
-        'login loooooooooooooooooooooooooooooooooooooooooooooooooooooooooo ${Constants.webServerBaseUrl}');
-
+      {required BuildContext context,
+      required String emailOrUsername,
+      required String password}) async {
     final Uri url = Uri.parse('${Constants.webServerBaseUrl}/api/users/login');
     final Map<String, dynamic> requestBody = {
       'email_or_username': emailOrUsername,
@@ -79,7 +81,7 @@ class UserApiService {
             },
             body: jsonEncode(requestBody),
           )
-          .timeout(Duration(seconds: 5));
+          .timeout(const Duration(seconds: 10));
 
       final responseBody = jsonDecode(response.body);
 
@@ -89,29 +91,44 @@ class UserApiService {
         await AuthApiService.cacheToken(token);
         // Return response data
         return responseBody;
-      } else if (response.statusCode == 400) {
-        throw BadRequestException(message: responseBody['message']);
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException(message: responseBody['message']);
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException(message: responseBody['message']);
-      } else if (response.statusCode == 404) {
-        throw NotFoundException(message: responseBody['message']);
-      } else if (response.statusCode == 409) {
-        throw ConflictException(message: responseBody['message']);
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException(message: responseBody['message']);
       } else {
-        throw Exception('Failed to login');
+        handleErrorResponse(context, response);
+        // This line will not be reached if handleErrorResponse always throws.
+        // But to satisfy the Dart analyzer, we need to ensure all paths return or throw.
+        throw Exception('Failed to login: ${response.statusCode}');
       }
-    } on TimeoutException {
-      throw TimeoutException('The connection has timed out. Please try again.');
-    } catch (e) {
-      rethrow;
+    } on TimeoutException catch (e) {
+      // Handle request timeout
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Request timed out. Please try again later.'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Request timed out: $e');
+    } on FormatException catch (e) {
+      // Handle unexpected response format (e.g., HTML instead of JSON)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected response format: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected response format: $e');
+    } catch (e, stackTrace) {
+      // Handle other errors
+      print('Unexpected error occurred: $e\n$stackTrace');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error occurred: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected error occurred: $e');
     }
   }
 
-  static Future<void> logout() async {
+  static Future<void> logout({required BuildContext context}) async {
     try {
       // Get the cached token
       String? token = await AuthApiService.getAuthToken();
@@ -125,90 +142,170 @@ class UserApiService {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json; charset=UTF-8',
         },
-      );
+      ).timeout(const Duration(seconds: 10));
 
-      final responseBody = jsonDecode(response.body);
       // Check the response status code
       if (response.statusCode == 200) {
         // Successfully logged out, clear the cached token
         await AuthApiService.clearToken();
         UserCredentials().clearUserCredentials();
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
       } else {
-        throw Exception('Failed to logout');
+        handleErrorResponse(context, response);
       }
-    } on TimeoutException {
-      throw TimeoutException('The connection has timed out. Please try again.');
-    } catch (e) {
-      rethrow;
+    } on TimeoutException catch (e) {
+      // Handle request timeout
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Request timed out. Please try again later.'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Request timed out: $e');
+    } on FormatException catch (e) {
+      // Handle unexpected response format (e.g., HTML instead of JSON)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected response format: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected response format: $e');
+    } catch (e, stackTrace) {
+      // Handle other errors
+      print('Unexpected error occurred: $e\n$stackTrace');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error occurred: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected error occurred: $e');
     }
   }
 
-  static Future<User> getUserInfo() async {
-        try {
-    String? token = await AuthApiService.getAuthToken();
-    final Uri url = Uri.parse('$webServerBaseUrl/api/users/');
-    final response = await http.get(
-      url,
-      headers: <String, String>{
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-    );
-    print('getUserInfo $token');
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> userDetails = jsonDecode(response.body);
-      return User.fromJson(userDetails);
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found - User not found');
-    } else if (response.statusCode == 500) {
-      throw Exception('Internal Server Error');
-    } else {
-      throw Exception('Failed to fetch user info');
-}
-    } on TimeoutException {
-      throw TimeoutException('The connection has timed out. Please try again.');
-    } catch (e) {
-      rethrow;
+  static Future<User> getUserInfo({required BuildContext context}) async {
+    try {
+      String? token = await AuthApiService.getAuthToken();
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users/');
+      final response = await http.get(
+        url,
+        headers: <String, String>{
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      ).timeout(const Duration(seconds: 10));
+      print('getUserInfo $token');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> userDetails = jsonDecode(response.body);
+        return User.fromJson(userDetails);
+      } else {
+        handleErrorResponse(context, response);
+        // This line will not be reached if handleErrorResponse always throws.
+        // But to satisfy the Dart analyzer, we need to ensure all paths return or throw.
+        throw Exception(
+            'Failed to fetch user information: ${response.statusCode}');
+      }
+    } on TimeoutException catch (e) {
+      // Handle request timeout
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Request timed out. Please try again later.'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Request timed out: $e');
+    } on FormatException catch (e) {
+      // Handle unexpected response format (e.g., HTML instead of JSON)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected response format: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected response format: $e');
+    } catch (e, stackTrace) {
+      // Handle other errors
+      print('Unexpected error occurred: $e\n$stackTrace');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error occurred: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected error occurred: $e');
     }
   }
 
   static Future<void> updateUserInfo(
-      {required String username, required String email}) async {
-    String? token = await AuthApiService.getAuthToken();
-    final Uri url = Uri.parse('$webServerBaseUrl/api/users');
-    final Map<String, String> body = {
-      'username': username,
-      'email': email,
-    };
+      {required BuildContext context,
+      required String username,
+      required String email}) async {
+    try {
+      String? token = await AuthApiService.getAuthToken();
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users');
+      final Map<String, String> body = {
+        'username': username,
+        'email': email,
+      };
 
-    final response = await http.put(
-      url,
-      headers: <String, String>{
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(body),
-    );
+      final response = await http
+          .put(
+            url,
+            headers: <String, String>{
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      // User information updated successfully
-    } else if (response.statusCode == 400) {
-      throw Exception('Bad Request');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found - User not found');
-    } else if (response.statusCode == 409) {
-      throw Exception(
-          'Conflict - The username or email is already taken or identical to the current one');
-    } else if (response.statusCode == 500) {
-      throw Exception('Internal Server Error');
-    } else {
-      throw Exception('Failed to update user info');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final String message =
+            responseBody['message'] ?? 'User information updated successfully';
+
+        // Show success message in SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: successColor,
+          ),
+        );
+      } else {
+        handleErrorResponse(context, response);
+        // This line will not be reached if handleErrorResponse always throws.
+        // But to satisfy the Dart analyzer, we need to ensure all paths return or throw.
+        throw Exception(
+            'Failed to update user information: ${response.statusCode}');
+      }
+    } on TimeoutException catch (e) {
+      // Handle request timeout
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Request timed out. Please try again later.'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Request timed out: $e');
+    } on FormatException catch (e) {
+      // Handle unexpected response format (e.g., HTML instead of JSON)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected response format: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected response format: $e');
+    } catch (e, stackTrace) {
+      // Handle other errors
+      print('Unexpected error occurred: $e\n$stackTrace');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error occurred: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected error occurred: $e');
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart';
+
 class SelectionWidget<T> extends StatefulWidget {
   final List<T> items;
   final List<T> preselectedItems;
@@ -28,6 +29,7 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
   void initState() {
     super.initState();
     _selectedItems = widget.preselectedItems;
+    print('SelectionWidget _selectedItems $_selectedItems');
   }
 
   void _toggleSelection(T item) {
@@ -47,6 +49,7 @@ class _SelectionWidgetState<T> extends State<SelectionWidget<T>> {
 
   @override
   Widget build(BuildContext context) {
+    print('widget.items.length ${widget.items.length}');
     return ListView.builder(
       itemCount: widget.items.length,
       itemBuilder: (context, index) {

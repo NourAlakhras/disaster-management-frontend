@@ -1,28 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_3/models/device.dart';
-import 'package:flutter_3/services/device_api_service.dart';
+import 'package:flutter_3/models/user.dart';
+import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/selection_widget.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
-class EditDevicesScreen extends StatefulWidget {
-  final List<Device>? preselectedDevices;
+class EditMissionUsersScreen extends StatefulWidget {
+  final List<User>? preselectedUsers;
   final String? missionId;
-  final String? brokerId; // Add brokerId parameter
 
-  EditDevicesScreen({
-    this.preselectedDevices,
-    this.missionId,
-    this.brokerId,
-  }); // Modify constructor
+  EditMissionUsersScreen({this.preselectedUsers, this.missionId});
+
   @override
-  _EditDevicesScreenState createState() => _EditDevicesScreenState();
+  _EditMissionUsersScreenState createState() => _EditMissionUsersScreenState();
 }
 
-class _EditDevicesScreenState extends State<EditDevicesScreen> {
-  late List<Device> _deviceOptions;
-  late List<Device> _selectedDevices = [];
+class _EditMissionUsersScreenState extends State<EditMissionUsersScreen> {
+  late List<User> _userOptions = [];
+  late List<User> _selectedUsers = [];
 
   bool _isLoading = false;
   int _pageNumber = 1;
@@ -32,57 +29,60 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedDevices = widget.preselectedDevices ?? [];
-    _fetchDevices();
+    _selectedUsers = widget.preselectedUsers ?? [];
+    _fetchUsers();
   }
 
-  Future<void> _fetchDevices({int pageNumber = 1}) async {
+  Future<void> _fetchUsers({int pageNumber = 1}) async {
     setState(() {
       _isLoading = true;
     });
     try {
-      final typesToInclude =
-          DeviceType.values.where((type) => type != DeviceType.BROKER).toList();
-      final deviceResponse = await DeviceApiService.getAllDevices(
+      final userResponse = await AdminApiService.getAllUsers(
         pageNumber: pageNumber,
         pageSize: 5,
-        statuses: [DeviceStatus.AVAILABLE],
-        types: typesToInclude,
-        brokerId: widget.brokerId, // Fetch devices by broker ID
+        missionId: widget.missionId,
+        statuses: [
+          UserStatus.AVAILABLE,
+          UserStatus.ASSIGNED,
+        ],
       );
       if (!mounted) return;
 
       setState(() {
-        _deviceOptions = deviceResponse.items;
+        _userOptions = userResponse.items;
+        _pageNumber = userResponse.page;
+        _hasNext = userResponse.hasNext;
+        _hasPrev = userResponse.hasPrev;
         _isLoading = false;
       });
-      if (!mounted) return;
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
-      throw Exception('Failed to fetch devices: $e');
+      throw Exception('Failed to fetch users: $e');
     }
   }
 
   void _nextPage() {
     if (_hasNext) {
-      _fetchDevices(pageNumber: _pageNumber + 1);
+      _fetchUsers(pageNumber: _pageNumber + 1);
     }
   }
 
   void _previousPage() {
     if (_hasPrev) {
-      _fetchDevices(pageNumber: _pageNumber - 1);
+      _fetchUsers(pageNumber: _pageNumber - 1);
     }
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomUpperBar(
-        title: 'Select Devices',
+        title: 'Select Users',
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           color: primaryTextColor,
@@ -95,7 +95,7 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
             icon: const Icon(Icons.check),
             color: primaryTextColor,
             onPressed: () {
-              Navigator.pop<List<Device>>(context, _selectedDevices);
+              Navigator.pop<List<User>>(context, _selectedUsers);
             },
           ),
         ],
@@ -117,7 +117,7 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
                 children: [
                   Expanded(
                     flex: 5,
-                    child: Text("Device's name",
+                    child: Text('Username',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -132,27 +132,37 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
                             color: primaryTextColor)),
                   ),
                   Expanded(
+                    flex: 3,
+                    child: Text('Active Mission Count',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: primaryTextColor)),
+                  ),
+                  Expanded(
                     flex: 2,
                     child: SizedBox(),
                   ),
                 ],
               ),
             ),
-            // Device List
+            // User List
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : SelectionWidget<Device>(
-                      items: _deviceOptions,
-                      preselectedItems: _selectedDevices,
-                      singleSelection: false,
-                      onSelectionChanged: (selectedDevices) {
+                  : SelectionWidget<User>(
+                      items: _userOptions,
+                      preselectedItems: _selectedUsers,
+                      onSelectionChanged: (selectedUsers) {
                         setState(() {
-                          _selectedDevices = selectedDevices;
+                          _selectedUsers = selectedUsers;
+                          print(
+                              'EditMissionUsersScreen selectedUsers: $_selectedUsers');
                         });
                       },
-                      itemBuilder: (device, isSelected) =>
-                          _buildDeviceTile(device, isSelected),
+                      itemBuilder: (user, isSelected) =>
+                          _buildUserTile(user, isSelected),
+                      singleSelection: false,
                     ),
             ),
             // Pagination Controls
@@ -190,7 +200,7 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
     );
   }
 
-  Widget _buildDeviceTile(Device device, bool isSelected) {
+  Widget _buildUserTile(User user, bool isSelected) {
     return Container(
       decoration: const BoxDecoration(
         border: Border(
@@ -203,14 +213,21 @@ class _EditDevicesScreenState extends State<EditDevicesScreen> {
           Expanded(
             flex: 5,
             child: Text(
-              device.name,
+              user.username,
               style: const TextStyle(fontSize: 17, color: secondaryTextColor),
             ),
           ),
           Expanded(
             flex: 3,
             child: Text(
-              device.type.toString().split('.').last.toLowerCase(),
+              user.type.toString().split('.').last.toLowerCase(),
+              style: const TextStyle(fontSize: 17, color: secondaryTextColor),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(
+              user.activeMissionCount.toString(),
               style: const TextStyle(fontSize: 17, color: secondaryTextColor),
             ),
           ),

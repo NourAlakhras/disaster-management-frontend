@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_3/models/device.dart';
-import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/providers/sensor_data_provider.dart';
 import 'package:flutter_3/utils/app_colors.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class MissionAnalyticsTab extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
   final List<Device> devices;
   final Device? broker;
 
   const MissionAnalyticsTab({
     Key? key,
-    required this.mqttClient,
     required this.devices,
     required this.broker,
   }) : super(key: key);
@@ -22,59 +21,12 @@ class MissionAnalyticsTab extends StatefulWidget {
 }
 
 class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
-  int _currentSensorIndex = 0; // Track current sensor index
-
-  // Define sensor types in the order you want to display
-  final List<String> _sensorTypes = [
-    'Temperature',
-    'Humidity',
-    'Distance',
-    'Gas Concentration',
-    'Air Quality',
-    'Smoke Detection',
-    'Earthquake Detection',
-    'Radiation Level',
-    'Light',
-    'Sound Level',
-  ];
-
-  // Method to update current sensor index
-  void _updateCurrentSensorIndex(int newIndex) {
-    setState(() {
-      _currentSensorIndex = newIndex;
-    });
-  }
-
-  // Method to go to next sensor
-  void _nextSensor() {
-    if (_currentSensorIndex < _sensorTypes.length - 1) {
-      _updateCurrentSensorIndex(_currentSensorIndex + 1);
-    }
-  }
-
-  // Method to go to previous sensor
-  void _prevSensor() {
-    if (_currentSensorIndex > 0) {
-      _updateCurrentSensorIndex(_currentSensorIndex - 1);
-    }
-  }
-
-  final Map<String, Map<String, double>> _deviceSensorData = {};
-  late final List<String> topics;
+  final deviceSensorData = <String, Map<String, dynamic>>{};
   Map<String, Map<String, double>> thresholds = {};
 
   @override
   void initState() {
     super.initState();
-    for (Device d in widget.devices) {
-      print({d.mission});
-    }
-
-    topics = widget.devices
-        .map((device) =>
-            'cloud/reg/${widget.broker?.name ?? 'default'}/${device.name}/sensor_data')
-        .toList();
-    _subscribeToSensorData(topics);
     _loadThresholds();
   }
 
@@ -83,95 +35,56 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
     final defaultThresholds = {
       'temperature': {'low': 0.0, 'high': 30.0},
       'humidity': {'low': 30.0, 'high': 70.0},
-      'gas concentration': {'low': 0.0, 'high': 50.0},
-      'air quality': {'low': 0.0, 'high': 100.0},
-      'smoke detection': {'low': 0.0, 'high': 1.0},
-      'earthquake detection': {'low': 0.0, 'high': 1.0},
-      'radiation level': {'low': 0.0, 'high': 100.0},
-      'sound level': {'low': 0.0, 'high': 70.0},
-      'distance': {'low': 0.0, 'high': 100.0},
-      'light': {'low': 0.0, 'high': 1000.0},
+      'gas': {'low': 0.0, 'high': 50.0},
+      'co2': {'low': 0.0, 'high': 1000.0},
+      'tvoc': {'low': 0.0, 'high': 500.0},
+      'accelerometer': {'low': -10.0, 'high': 10.0},
+      'gyroscope': {'low': -200.0, 'high': 200.0},
+      'ir': {'low': 0.0, 'high': 1.0},
+      'ultrasonic': {'low': 0.0, 'high': 100.0},
+      'sound': {'low': 0.0, 'high': 100.0},
+      'battery': {'low': 0.0, 'high': 100.0},
     };
 
     setState(() {
       defaultThresholds.forEach((key, value) {
-        final low = prefs.getDouble('${key}_low') ?? value['low']!;
-        final high = prefs.getDouble('${key}_high') ?? value['high']!;
+        final low = prefs.getDouble('${key}_low') ?? 0.0;
+        final high = prefs.getDouble('${key}_high') ?? 100.0;
         thresholds[key] = {'low': low, 'high': high};
       });
     });
   }
 
-  void _subscribeToSensorData(List<String> topics) {
-    widget.mqttClient.subscribeToMultipleTopics(topics);
-    widget.mqttClient.onDataReceived = _onDataReceived;
-  }
-
-  void _onDataReceived(Map<String, dynamic> data) {
-    setState(() {
-      // Extract device name from topic
-      String topic = data['topic'];
-      String deviceName = topic.split('/')[3]; // Get "Device16" from the topic
-
-      // Initialize sensor data map for this device if not already present
-      _deviceSensorData.putIfAbsent(deviceName, () => {});
-
-      // Update each sensor type's value for this device
-      if (data.containsKey('temperature')) {
-        _deviceSensorData[deviceName]!['temperature'] = data['temperature'];
-      }
-      if (data.containsKey('humidity')) {
-        _deviceSensorData[deviceName]!['humidity'] = data['humidity'];
-      }
-      if (data.containsKey('gas concentration')) {
-        _deviceSensorData[deviceName]!['gas concentration'] =
-            data['gas concentration'];
-      }
-      if (data.containsKey('light')) {
-        _deviceSensorData[deviceName]!['light'] = data['light'];
-      }
-      if (data.containsKey('air quality')) {
-        _deviceSensorData[deviceName]!['air quality'] = data['air quality'];
-      }
-      if (data.containsKey('smoke detection')) {
-        _deviceSensorData[deviceName]!['smoke detection'] =
-            data['smoke detection'];
-      }
-      if (data.containsKey('earthquake detection')) {
-        _deviceSensorData[deviceName]!['earthquake detection'] =
-            data['earthquake detection'];
-      }
-      if (data.containsKey('sound level')) {
-        _deviceSensorData[deviceName]!['sound level'] = data['sound level'];
-      }
-      if (data.containsKey('radiation level')) {
-        _deviceSensorData[deviceName]!['radiation level'] =
-            data['radiation level'];
-      }
-      // Add handling for other sensor types similarly
-    });
-  }
-
   Color _generateColor(int index) {
-    final double hue =
-        (index * 137.508) % 360; // Use golden angle approximation
+    final double hue = (index * 137.508) % 360;
     return HSVColor.fromAHSV(1.0, hue, 0.5, 0.9).toColor();
   }
 
   List<BarChartGroupData> _createBarChartData(String sensorType) {
+    print('_createBarChartData sensorType $sensorType');
     List<BarChartGroupData> barGroups = [];
 
     widget.devices.asMap().forEach((index, device) {
       String deviceName = device.name ?? 'Unknown';
-      double sensorValue = _deviceSensorData[deviceName]?[sensorType] ?? 0.0;
-      Color colorOfBar = _generateColor(index); // Generate color based on index
+      print('_createBarChartData deviceName $deviceName');
+      print('deviceSensorData $deviceSensorData');
+      dynamic sensorValue = deviceSensorData[deviceName]?[sensorType]?['value'];
+
+      sensorValue ??= 0.0;
+      print('_createBarChartData sensorValue $sensorValue');
+      Color colorOfBar = _generateColor(index);
       barGroups.add(BarChartGroupData(
         x: index,
         barRods: [
           BarChartRodData(
             fromY: 0,
-            toY: sensorValue,
+            toY: sensorValue.toDouble(),
             color: colorOfBar,
+            borderRadius: BorderRadius.circular(6),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              color: Colors.grey.withOpacity(0.2),
+            ),
           ),
         ],
       ));
@@ -182,45 +95,97 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(10.0),
-      children: [
-        _buildSensorBarChart('Temperature', _createBarChartData('temperature')),
-        _buildSensorBarChart('Humidity', _createBarChartData('humidity')),
-        _buildSensorBarChart('Distance', _createBarChartData('distance')),
-        _buildSensorBarChart(
-            'Gas Concentration', _createBarChartData('gas concentration')),
-        _buildSensorBarChart('Air Quality', _createBarChartData('air quality')),
-        _buildSensorBarChart(
-            'Smoke Detection', _createBarChartData('smoke detection')),
-        _buildSensorBarChart('Earthquake Detection',
-            _createBarChartData('earthquake detection')),
-        _buildSensorBarChart(
-            'Radiation Level', _createBarChartData('radiation level')),
-        _buildSensorBarChart('Light', _createBarChartData('light')),
-        _buildSensorBarChart('Sound Level', _createBarChartData('sound level')),
-        // Add more charts for other sensor types similarly
-      ],
+    return Consumer<SensorDataProvider>(
+      builder: (context, sensorDataProvider, child) {
+        // Collect sensor data from the provider
+        sensorDataProvider.sensorData.forEach((key, sensorReading) {
+          final deviceName = key.split('/')[0];
+          final sensorType = sensorReading.sensor;
+          final value = sensorReading.value;
+          final unit = sensorReading.unit;
+
+          deviceSensorData.putIfAbsent(deviceName, () => {});
+          deviceSensorData[deviceName]![sensorType] = {
+            'value': value,
+            'unit': unit,
+          };
+        });
+        print('build deviceSensorData $deviceSensorData');
+        return ListView(
+          padding: const EdgeInsets.all(10.0),
+          children: _buildCharts(deviceSensorData),
+        );
+      },
     );
+  }
+
+  List<Widget> _buildCharts(
+      Map<String, Map<String, dynamic>> deviceSensorData) {
+    List<Widget> barCharts = [];
+
+    if (deviceSensorData.isNotEmpty) {
+      print('hi');
+      deviceSensorData.values.first.keys.forEach((sensorType) {
+        barCharts.add(
+            _buildSensorBarChart(sensorType, _createBarChartData(sensorType)));
+      });
+    } else {
+      barCharts.add(
+        const Center(
+          child: Text(
+            'No sensor data available',
+            style: TextStyle(
+              color: secondaryTextColor,
+              fontSize: 18,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return barCharts;
   }
 
   Widget _buildSensorBarChart(
       String title, List<BarChartGroupData> barChartData) {
+    // Sets min and max values for the Y-axis based on thresholds
     double minY = thresholds[title.toLowerCase()]?['low'] ?? 0.0;
     double maxY = thresholds[title.toLowerCase()]?['high'] ?? 100.0;
-
-    // Define labels for the thresholds
-    String minLabel = 'Min: $minY';
-    String maxLabel = 'Max: $maxY';
+// Calculate the maximum length of device names
+    double maxDeviceNameWidth = 0;
+    for (var device in widget.devices) {
+      final textSpan = TextSpan(
+        text: device.name,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+        ),
+      );
+      final textPainter = TextPainter(
+        text: textSpan,
+        textDirection: TextDirection.ltr,
+        textScaleFactor: MediaQuery.of(context).textScaleFactor,
+      )..layout();
+      maxDeviceNameWidth = textPainter.size.width > maxDeviceNameWidth
+          ? textPainter.size.width
+          : maxDeviceNameWidth;
+    }
 
     return Padding(
+      // Adds padding around the entire chart
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Center(
             child: Text(
-              title,
+              title[0].toUpperCase() +
+                  title
+                      .substring(1)
+                      .toLowerCase(), // Capitalize the first letter
+              textAlign: TextAlign
+                  .start, // Aligns the text to start from the same point
+
               style: const TextStyle(
                 color: accentColor,
                 fontSize: 20,
@@ -231,30 +196,72 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
           ),
           Container(
             decoration: const BoxDecoration(
+              // Adds a bottom border to the chart container
               border: Border(
                 bottom: BorderSide(
-                  color: secondaryTextColor, // Choose your border color here
-                  width: 0.1, // Adjust the border thickness
+                  color: secondaryTextColor,
+                  width: 0.1,
                 ),
               ),
             ),
-            height: 300, // Adjust height as needed
-            padding: const EdgeInsets.fromLTRB(3, 0, 3, 20),
+            height: 400, // Sets the height of the chart container
+                        width: 400, // Sets the height of the chart container
+
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceEvenly,
                 backgroundColor: Colors.transparent,
-                barGroups: barChartData,
+                barGroups: barChartData, // Provides the data for the bars
                 titlesData: FlTitlesData(
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
-                      showTitles: true,
+                      showTitles: true, // Shows titles on the bottom axis
+                      reservedSize: maxDeviceNameWidth +
+                          30, // Ensures enough space for titles
                       getTitlesWidget: (value, _) {
-                        return Text(
-                          widget.devices[value.toInt()].name,
+                        // Function to create the widget for each title
+                        final deviceName = widget.devices[value.toInt()]
+                            .name; // Gets the device name
+                        final textSpan = TextSpan(
+                          text: deviceName, // Sets the text to the device name
                           style: const TextStyle(
-                            color: secondaryTextColor,
-                            fontWeight: FontWeight.normal,
+                            color: secondaryTextColor, // Sets the text color
+                            fontWeight:
+                                FontWeight.normal, // Sets the text weight
+                          ),
+                        );
+                        final textPainter = TextPainter(
+                          text: textSpan, // Sets the text to be painted
+                          textDirection:
+                              TextDirection.ltr, // Left to right text direction
+                          textScaleFactor: MediaQuery.of(context)
+                              .textScaleFactor, // Adjusts for text scaling factor
+                        )..layout(); // Lays out the text to calculate its size
+
+                        final textHeight = textPainter
+                            .size.height; // Gets the height of the text
+
+                        return Align(
+                          alignment: Alignment
+                              .center, // Aligns the text at the bottom center
+                          child: Container(
+                            height: textHeight +
+                                10, // Extra space to avoid trimming
+                            child: Transform.rotate(
+                              angle:
+                                  -1.5708, // Rotates the text -90 degrees (in radians)
+                              child: Text(
+                                deviceName, // Displays the device name
+                                textAlign: TextAlign
+                                    .start, // Aligns the text to start from the same point
+                                style: const TextStyle(
+                                  color:
+                                      secondaryTextColor, // Sets the text color
+                                  fontWeight:
+                                      FontWeight.normal, // Sets the text weight
+                                ),
+                              ),
+                            ),
                           ),
                         );
                       },
@@ -262,41 +269,27 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
                   ),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
-                      showTitles: true,
+                      showTitles: true, // Shows titles on the left axis
                       getTitlesWidget: (value, _) {
                         return Text(
-                          value.toInt().toString(),
+                          value
+                              .toInt()
+                              .toString(), // Displays the Y-axis values
                           style: const TextStyle(
-                            color:
-                                secondaryTextColor, // Set your desired color here
+                            color: secondaryTextColor,
                             fontWeight: FontWeight.normal,
                           ),
                         );
                       },
-                      reservedSize: 40, // Adjust the margin value as needed
-                    ),
-                  ),
-                  rightTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (value, _) {
-                        if (value == minY) {
-                          return Text(minLabel);
-                        } else if (value == maxY) {
-                          return Text(maxLabel);
-                        } else {
-                          return const Text('');
-                        }
-                      },
-                      interval: (maxY - minY) /
-                          2, // Adjust interval based on your data range                      reservedSize: 40, // Adjust the margin value as needed
+                      reservedSize: 40, // Reserves space for the left titles
                     ),
                   ),
                 ),
-                gridData: const FlGridData(show: true),
-                borderData: FlBorderData(show: false),
+                gridData: const FlGridData(show: true), // Shows the grid lines
+                borderData:
+                    FlBorderData(show: false), // Shows the border of the chart
                 barTouchData: BarTouchData(
-                  handleBuiltInTouches: true,
+                  handleBuiltInTouches: true, // Handles touch interactions
                   touchTooltipData: BarTouchTooltipData(
                     tooltipPadding: const EdgeInsets.all(8),
                     tooltipMargin: 8,
@@ -312,7 +305,7 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
                         ),
                         children: <TextSpan>[
                           TextSpan(
-                            text: '${rod.toY}',
+                            text: '${rod.toY}', // Displays the value of the bar
                             style: const TextStyle(
                               color: barColor,
                               fontWeight: FontWeight.w500,
@@ -323,7 +316,7 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
                     },
                     getTooltipColor: (group) => secondaryTextColor,
                     fitInsideHorizontally: true,
-                    fitInsideVertically: false,
+                    fitInsideVertically: true,
                     direction: TooltipDirection.auto,
                   ),
                 ),
@@ -367,11 +360,5 @@ class _MissionAnalyticsTabState extends State<MissionAnalyticsTab> {
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    widget.mqttClient.unsubscribeFromMultipleTopics(topics);
-    super.dispose();
   }
 }

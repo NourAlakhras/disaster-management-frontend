@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user_credentials.dart';
-import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
+import 'package:flutter_3/screens/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
-import 'package:flutter_3/screens/user/device_detailed_screen.dart';
+import 'package:flutter_3/screens/device_detailed_screen.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class DeviceProfileScreen extends StatefulWidget {
@@ -236,7 +236,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      MissionDevicesListScreen(
+                                      MissionDevicesBaseScreen(
                                     mission: mission,
                                     mqttClient: widget.mqttClient,
                                   ),
@@ -351,7 +351,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                 builder: (context) => DeviceDetailedScreen(
                   device: widget.device,
                   mqttClient: widget.mqttClient,
-                   broker: widget.device.broker,
+                  broker: widget.device.broker,
                 ),
               )).then((_) {
             setState(() {

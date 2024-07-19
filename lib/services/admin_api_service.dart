@@ -80,7 +80,8 @@ class AdminApiService {
 // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
 
-      final Uri url = Uri.parse('$webServerBaseUrl/api/users/all?$queryStringJoined');
+      final Uri url =
+          Uri.parse('$webServerBaseUrl/api/users/all?$queryStringJoined');
 
 // Print out the generated URL
       print('URL: $url');

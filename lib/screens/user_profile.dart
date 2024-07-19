@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart';
-import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
+import 'package:flutter_3/models/user_credentials.dart';
+import 'package:flutter_3/screens/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/widgets/confirmation_dialog.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
@@ -173,14 +175,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           });
         }
       });
-    } catch (error) {
-      print("Failed to fetch user's details: $error");
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to fetch user details: $e'),
+            backgroundColor: errorColor,
+          ),
+        );
+      }
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -230,7 +239,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => MissionDevicesListScreen(
+                builder: (context) => MissionDevicesBaseScreen(
                   mission: mission,
                   mqttClient: widget.mqttClient,
                 ),
@@ -243,7 +252,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
-  Future<void> _showApprovalDialog(String userId) async {
+  Future<void> _showApprovalDialog(User user) async {
     return showDialog(
       context: context,
       builder: (context) {
@@ -254,14 +263,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _approveUser(userId, isAdmin: true);
+                _approveUser(user, isAdmin: true);
               },
               child: const Text('Admin'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _approveUser(userId, isAdmin: false);
+                _approveUser(user, isAdmin: false);
               },
               child: const Text('Regular User'),
             ),
@@ -271,75 +280,140 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Future<void> _approveUser(String userId, {required bool isAdmin}) async {
+  Future<void> _approveUser(User user, {required bool isAdmin}) async {
     try {
-      // Call the API to approve the user account
-      await AdminApiService.approveUser(userId, isAdmin);
-      // After successful approval, refresh the user list
-      await _fetchUserDetails();
+      await user.approve(isAdmin, () {
+        setState(() {});
+      });
     } catch (error) {
       print('Failed to approve user: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to approve user: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  Future<void> _rejectUser(String userId) async {
-    try {
-      await AdminApiService.rejectUser(userId);
-      await _fetchUserDetails();
-    } catch (error) {
-      print('Failed to reject user: $error');
+  Widget _buildActionButton(
+    String label,
+    Future<void> Function() action,
+  ) {
+    return ElevatedButton(
+      onPressed: () async {
+        try {
+          await action();
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to perform action: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } finally {
+          setState(() {});
+        }
+      },
+      child: Text(label),
+    );
+  }
+
+  Future<void> _handleDeleteUser(User user) async {
+    // Check if the user is trying to delete their own account
+    if (widget.user.user_id == user.user_id) {
+      final bool confirmed = await showConfirmationDialog(
+        context: context,
+        title: 'Delete Account',
+        message:
+            'You cannot delete your own account. Are you sure you want to proceed?',
+        confirmText: 'Yes, Proceed',
+        cancelText: 'Cancel',
+      );
+
+      if (confirmed) {
+        // Handle deletion logic here
+        await _deleteUser();
+      }
+    } else {
+      final bool confirmed = await showConfirmationDialog(
+        context: context,
+        title: 'Delete Account',
+        message: 'Are you sure you want to delete this user?',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+      );
+
+      if (confirmed) {
+        await _deleteUser();
+      }
     }
   }
 
-  Future<void> _deleteUser(String userId) async {
+  Future<void> _deleteUser() async {
     try {
-      await AdminApiService.deleteUser(userId);
-      await _fetchUserDetails();
-    } catch (error) {
-      print('Failed to delete user: $error');
+      await widget.user.delete(() {
+        setState(() {}); // Refresh state after deletion
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User deleted successfully'),
+          backgroundColor: successColor,
+        ),
+      );
+      Navigator.pop(context); // Navigate back after successful deletion
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete user: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
     }
   }
 
   List<Widget> _buildUserActions(User user) {
-    switch (user.status) {
-      case UserStatus.PENDING:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              _showApprovalDialog(user.user_id);
-            },
-            child: const Text('Approve'),
-          ),
-          const SizedBox(width: 5),
-          ElevatedButton(
-            onPressed: () {
-              _rejectUser(user.user_id);
-            },
-            child: const Text('Reject'),
-          ),
-        ];
-      case UserStatus.REJECTED:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              _showApprovalDialog(user.user_id);
-            },
-            child: const Text('Approve'),
-          ),
-          const SizedBox(width: 5),
-        ];
-      case UserStatus.INACTIVE:
-        return [];
-      default:
-        return [
-          ElevatedButton(
-            onPressed: () {
-              _deleteUser(user.user_id);
-            },
-            child: const Text('Delete'),
-          ),
-        ];
+    if (UserCredentials().getUserType() == UserType.ADMIN) {
+      final actions = <Widget>[];
+
+      switch (user.status) {
+        case UserStatus.PENDING:
+          actions.addAll([
+            _buildActionButton('Approve', () => _showApprovalDialog(user)),
+            _buildActionButton(
+                'Reject',
+                () => user.reject(() {
+                      setState(() {}); // Refresh state after rejection
+                    })),
+          ]);
+          break;
+
+        case UserStatus.REJECTED:
+          actions.addAll([
+            _buildActionButton('Approve', () => _showApprovalDialog(user)),
+          ]);
+          break;
+
+        case UserStatus.AVAILABLE:
+        case UserStatus.ASSIGNED:
+          actions.addAll([
+            _buildActionButton(
+                'Delete', () => _handleDeleteUser(user)), // Use the new method
+          ]);
+          break;
+
+        case UserStatus.INACTIVE:
+          // No actions for inactive users
+          break;
+
+        default:
+          break;
+      }
+
+      return actions;
     }
+
+    return [];
   }
 
   Widget _buildEditableField({

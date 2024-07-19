@@ -1,4 +1,4 @@
-// Define the UserType enum with specific numbers assigned to each enum value
+// Define the userType enum with specific numbers assigned to each enum value
 enum UserType {
   REGULAR,
   ADMIN,
@@ -9,6 +9,7 @@ final userTypeValues = {
   UserType.REGULAR: 1,
   UserType.ADMIN: 2,
 };
+
 // Define the UserStatus enum with specific numbers assigned to each enum value
 enum UserStatus {
   PENDING,
@@ -59,14 +60,12 @@ final deviceStatusValues = {
   DeviceStatus.INACTIVE: 3,
 };
 
-
-
 // Define the MissionStatus enum with specific numbers assigned to each enum value
 enum MissionStatus {
   CREATED,
   ONGOING,
   PAUSED,
-  CANCELED,
+  CANCELLED,
   FINISHED,
 }
 
@@ -75,7 +74,7 @@ final missionStatusValues = {
   MissionStatus.CREATED: 1,
   MissionStatus.ONGOING: 2,
   MissionStatus.PAUSED: 3,
-  MissionStatus.CANCELED: 4,
+  MissionStatus.CANCELLED: 4,
   MissionStatus.FINISHED: 5,
 };
 

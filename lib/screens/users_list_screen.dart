@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user.dart';
-import 'package:flutter_3/screens/shared/settings_screen.dart';
+import 'package:flutter_3/models/user_credentials.dart';
+import 'package:flutter_3/screens/settings_screen.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
-import 'package:flutter_3/services/user_api_service.dart';
+import 'package:flutter_3/widgets/confirmation_dialog.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/models/mission.dart';
-import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/filter_drawer.dart';
-import 'package:flutter_3/screens/admin/user_profile.dart';
+import 'package:flutter_3/screens/user_profile.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class UsersListScreen extends StatefulWidget {
@@ -339,36 +338,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
     _fetchUsers();
   }
 
-  Future<void> _approveUser(String userId, {required bool isAdmin}) async {
-    try {
-      // Call the API to approve the user account
-      await AdminApiService.approveUser(userId, isAdmin);
-      // After successful approval, refresh the user list
-      await _fetchUsers();
-    } catch (error) {
-      print('Failed to approve user: $error');
-    }
-  }
-
-  Future<void> _rejectUser(String userId) async {
-    try {
-      await AdminApiService.rejectUser(userId);
-      await _fetchUsers();
-    } catch (error) {
-      print('Failed to reject user: $error');
-    }
-  }
-
-  Future<void> _deleteUser(String userId) async {
-    try {
-      await AdminApiService.deleteUser(userId);
-      await _fetchUsers();
-    } catch (error) {
-      print('Failed to delete user: $error');
-    }
-  }
-
-  Future<void> _showApprovalDialog(String userId) async {
+  Future<void> _showApprovalDialog(User user) async {
     return showDialog(
       context: context,
       builder: (context) {
@@ -379,14 +349,14 @@ class _UsersListScreenState extends State<UsersListScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _approveUser(userId, isAdmin: true);
+                _approveUser(user, isAdmin: true);
               },
               child: const Text('Admin'),
             ),
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                _approveUser(userId, isAdmin: false);
+                _approveUser(user, isAdmin: false);
               },
               child: const Text('Regular User'),
             ),
@@ -396,67 +366,153 @@ class _UsersListScreenState extends State<UsersListScreen> {
     );
   }
 
-  List<Widget> _buildUserActions(User user) {
-    if (user.status == UserStatus.PENDING) {
-      return [
-        PopupMenuButton<int>(
-          icon: const Icon(Icons.more_vert, color: secondaryTextColor),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 1,
-              child: Text('Approve'),
-            ),
-            const PopupMenuItem(
-              value: 2,
-              child: Text('Reject'),
-            ),
-          ],
-          onSelected: (value) {
-            if (value == 1) {
-              _showApprovalDialog(user.user_id);
-            } else if (value == 2) {
-              _rejectUser(user.user_id);
-            }
-          },
+  Future<void> _approveUser(User user, {required bool isAdmin}) async {
+    try {
+      await user.approve(isAdmin, () {
+        setState(() {}); // Refresh state after approval
+      });
+    } catch (error) {
+      print('Failed to approve user: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to approve user: $error'),
+          backgroundColor: Colors.red,
         ),
-      ];
-    } else if (user.status == UserStatus.REJECTED) {
-      return [
-        PopupMenuButton<int>(
-          icon: const Icon(Icons.more_vert, color: secondaryTextColor),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 1,
-              child: Text('Approve'),
-            ),
-          ],
-          onSelected: (value) {
-            if (value == 1) {
-              _showApprovalDialog(user.user_id);
-            }
-          },
-        ),
-      ];
-    } else if (user.status == UserStatus.INACTIVE) {
-      return [];
-    } else {
-      return [
-        PopupMenuButton<int>(
-          icon: const Icon(Icons.more_vert, color: secondaryTextColor),
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 1,
-              child: Text('Delete'),
-            ),
-          ],
-          onSelected: (value) {
-            if (value == 1) {
-              _deleteUser(user.user_id);
-            }
-          },
-        ),
-      ];
+      );
     }
+  }
+
+  Future<void> _rejectUser(User user) async {
+    try {
+      await user.reject(() {
+        setState(() {}); // Refresh state after rejection
+      });
+    } catch (error) {
+      print('Failed to reject user: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to reject user: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteUser(User user) async {
+    try {
+      await user.delete(() {
+        setState(() {}); // Refresh state after deletion
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User deleted successfully'),
+          backgroundColor: successColor,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to delete user: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleDeleteUser(User user) async {
+    final bool confirmed = await showConfirmationDialog(
+      context: context,
+      title: 'Delete Account',
+      message: 'Are you sure you want to delete this user?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+    );
+
+    if (confirmed) {
+      await _deleteUser(user);
+      setState(() {
+        // Refresh user list after deletion
+        _fetchUsers();
+      });
+    }
+  }
+
+  List<Widget> _buildUserActions(User user) {
+    if (UserCredentials().getUserType() != UserType.ADMIN) {
+      return [];
+    }
+
+    switch (user.status) {
+      case UserStatus.PENDING:
+        return [
+          _buildPopupMenuButton(
+            items: [
+              _buildPopupMenuItem(1, 'Approve'),
+              _buildPopupMenuItem(2, 'Reject'),
+            ],
+            onSelected: (value) async {
+              if (value == 1) {
+                _showApprovalDialog(user);
+              } else if (value == 2) {
+                _rejectUser(user);
+              }
+            },
+          ),
+        ];
+
+      case UserStatus.REJECTED:
+        return [
+          _buildPopupMenuButton(
+            items: [
+              _buildPopupMenuItem(1, 'Approve'),
+            ],
+            onSelected: (value) async {
+              if (value == 1) {
+                _showApprovalDialog(user);
+              }
+            },
+          ),
+        ];
+
+      case UserStatus.AVAILABLE:
+      case UserStatus.ASSIGNED:
+        return [
+          _buildPopupMenuButton(
+            items: [
+              _buildPopupMenuItem(1, 'Delete'),
+            ],
+            onSelected: (value) async {
+              if (value == 1) {
+                _handleDeleteUser(user);
+              }
+            },
+          ),
+        ];
+
+      case UserStatus.INACTIVE:
+        return []; // No actions for inactive users
+
+      default:
+        return [];
+    }
+  }
+
+  PopupMenuButton<int> _buildPopupMenuButton({
+    required List<PopupMenuItem<int>> items,
+    required void Function(int) onSelected,
+  }) {
+    return PopupMenuButton<int>(
+      icon: const Icon(Icons.more_vert, color: Colors.grey),
+      itemBuilder: (context) => items,
+      onSelected: onSelected,
+    );
+  }
+
+  PopupMenuItem<int> _buildPopupMenuItem(int value, String text) {
+    return PopupMenuItem<int>(
+      value: value,
+      child: Text(text),
+    );
   }
 
   Future<void> _previousPage() async {

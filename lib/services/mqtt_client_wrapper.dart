@@ -12,7 +12,7 @@ typedef MqttDataCallback = void Function(Map<String, dynamic> data);
 
 class MQTTClientWrapper {
   late MqttServerClient client;
-  late MqttDataCallback onDataReceived;
+  MqttDataCallback onDataReceived = (data) {}; // Default no-op function
   Timer? _statusTimer;
   bool _showingDialog = false;
 
@@ -137,14 +137,28 @@ class MQTTClientWrapper {
         final message =
             MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
 
-        // Parse message to Map<String, dynamic>
-        final Map<String, dynamic> data = parseMessage(message);
+        // Parse message to dynamic
+        final dynamic data = parseMessage(message);
 
-        // Add the topic to the data map
-        data['topic'] = c[0].topic;
-
-        // Invoke callback with parsed data
-        onDataReceived(data);
+        // Check if data is a Map<String, dynamic>
+        if (data is Map<String, dynamic>) {
+          data['topic'] = c[0].topic;
+          onDataReceived(data); // Safe to call as it's initialized
+        } else if (data is List<dynamic>) {
+          // Handle list of maps
+          for (var item in data) {
+            if (item is Map<String, dynamic>) {
+              item['topic'] = c[0].topic;
+              onDataReceived(item);
+            } else {
+              print(
+                  'Received item in list is not a Map<String, dynamic>: $item');
+            }
+          }
+        } else {
+          print(
+              'Received data is neither a Map<String, dynamic> nor a List: $data');
+        }
       });
     } catch (e, stackTrace) {
       print('Error in setupMessageListener: $e');
@@ -174,6 +188,7 @@ class MQTTClientWrapper {
       // Handle error as needed
     }
   }
+  
 
   void publishMessage(String topic, String message) {
     try {
@@ -191,8 +206,14 @@ class MQTTClientWrapper {
 
   dynamic parseMessage(String message) {
     try {
-      // Attempt to parse the message as JSON
-      return json.decode(message);
+      final parsed = json.decode(message);
+
+      if (parsed is Map<String, dynamic> || parsed is List<dynamic>) {
+        return parsed;
+      } else {
+        print('Parsed JSON is neither a Map nor a List: $parsed');
+        return message; // or handle as needed
+      }
     } catch (e, stackTrace) {
       print('Error in parseMessage: $e');
       print('Stack trace: $stackTrace');

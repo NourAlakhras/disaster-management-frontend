@@ -1,0 +1,772 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_3/models/device.dart';
+import 'package:flutter_3/models/mission.dart';
+import 'package:flutter_3/models/sensor_data.dart';
+import 'package:flutter_3/services/sensor_data_provider.dart';
+import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/widgets/custom_upper_bar.dart';
+import 'package:flutter_3/widgets/custom_search_bar.dart';
+import 'package:flutter_3/widgets/filter_drawer.dart';
+import 'package:flutter_3/widgets/mission_analytics_tab.dart';
+import 'package:flutter_3/widgets/mission_devices_list_tab.dart';
+import 'package:flutter_3/widgets/mission_devices_map_tab.dart';
+import 'package:flutter_3/widgets/mission_devices_thumbnails_tab.dart';
+import 'package:flutter_3/widgets/tabbed_view.dart';
+import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/utils/app_colors.dart';
+import 'package:provider/provider.dart';
+
+class MissionDevicesBaseScreen extends StatefulWidget {
+  final MQTTClientWrapper mqttClient;
+  final Mission mission;
+
+  const MissionDevicesBaseScreen(
+      {required this.mqttClient, super.key, required this.mission});
+
+  @override
+  State<MissionDevicesBaseScreen> createState() =>
+      _MissionDevicesBaseScreenState();
+}
+
+class _MissionDevicesBaseScreenState extends State<MissionDevicesBaseScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  List<DeviceType>? _filteredTypes = DeviceType.values;
+  final criteriaList = [
+    FilterCriterion(name: 'Device Type', options: DeviceType.values.toList()),
+  ];
+  String? _name;
+  List<String> mqttTopics = [];
+  List<Device> _filteredDevices = [];
+  @override
+  void initState() {
+    super.initState();
+    fetchMissionDetails();
+    widget.mqttClient.onDataReceived = _onDataReceived; // Set the callback
+
+    _subscribeToTopics();
+  }
+
+  void _onDataReceived(Map<String, dynamic> data) {
+    print('Data received: $data'); // Log the entire data map
+
+    final sensorDataProvider =
+        Provider.of<SensorDataProvider>(context, listen: false);
+
+    final topic = data['topic'] as String;
+// Extract sensor data
+    String sensor = data['sensor'] ?? 'Unknown';
+    String unit = data['unit'] ?? '';
+    var value = data['value'];
+
+    if (value == null) {
+      throw ArgumentError('Value cannot be null');
+    }
+
+    print(
+        'Topic: $topic, Sensor: $sensor, Unit: $unit, Value: $value'); // Log individual components
+
+    String deviceName = _extractDeviceNameFromTopic(topic);
+
+    if (value is List<dynamic>) {
+      // Handle list of values
+      for (var item in value) {
+        if (item is num) {
+          final sensorReading = SensorData(
+            sensor: sensor,
+            value: item,
+            unit: unit,
+          );
+          sensorDataProvider.handleIncomingData(deviceName, sensorReading);
+        } else {
+          print('Received item in list is not a num: $item');
+        }
+      }
+    } else if (value is num) {
+      // Handle single value
+      final sensorReading = SensorData(
+        sensor: sensor,
+        value: value,
+        unit: unit,
+      );
+      sensorDataProvider.handleIncomingData(deviceName, sensorReading);
+    } else {
+      print('Received value is not a num or List<num>: $value');
+    }
+  }
+
+  String _extractDeviceNameFromTopic(String topic) {
+    final parts = topic.split('/');
+    final deviceName = parts.length > 3 ? parts[3] : 'unknown_device';
+    print(
+        'Extracted device name: $deviceName'); // Log the extracted device name
+    return deviceName;
+  }
+
+  void _subscribeToTopics() {
+    for (var device in _filteredDevices) {
+      mqttTopics.addAll([
+        'cloud/reg/${widget.mission.broker?.name}/${device.name}/sensor-data',
+        // 'cloud/reg/${widget.mission.broker?.name}/${device.name}/gps',
+        'cloud/reg/${widget.mission.broker?.name}/${device.name}/connectivity',
+      ]);
+    }
+    widget.mqttClient.subscribeToMultipleTopics(mqttTopics);
+    widget.mqttClient.setupMessageListener();
+  }
+
+  void _unsubscribeFromTopics() {
+    widget.mqttClient.unsubscribeFromMultipleTopics(mqttTopics);
+  }
+
+  @override
+  void dispose() {
+    _unsubscribeFromTopics();
+    super.dispose();
+  }
+
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     appBar: CustomUpperBar(
+  //       title: 'Mission: ${widget.mission.name}',
+  //       leading: IconButton(
+  //         icon: const Icon(Icons.arrow_back),
+  //         color: primaryTextColor,
+  //         onPressed: () {
+  //           Navigator.pop(context);
+  //         },
+  //       ),
+  //       actions: [
+  //         IconButton(
+  //           icon: const Icon(Icons.notifications),
+  //           color: primaryTextColor,
+  //           onPressed: () {},
+  //         )
+  //       ],
+  //     ),
+  //     body: SizedBox(
+  //       height: MediaQuery.of(context).size.height,
+  //       width: double.infinity,
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.stretch,
+  //         children: <Widget>[
+  //           Padding(
+  //             padding: const EdgeInsets.fromLTRB(15, 8, 15.0, 00),
+  //             child: CustomSearchBar(
+  //               controller: _searchController,
+  //               onChanged: _filterDevices,
+  //               onClear: _clearSearch,
+  //             ),
+  //           ),
+  //           Expanded(
+  //             child: TabbedView(
+  //               length: 4,
+  //               tabs: const <Widget>[
+  //                 Tab(
+  //                   child: Icon(Icons.list),
+  //                 ),
+  //                 Tab(
+  //                   child: Icon(Icons.analytics_outlined),
+  //                 ),
+  //                 Tab(
+  //                   child: Icon(Icons.photo_camera_front),
+  //                 ),
+  //                 Tab(
+  //                   icon: Icon(Icons.map_outlined),
+  //                 ),
+  //               ],
+  //               tabContents: <Widget>[
+  //                 // Content for Tab 1
+  //                 if (_filteredDevices.isNotEmpty)
+  //                   MissionDevicesListTab(
+  //                     mqttClient: widget.mqttClient,
+  //                     devices: _filteredDevices,
+  //                   )
+  //                 else
+  //                   const Center(
+  //                     child: Text('No devices available',
+  //                         style: TextStyle(color: primaryTextColor)),
+  //                   ),
+  //                 // Content for Tab 2
+  //                 if (_filteredDevices.isNotEmpty)
+  //                   MissionAnalyticsTab(
+  //                     mqttClient: widget.mqttClient,
+  //                     devices: _filteredDevices,
+  //                     broker: widget.mission.broker,
+  //                   )
+  //                 else
+  //                   const Center(
+  //                     child: Text('No devices available',
+  //                         style: TextStyle(color: primaryTextColor)),
+  //                   ),
+  //                 // Content for Tab 3
+  //                 if (_filteredDevices.isNotEmpty)
+  //                   MissionDevicesThumbnailsTab(
+  //                     mqttClient: widget.mqttClient,
+  //                     devices: _filteredDevices,
+  //                     broker: widget.mission.broker,
+  //                   )
+  //                 else
+  //                   const Center(
+  //                     child: Text('No devices available',
+  //                         style: TextStyle(color: primaryTextColor)),
+  //                   ),
+  //                 // // Content for Tab 4
+  //                 if (_filteredDevices.isNotEmpty)
+  //                   MissionDevicesMapTab(
+  //                     mqttClient: widget.mqttClient,
+  //                     devices: _filteredDevices, // Use devices from mission
+  //                     broker: widget.mission.broker,
+  //                   )
+  //                 else
+  //                   const Center(
+  //                     child: Text('No devices available',
+  //                         style: TextStyle(color: primaryTextColor)),
+  //                   ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //     endDrawer: FilterDrawerWidget(
+  //       onFilterApplied: (selectedCriteria) {
+  //         final List<DeviceType> selectedTypes =
+  //             (selectedCriteria['Device Type'] as List<dynamic>)
+  //                 .cast<DeviceType>();
+
+  //         setState(() {
+  //           _filteredTypes =
+  //               selectedTypes.isNotEmpty ? selectedTypes : DeviceType.values;
+  //         });
+  //         _filterDevices(_searchController.text);
+  //       },
+  //       criteriaList: criteriaList,
+  //       title: 'Filter Options',
+  //     ),
+  //   );
+  // }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Mission: ${widget.mission.name}'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Column(
+        children: <Widget>[
+          Expanded(
+            child: Consumer<SensorDataProvider>(
+              builder: (context, provider, child) {
+                if (provider.sensorData.isEmpty) {
+                  return Center(
+                    child: Text('No sensor data available'),
+                  );
+                }
+                return ListView.builder(
+                  itemCount: provider.sensorData.length,
+                  itemBuilder: (context, index) {
+                    final sensorReading =
+                        provider.sensorData.values.elementAt(index);
+                    final valueDisplay = sensorReading.value is List<dynamic>
+                        ? (sensorReading.value as List<dynamic>).join(', ')
+                        : sensorReading.value.toString();
+
+                    return ListTile(
+                      title: Text(
+                        '${sensorReading.sensor}: $valueDisplay ${sensorReading.unit}', style:TextStyle(color: Colors.amber)
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  void _filterDevices(String query) {
+    setState(() {
+      _name = query.isNotEmpty ? query.toLowerCase() : null;
+      _filteredDevices = widget.mission.devices!.where((device) {
+        final deviceNameLower = device.name.toLowerCase();
+        final matchesName = _name == null || deviceNameLower.contains(_name!);
+        final matchesType = _filteredTypes!.contains(device.type);
+        return matchesName && matchesType;
+      }).toList();
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _filterDevices('');
+  }
+
+  Future<void> fetchMissionDetails() async {
+    widget.mission.fetchMissionDetails(() {
+      if (mounted) {
+        setState(() {
+          _filteredDevices = widget.mission.devices!;
+        });
+      }
+    });
+  }
+}
+
+____________________
+class SensorData {
+  final String sensor;
+  final dynamic value;
+  final String unit;
+
+  SensorData({
+    required this.sensor,
+    required this.value,
+    required this.unit,
+  });
+
+  factory SensorData.fromJson(Map<String, dynamic> json) {
+    return SensorData(
+      sensor: json['sensor'],
+      value: json['value'],
+      unit: json['unit'],
+    );
+  }
+}
+____________________
+import 'package:flutter/material.dart';
+import 'package:flutter_3/models/sensor_data.dart';
+
+class SensorDataProvider with ChangeNotifier {
+  Map<String, SensorData> _sensorData = {};
+
+  Map<String, SensorData> get sensorData => _sensorData;
+
+ void updateSensorData(String deviceName, SensorData sensorReading) {
+    final key = '$deviceName/${sensorReading.sensor}';
+    print('Updating sensor data for key: $key'); // Log the key
+    print(
+        'New sensor reading: ${sensorReading.sensor}: ${sensorReading.value} ${sensorReading.unit}'); // Log the new sensor reading
+
+    _sensorData[key] = sensorReading;
+    notifyListeners(); // Notify listeners after updating the data
+  }
+
+
+  void handleIncomingData(String deviceName, SensorData sensorReading) {
+    try {
+      updateSensorData(deviceName, sensorReading);
+    } catch (e) {
+      print('Error handling incoming data: $e');
+    }
+  }
+}
+____________________import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_3/models/user_credentials.dart';
+import 'package:flutter_3/utils/constants.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
+
+typedef MqttDataCallback = void Function(Map<String, dynamic> data);
+
+class MQTTClientWrapper {
+  late MqttServerClient client;
+  MqttDataCallback onDataReceived = (data) {}; // Default no-op function
+  Timer? _statusTimer;
+  bool _showingDialog = false;
+
+  Set<String> subscribedTopics = {};
+
+  void _startStatusTimer() {
+    const timeoutDuration = Duration(seconds: 5); // Initial 5 seconds
+    int elapsedTimeInSeconds = 0;
+
+    _statusTimer?.cancel();
+    _statusTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      elapsedTimeInSeconds++;
+      final status = client.connectionStatus;
+      print(
+          'MQTT Connection Status ${status?.state} , returnCode: ${status?.returnCode}');
+      _connectionStatusController.add(status!.state);
+
+      if (status.state != MqttConnectionState.connected &&
+          elapsedTimeInSeconds >= 5) {
+        _onDisconnected(); // Show dialog after 5 seconds if still connecting
+      }
+
+      if (status.state == MqttConnectionState.connected) {
+        _statusTimer?.cancel(); // Cancel timer once connected
+      }
+    });
+  }
+
+  Future<void> prepareMqttClient() async {
+    try {
+      final credentials = UserCredentials();
+      final username = credentials.username;
+      final password = credentials.password;
+      _setupMqttClient(username);
+      await _connectClient(username, password);
+
+      setupMessageListener();
+      _startStatusTimer();
+      _listenToConnectionStatus();
+      _listenToConnectivityChanges();
+    } catch (e, stackTrace) {
+      print('Error in prepareMqttClient: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+      disconnect();
+    }
+  }
+
+  Future<void> _connectClient(String username, String password) async {
+    try {
+      print('Connecting to MQTT broker...');
+      await client.connect(username, password);
+      print('Connected to MQTT broker');
+    } catch (e, stackTrace) {
+      print('Error in _connectClient: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+      disconnect();
+    }
+  }
+
+  Future<void> disconnect() async {
+    try {
+      print('Disconnecting MQTT client...');
+      client.disconnect();
+      print('MQTT client disconnected');
+    } catch (e, stackTrace) {
+      print('Error in disconnect: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void _setupMqttClient(String username) {
+    try {
+      client = MqttServerClient.withPort(
+        Constants.mqttBrokerUrl,
+        username,
+        1883,
+      );
+      client.secure = false;
+      client.securityContext = SecurityContext.defaultContext;
+      client.keepAlivePeriod = 5;
+      client.autoReconnect = true;
+      client.onDisconnected = _onDisconnected;
+      client.onConnected = _onConnected;
+      client.onSubscribed = _onSubscribed;
+      client.onAutoReconnect = _onAutoReconnect;
+    } catch (e, stackTrace) {
+      print('Error in _setupMqttClient: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void subscribeToTopic(String topicName) {
+    try {
+      client.subscribe(topicName, MqttQos.atLeastOnce);
+      print('Subscribed to topic: $topicName');
+      subscribedTopics.add(topicName);
+    } catch (e, stackTrace) {
+      print('Error in subscribeToTopic: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void subscribeToMultipleTopics(List<String> topics) {
+    try {
+      topics.forEach(subscribeToTopic);
+    } catch (e, stackTrace) {
+      print('Error in subscribeToMultipleTopics: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void setupMessageListener() {
+    try {
+      client.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+        final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+        final message =
+            MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+
+        // Parse message to dynamic
+        final dynamic data = parseMessage(message);
+
+        // Check if data is a Map<String, dynamic>
+        if (data is Map<String, dynamic>) {
+          data['topic'] = c[0].topic;
+          onDataReceived(data); // Safe to call as it's initialized
+        } else if (data is List<dynamic>) {
+          // Handle list of maps
+          for (var item in data) {
+            if (item is Map<String, dynamic>) {
+              item['topic'] = c[0].topic;
+              onDataReceived(item);
+            } else {
+              print(
+                  'Received item in list is not a Map<String, dynamic>: $item');
+            }
+          }
+        } else {
+          print(
+              'Received data is neither a Map<String, dynamic> nor a List: $data');
+        }
+      });
+    } catch (e, stackTrace) {
+      print('Error in setupMessageListener: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void unsubscribeFromTopic(String topic) {
+    try {
+      print('Unsubscribing from the $topic topic');
+      client.unsubscribe(topic);
+      subscribedTopics.remove(topic);
+    } catch (e, stackTrace) {
+      print('Error in unsubscribeFromTopic: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void unsubscribeFromMultipleTopics(List<String> topics) {
+    try {
+      topics.forEach(unsubscribeFromTopic);
+    } catch (e, stackTrace) {
+      print('Error in unsubscribeFromMultipleTopics: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+  
+
+  void publishMessage(String topic, String message) {
+    try {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(message);
+
+      print('Publishing message "$message" to topic $topic');
+      client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
+    } catch (e, stackTrace) {
+      print('Error in publishMessage: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  dynamic parseMessage(String message) {
+    try {
+      final parsed = json.decode(message);
+
+      if (parsed is Map<String, dynamic> || parsed is List<dynamic>) {
+        return parsed;
+      } else {
+        print('Parsed JSON is neither a Map nor a List: $parsed');
+        return message; // or handle as needed
+      }
+    } catch (e, stackTrace) {
+      print('Error in parseMessage: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+      return message; // Return the original message on error
+    }
+  }
+
+  void _onSubscribed(String topic) {
+    try {
+      print('Subscription confirmed for topic $topic');
+    } catch (e, stackTrace) {
+      print('Error in _onSubscribed: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void _onDisconnected() {
+    try {
+      print('Disconnected from MQTT broker');
+      // Attempt to reconnect if not already disconnected
+      if (client.connectionStatus?.state != MqttConnectionState.disconnected &&
+          client.connectionStatus?.state != MqttConnectionState.disconnecting) {
+        client.connect();
+      }
+    } catch (e, stackTrace) {
+      print('Error in _onDisconnected: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void _onConnected() {
+    try {
+      print('Connected to MQTT broker');
+
+      // Dismiss reconnect dialogs if shown
+      if (_showingDialog) {
+        _showingDialog = false;
+        Navigator.of(Constants.navigatorKey.currentState!.overlay!.context)
+            .pop();
+      }
+
+      // Any other actions needed upon successful connection
+    } catch (e, stackTrace) {
+      print('Error in _onConnected: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  final StreamController<MqttConnectionState> _connectionStatusController =
+      StreamController<MqttConnectionState>.broadcast();
+
+  void _listenToConnectionStatus() {
+    _connectionStatusController.stream.listen((MqttConnectionState state) {
+      if (state == MqttConnectionState.connecting) {
+        _onAutoReconnect();
+      }
+    });
+  }
+
+  Connectivity _connectivity = Connectivity();
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+
+  void _listenToConnectivityChanges() {
+    _connectivitySubscription
+        ?.cancel(); // Cancel previous subscription if exists
+    _connectivitySubscription = _connectivity.onConnectivityChanged
+        .listen((List<ConnectivityResult> event) {
+      // Note: 'event' is actually a single item list in this context
+      ConnectivityResult result =
+          event.isNotEmpty ? event[0] : ConnectivityResult.none;
+      print('Connectivity changed to $result');
+      if (result == ConnectivityResult.none) {
+        _onDisconnected();
+      }
+    });
+  }
+
+  void logout() {
+    try {
+      // Disconnect MQTT client
+      disconnect();
+
+      // Stop auto reconnection
+      client.autoReconnect = false;
+
+      // Clear status timer
+      _statusTimer?.cancel();
+
+      // Clear subscribed topics
+      if (subscribedTopics.isNotEmpty) {
+        MQTTClientWrapper()
+            .unsubscribeFromMultipleTopics(subscribedTopics.toList());
+        subscribedTopics.clear();
+      }
+
+      // Close connection status controller
+      _connectionStatusController.close();
+
+      // Cancel connectivity subscription
+      _connectivitySubscription?.cancel(); // Restart the app
+    } catch (e, stackTrace) {
+      print('Error in logout: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
+
+  void _onAutoReconnect() {
+    if (!_showingDialog) {
+      _showingDialog = true;
+      final BuildContext? context =
+          Constants.navigatorKey.currentState?.overlay?.context;
+
+      if (context == null) {
+        print('Error: navigatorKey context is null');
+        _showingDialog = false;
+        return;
+      }
+
+      int elapsedTimeInSeconds = 0;
+      Timer? reconnectTimer;
+
+      // Show initial transparent dialog with progress indicator for the first 5 seconds
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            backgroundColor: Colors.transparent,
+            content: Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        },
+      );
+
+      // Start timer to switch to full dialog after 5 seconds
+      reconnectTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        elapsedTimeInSeconds++;
+        final status = client.connectionStatus;
+
+        if (status?.state != MqttConnectionState.connected &&
+            elapsedTimeInSeconds >= 5) {
+          // Cancel the initial transparent dialog
+          Navigator.of(context).pop();
+
+          // Show the full reconnect dialog
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Connection Lost'),
+                content: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text('Attempting to reconnect to MQTT...'),
+                    SizedBox(height: 16),
+                    CircularProgressIndicator(), // Add circular progress indicator
+                  ],
+                ),
+                actions: <Widget>[
+                  TextButton(
+                    child: const Text('Logout'),
+                    onPressed: () {
+                      logout();
+                      Navigator.of(context)
+                          .pushNamedAndRemoveUntil('/', (route) => false);
+                    },
+                  ),
+                ],
+              );
+            },
+          ).then((value) => _showingDialog = false);
+
+          reconnectTimer?.cancel();
+        }
+      });
+    }
+  }
+}
+

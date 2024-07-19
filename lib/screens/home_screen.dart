@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user_credentials.dart';
-import 'package:flutter_3/screens/admin/missions_list_screen.dart';
-import 'package:flutter_3/screens/admin/dashboard_screen.dart';
-import 'package:flutter_3/screens/admin/users_list_screen.dart';
+import 'package:flutter_3/screens/missions_list_screen.dart';
+import 'package:flutter_3/screens/dashboard_screen.dart';
+import 'package:flutter_3/screens/users_list_screen.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar.dart';
 import 'package:curved_labeled_navigation_bar/curved_navigation_bar_item.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
-import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/screens/admin/devices_list_screen.dart';
-import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
+import 'package:flutter_3/screens/devices_list_screen.dart';
 import 'package:flutter_3/utils/app_colors.dart';
-import 'package:flutter_3/models/mission.dart';
 
 class HomeScreen extends StatefulWidget {
   final MQTTClientWrapper mqttClient;

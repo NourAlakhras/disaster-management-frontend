@@ -3,17 +3,18 @@ import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/models/user_credentials.dart';
-import 'package:flutter_3/screens/admin/edit_mission_brokers_screen.dart';
-import 'package:flutter_3/screens/admin/edit_mission_devices_screen.dart';
-import 'package:flutter_3/screens/admin/edit_mission_users_screen.dart';
-import 'package:flutter_3/screens/admin/mission_devices_base_screen.dart';
+import 'package:flutter_3/screens/edit_mission_brokers_screen.dart';
+import 'package:flutter_3/screens/edit_mission_devices_screen.dart';
+import 'package:flutter_3/screens/edit_mission_users_screen.dart';
+import 'package:flutter_3/screens/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
-import 'package:flutter_3/screens/user/device_detailed_screen.dart';
+import 'package:flutter_3/screens/device_detailed_screen.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_3/utils/app_colors.dart';
+import 'package:flutter_3/widgets/editable_field_widget.dart';
 
 class MissionProfileScreen extends StatefulWidget {
   final Mission mission;
@@ -30,7 +31,9 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
   final TextEditingController _missionNameController = TextEditingController();
   List<User> _selectedUsers = [];
   List<Device> _selectedDevices = [];
-  List<Device> _initialMissionDevices = [];
+  bool _isMissionNameValid = true;
+  bool _isBrokerSelected = true;
+
   Device? _selectedBroker;
 
   bool _isLoading = false;
@@ -69,10 +72,19 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildEditableField(
+                  EditableFieldWidget(
                     label: 'Mission Name',
                     controller: _missionNameController,
                     isEditing: _isEditing,
+                    isValid: _isMissionNameValid,
+                    errorText: _isMissionNameValid
+                        ? null
+                        : 'Mission name must be 3-20 characters long',
+                    onChanged: (value) {
+                      setState(() {
+                        _isMissionNameValid = Mission.validateName(value);
+                      });
+                    },
                   ),
                   const SizedBox(height: 8),
                   if (widget.mission.startDate != null)
@@ -167,18 +179,40 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
   }
 
   Future<void> fetchMissionDetails() async {
-    widget.mission.fetchMissionDetails(() {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await widget.mission.fetchMissionDetails(() {
+        if (mounted) {
+          setState(() {
+            _missionNameController.text = widget.mission.name;
+            _selectedBroker = widget.mission.broker;
+            _selectedDevices = widget.mission.devices!
+                .where((device) => device.type != DeviceType.BROKER)
+                .toList();
+            _selectedUsers = widget.mission.users!.toList();
+          });
+        }
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to fetch mission details: $e'),
+            backgroundColor: errorColor,
+          ),
+        );
+      }
+    } finally {
       if (mounted) {
         setState(() {
-          _missionNameController.text = widget.mission.name;
-          _selectedBroker = widget.mission.broker;
-          _selectedDevices = widget.mission.devices!
-              .where((device) => device.type != DeviceType.BROKER)
-              .toList();
-          _selectedUsers = widget.mission.users!.toList();
+          _isLoading = false;
         });
       }
-    });
+    }
   }
 
   Widget _buildNonEditableUserSelection() {
@@ -344,7 +378,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                 List<User> selectedUsers = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditUsersScreen(
+                    builder: (context) => EditMissionUsersScreen(
                       missionId: widget.mission.id,
                       preselectedUsers: _selectedUsers,
                     ),
@@ -403,9 +437,8 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                 List<Device> selectedDevices = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditDevicesScreen(
+                    builder: (context) => EditMissionDevicesScreen(
                       preselectedDevices: _selectedDevices,
-                      missionId: widget.mission.id,
                       brokerId: _selectedBroker!.device_id,
                     ),
                   ),
@@ -464,29 +497,50 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                 Device? selectedBroker = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditBrokersScreen(
+                    builder: (context) => EditMissionBrokerScreen(
                       missionId: widget.mission.id,
-                      preselectedBroker: widget.mission.broker,
+                      preselectedBroker: _selectedBroker,
                     ),
                   ),
                 );
-                if (selectedBroker != null) {
-                  setState(() {
-                    if (_selectedBroker != null &&
-                        _selectedBroker!.device_id !=
-                            selectedBroker.device_id) {
+                print(' profile selectedBroker $selectedBroker');
+                setState(() {
+                  if (selectedBroker != null) {
+                    if (_selectedBroker == null) {
+                      _selectedDevices = [];
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              'Broker selected, devices selection is ready for new selection.'),
+                          backgroundColor: successColor,
+                        ),
+                      );
+                    } else if (_selectedBroker!.device_id !=
+                        selectedBroker.device_id) {
                       _selectedDevices = [];
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content:
-                              Text('Broker changed, device selection cleared.'),
+                              Text('Broker changed, devices selection cleared.'),
                           backgroundColor: warningColor,
                         ),
                       );
                     }
-                    _selectedBroker = selectedBroker;
-                  });
-                }
+                    _isBrokerSelected = true;
+                  } else {
+                    _selectedDevices = [];
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                            Text('No broker selected, devices selection cleared.'),
+                        backgroundColor: errorColor,
+                      ),
+                    );
+                  }
+                  _selectedBroker = selectedBroker;
+                  print(' profile _selectedBroker $_selectedBroker');
+                });
+
               },
               icon: const Icon(Icons.edit),
               tooltip: 'Edit',
@@ -505,44 +559,29 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
     );
   }
 
-  Widget _buildEditableField({
-    required String label,
-    required TextEditingController controller,
-    required bool isEditing,
-  }) {
-    return Row(
-      children: [
-        Text(
-          '$label: ',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: primaryTextColor,
-          ),
-        ),
-        Expanded(
-          child: isEditing
-              ? TextFormField(
-                  controller: controller,
-                  style: const TextStyle(
-                    color: secondaryTextColor,
-                  ),
-                )
-              : Text(
-                  controller.text,
-                  style: const TextStyle(
-                    color: secondaryTextColor,
-                  ),
-                ),
-        ),
-      ],
-    );
+  bool _validateForm() {
+    final missionName = _missionNameController.text.trim();
+
+    // Validate mission name
+    final isNameValid = missionName.isNotEmpty &&
+        missionName.length >= 3 &&
+        missionName.length <= 20;
+
+    // Validate broker selection
+    final isBrokerValid = _selectedBroker != null;
+
+    setState(() {
+      _isMissionNameValid = isNameValid;
+      _isBrokerSelected = isBrokerValid;
+    });
+
+    return isNameValid && isBrokerValid;
   }
 
   Widget _buildEditButton() {
     if (UserCredentials().getUserType() == UserType.ADMIN) {
       if (widget.mission.status == MissionStatus.FINISHED ||
-          widget.mission.status == MissionStatus.CANCELED) {
+          widget.mission.status == MissionStatus.CANCELLED) {
         // If mission status is FINISHED or CANCELED, return an empty container
         return const SizedBox();
       } else {
@@ -552,10 +591,33 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
           child: ElevatedButton(
             onPressed: () {
               if (_isEditing) {
-                _saveChanges();
+                if (_validateForm()) {
+                  _saveChanges();
+                  setState(() {
+                    _isEditing = false;
+                  });
+                } else {
+                  if (!_isBrokerSelected) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please select a broker.'),
+                        backgroundColor: errorColor,
+                      ),
+                    );
+                  }
+                  if (!_isMissionNameValid) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content:
+                            Text('Mission name must be 3-20 characters long'),
+                        backgroundColor: errorColor,
+                      ),
+                    );
+                  }
+                }
               }
               setState(() {
-                _isEditing = !_isEditing;
+                _isEditing = true;
               });
             },
             child: Text(_isEditing ? 'Save' : 'Edit'),
@@ -575,7 +637,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
           Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => MissionDevicesListScreen(
+                builder: (context) => MissionDevicesBaseScreen(
                   mission: widget.mission,
                   mqttClient: widget.mqttClient,
                 ),
@@ -590,169 +652,59 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
 
   List<Widget> _buildMissionActions(Mission mission) {
     if (UserCredentials().getUserType() == UserType.ADMIN) {
+      final actions = <Widget>[];
       switch (mission.status) {
         case MissionStatus.CREATED:
-          return [
-            ElevatedButton(
-              onPressed: () {
-                _startMission(mission.id);
-              },
-              child: const Text('Start'),
-            ),
-            const SizedBox(width: 5),
-            ElevatedButton(
-              onPressed: () {
-                _cancelMission(mission.id);
-              },
-              child: const Text('Cancel'),
-            ),
-          ];
+          actions.addAll([
+            _buildActionButton('Start', mission.start),
+            _buildActionButton('Cancel', mission.cancel),
+          ]);
+          break;
         case MissionStatus.ONGOING:
-          return [
-            ElevatedButton(
-              onPressed: () {
-                _pauseMission(mission.id);
-              },
-              child: const Text('Pause'),
-            ),
-            const SizedBox(width: 5),
-            ElevatedButton(
-              onPressed: () {
-                _endMission(mission.id);
-              },
-              child: const Text('End'),
-            ),
-          ];
+          actions.addAll([
+            _buildActionButton('Pause', mission.pause),
+            _buildActionButton('End', mission.end),
+          ]);
+          break;
         case MissionStatus.PAUSED:
-          return [
-            ElevatedButton(
-              onPressed: () {
-                _resumeMission(mission.id);
-              },
-              child: const Text('Resume'),
-            ),
-            const SizedBox(width: 5),
-            ElevatedButton(
-              onPressed: () {
-                _endMission(mission.id);
-              },
-              child: const Text('End'),
-            ),
-          ];
+          actions.addAll([
+            _buildActionButton('Resume', mission.resume),
+            _buildActionButton('End', mission.end),
+          ]);
+          break;
         default:
-          return [];
+          break;
       }
-    } else {
-      return [];
+      return actions;
     }
+    return [];
   }
 
-  Future<void> _startMission(String missionId) async {
-    try {
-      print('missionId $missionId');
-      String command = "start";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await fetchMissionDetails();
-    } catch (error) {
-      print('Failed to start mission: $error');
-    }
+  Widget _buildActionButton(
+    String label,
+    Future<void> Function(VoidCallback) action,
+  ) {
+    return ElevatedButton(
+      onPressed: () async {
+        try {
+          await action(() {
+            setState(() {});
+          });
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to update mission status: $e'),
+              backgroundColor: errorColor,
+            ),
+          );
+        } finally {
+          setState(() {});
+        }
+      },
+      child: Text(label),
+    );
   }
 
-  void _pauseMission(String missionId) async {
-    try {
-      print('missionId $missionId');
-      String command = "pause";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await fetchMissionDetails();
-    } catch (error) {
-      print('Failed to pause mission: $error');
-    }
-  }
-
-  void _endMission(String missionId) async {
-    try {
-      print('missionId $missionId');
-      String command = "end";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await fetchMissionDetails();
-    } catch (error) {
-      print('Failed to end mission: $error');
-    }
-  }
-
-  void _cancelMission(String missionId) async {
-    try {
-      print('missionId $missionId');
-      String command = "cancel";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await fetchMissionDetails();
-    } catch (error) {
-      print('Failed to cancel mission: $error');
-    }
-  }
-
-  void _resumeMission(String missionId) async {
-    try {
-      print('missionId $missionId');
-      String command = "continue";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await fetchMissionDetails();
-    } catch (error) {
-      print('Failed to continue mission: $error');
-    }
-  }
-
-//   void _saveChanges() async {
-//     setState(() {
-//       _isLoading = true;
-//     });
-
-//     try {
-//       final String missionNewName = _missionNameController.text;
-//       final List<String> missionNewUserIds =
-//           _selectedUsers.map((user) => user.user_id).toList();
-
-//       final String missionNewBrokerId = _selectedBroker?.device_id ?? '';
-
-//       final List<String> missionNewDeviceIds =
-//           _selectedDevices.map((device) => device.device_id).toList();
-// // Build the update data
-//       final Map<String, dynamic> updateData = {};
-
-// if (missionNewName != widget.mission.name) {
-//         updateData['missionName'] = missionNewName;
-//       }
-
-//       await MissionApiService.updateMission(
-//         missionId: widget.mission.id,
-//         name: updateData['missionName'],
-//         deviceIds: deviceIds,
-//         userIds: userIds,
-//         brokerId: brokerId,
-//         missionId: widget.mission.id,
-//       );
-
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         const SnackBar(
-//           content: Text('Mission created successfully'),
-//           backgroundColor: successColor,
-//         ),
-//       );
-
-//       Navigator.pop(context);
-//     } catch (e) {
-//       ScaffoldMessenger.of(context).showSnackBar(
-//         SnackBar(
-//           content: Text('Failed to create mission: $e'),
-//           backgroundColor: errorColor,
-//         ),
-//       );
-//     } finally {
-//       setState(() {
-//         _isLoading = false;
-//       });
-//     }
-//   }
   void _saveChanges() async {
     setState(() {
       _isLoading = true;
@@ -830,6 +782,14 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
           ),
         );
       }
+    } on ArgumentError catch (e) {
+      // Show error message if update fails
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update mission: ${e.message}'),
+          backgroundColor: errorColor,
+        ),
+      );
     } catch (e) {
       // Show error message if update fails
       ScaffoldMessenger.of(context).showSnackBar(
@@ -844,5 +804,13 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
         _isEditing = false;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    // Dispose your controllers or any listeners here
+    _missionNameController.dispose();
+    // Ensure you cancel any ongoing operations or listeners
+    super.dispose();
   }
 }

@@ -2,9 +2,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user_credentials.dart';
-import 'package:flutter_3/screens/admin/create_mission_screen.dart';
-import 'package:flutter_3/screens/admin/mission_profile.dart';
-import 'package:flutter_3/screens/shared/settings_screen.dart';
+import 'package:flutter_3/screens/create_mission_screen.dart';
+import 'package:flutter_3/screens/mission_profile.dart';
+import 'package:flutter_3/screens/settings_screen.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/user_api_service.dart';
@@ -33,7 +33,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
   final TextEditingController _searchController = TextEditingController();
   List<MissionStatus>? _filteredstatuses = MissionStatus.values
       .where((status) =>
-          status != MissionStatus.CANCELED && status != MissionStatus.FINISHED)
+          status != MissionStatus.CANCELLED && status != MissionStatus.FINISHED)
       .toList();
   String? _name;
   late TabController _tabController;
@@ -48,7 +48,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
               name: 'Mission Status',
               options: MissionStatus.values
                   .where((status) =>
-                      status != MissionStatus.CANCELED &&
+                      status != MissionStatus.CANCELLED &&
                       status != MissionStatus.FINISHED)
                   .toList()),
         ];
@@ -362,7 +362,8 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                               elevation:
                                   0, // No elevation as it's handled by BoxDecoration
                             ),
-                            child: const Icon(Icons.add,color:primaryTextColor),
+                            child:
+                                const Icon(Icons.add, color: primaryTextColor),
                           )
                         : const SizedBox(), // Empty SizedBox for non-admins
                   ),
@@ -449,133 +450,98 @@ class _MissionsListScreenState extends State<MissionsListScreen>
   }
 
   List<Widget> _buildMissionActions(Mission mission) {
-    if (UserCredentials().getUserType() == UserType.ADMIN) {
-      switch (mission.status) {
-        case MissionStatus.CREATED:
-          return [
-            PopupMenuButton<int>(
-              icon: const Icon(Icons.more_vert, color: secondaryTextColor),
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 1,
-                  child: Text('Start'),
-                ),
-                const PopupMenuItem(
-                  value: 2,
-                  child: Text('Cancel'),
-                ),
-              ],
-              onSelected: (value) {
-                if (value == 1) {
-                  _startMission(mission.id);
-                } else if (value == 2) {
-                  _cancelMission(mission.id);
-                }
-              },
-            ),
-          ];
-        case MissionStatus.ONGOING:
-          return [
-            PopupMenuButton<int>(
-              icon: const Icon(Icons.more_vert, color: secondaryTextColor),
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 1,
-                  child: Text('Pause'),
-                ),
-                const PopupMenuItem(
-                  value: 2,
-                  child: Text('End'),
-                ),
-              ],
-              onSelected: (value) {
-                if (value == 1) {
-                  _pauseMission(mission.id);
-                } else if (value == 2) {
-                  _endMission(mission.id);
-                }
-              },
-            ),
-          ];
-        case MissionStatus.PAUSED:
-          return [
-            PopupMenuButton<int>(
-              icon: const Icon(Icons.more_vert, color: secondaryTextColor),
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 1,
-                  child: Text('Resume'),
-                ),
-                const PopupMenuItem(
-                  value: 2,
-                  child: Text('End'),
-                ),
-              ],
-              onSelected: (value) {
-                if (value == 1) {
-                  _resumeMission(mission.id);
-                } else if (value == 2) {
-                  _endMission(mission.id);
-                }
-              },
-            ),
-          ];
-        default:
-          return [];
-      }
-    } else {
+    if (UserCredentials().getUserType() != UserType.ADMIN) {
       return [];
     }
-  }
 
-  Future<void> _startMission(String missionId) async {
-    try {
-      String command = "start";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await _fetchMissions();
-    } catch (error) {
-      print('Failed to start mission: $error');
+    switch (mission.status) {
+      case MissionStatus.CREATED:
+        return [
+          _buildPopupMenuButton(
+            items: [
+              _buildPopupMenuItem(1, 'Start'),
+              _buildPopupMenuItem(2, 'Cancel'),
+            ],
+            onSelected: (value) async {
+              if (value == 1) {
+                await mission.start(() {
+                  setState(() {});
+                });
+              } else if (value == 2) {
+                await mission.cancel(() {
+                  setState(() {});
+                });
+              }
+              setState(() {});
+            },
+          ),
+        ];
+
+      case MissionStatus.ONGOING:
+        return [
+          _buildPopupMenuButton(
+            items: [
+              _buildPopupMenuItem(1, 'Pause'),
+              _buildPopupMenuItem(2, 'End'),
+            ],
+            onSelected: (value) async {
+              if (value == 1) {
+                await mission.pause(() {
+                  setState(() {});
+                });
+              } else if (value == 2) {
+                await mission.end(() {
+                  setState(() {});
+                });
+              }
+              setState(() {});
+            },
+          ),
+        ];
+
+      case MissionStatus.PAUSED:
+        return [
+          _buildPopupMenuButton(
+            items: [
+              _buildPopupMenuItem(1, 'Resume'),
+              _buildPopupMenuItem(2, 'End'),
+            ],
+            onSelected: (value) async {
+              if (value == 1) {
+                await mission.resume(() {
+                  setState(() {});
+                });
+              } else if (value == 2) {
+                await mission.end(() {
+                  setState(() {});
+                });
+              }
+              setState(() {});
+            },
+          ),
+        ];
+
+      default:
+        return [];
     }
   }
 
-  void _pauseMission(String missionId) async {
-    try {
-      String command = "pause";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await _fetchMissions();
-    } catch (error) {
-      print('Failed to pause mission: $error');
-    }
+  PopupMenuButton<int> _buildPopupMenuButton({
+    required List<PopupMenuItem<int>> items,
+    required void Function(int) onSelected,
+  }) {
+    return PopupMenuButton<int>(
+      icon: const Icon(Icons.more_vert, color: secondaryTextColor),
+      itemBuilder: (context) => items,
+      onSelected: onSelected,
+    );
   }
 
-  void _endMission(String missionId) async {
-    try {
-      String command = "end";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await _fetchMissions();
-    } catch (error) {
-      print('Failed to end mission: $error');
-    }
-  }
-
-  void _cancelMission(String missionId) async {
-    try {
-      String command = "cancel";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await _fetchMissions();
-    } catch (error) {
-      print('Failed to cancel mission: $error');
-    }
-  }
-
-  void _resumeMission(String missionId) async {
-    try {
-      String command = "continue";
-      await MissionApiService.updateMissionStatus(missionId, command);
-      await _fetchMissions();
-    } catch (error) {
-      print('Failed to continue mission: $error');
-    }
+  PopupMenuItem<int> _buildPopupMenuItem(int value, String text) {
+    return PopupMenuItem<int>(
+      value: value,
+      child: Text(text),
+    );
   }
 
   void _clearSearch() {

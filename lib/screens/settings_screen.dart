@@ -14,7 +14,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  late Future<Map<String, dynamic>> _userDataFuture;
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _userEmailController = TextEditingController();
   final TextEditingController _oldPasswordController = TextEditingController();
@@ -37,21 +36,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _fetchUserSettingsDetails() async {
     try {
-      final userDetails = await UserApiService.getUserInfo();
+      final userDetails = await UserApiService.getUserInfo(context: context);
       print('userDetails $userDetails');
       setState(() {
         _userNameController.text = userDetails.username;
         _userEmailController.text = userDetails.email!;
       });
     } catch (e) {
-      print('Error fetching mission info: $e');
+      print('Error fetching user info: $e');
     }
   }
 
   Future<void> _logout(BuildContext context) async {
     try {
       widget.mqttClient.logout();
-      await UserApiService.logout();
+      await UserApiService.logout(context: context);
       Navigator.pushNamedAndRemoveUntil(
         context,
         '/',
@@ -240,7 +239,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final String username = _userNameController.text;
       final String email = _userEmailController.text;
 
-      await UserApiService.updateUserInfo(username: username, email: email);
+      await UserApiService.updateUserInfo(
+          username: username, email: email, context: context);
       await _fetchUserSettingsDetails();
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -250,12 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update user: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('Failed to update user info: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -275,7 +270,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Change Password', style:TextStyle(color: accentColor)),
+          title: const Text('Change Password',
+              style: TextStyle(color: accentColor)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -321,7 +317,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel', style:TextStyle(color: accentColor)),
+              child: const Text('Cancel', style: TextStyle(color: accentColor)),
             ),
             ElevatedButton(
               onPressed: () {

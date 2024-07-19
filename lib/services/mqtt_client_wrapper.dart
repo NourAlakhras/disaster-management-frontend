@@ -188,7 +188,6 @@ class MQTTClientWrapper {
       // Handle error as needed
     }
   }
-  
 
   void publishMessage(String topic, String message) {
     try {
@@ -295,6 +294,22 @@ class MQTTClientWrapper {
     });
   }
 
+  Future<void> updateConnection() async {
+      try {
+      // Disconnect MQTT client
+      disconnect();// Clear subscribed topics
+      if (subscribedTopics.isNotEmpty) {
+        MQTTClientWrapper()
+            .unsubscribeFromMultipleTopics(subscribedTopics.toList());
+        subscribedTopics.clear();
+      }
+            await prepareMqttClient();
+      } catch (e, stackTrace) {
+      print('Error in update connection: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+    }
+  }
   void logout() {
     try {
       // Disconnect MQTT client

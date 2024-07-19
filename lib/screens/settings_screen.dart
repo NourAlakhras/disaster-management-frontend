@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/services/user_api_service.dart';
@@ -27,6 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool isConfirmPasswordValid = true;
   bool _isEditing = false;
   bool _isLoading = false;
+  final credentials = UserCredentials();
 
   @override
   void initState() {
@@ -35,6 +37,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _fetchUserSettingsDetails() async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       final userDetails = await UserApiService.getUserInfo(context: context);
       print('userDetails $userDetails');
@@ -44,10 +49,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     } catch (e) {
       print('Error fetching user info: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   Future<void> _logout(BuildContext context) async {
+    setState(() {
+      _isLoading = true;
+    });
     try {
       widget.mqttClient.logout();
       await UserApiService.logout(context: context);
@@ -58,6 +70,72 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     } catch (e) {
       print('Failed to logout: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _saveChanges() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final String username = _userNameController.text;
+      final String email = _userEmailController.text;
+
+      await UserApiService.updateUserInfo(
+          username: username, email: email, context: context);
+      await _fetchUserSettingsDetails();
+
+      credentials.setUserCredentials(
+          username, credentials.password, credentials.userType);
+
+      // Connect to MQTT broker
+      await widget.mqttClient.updateConnection();
+    } catch (e) {
+      print('Failed to update user info: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _changePassword() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      String oldPassword = _oldPasswordController.text;
+      String newPassword = _newPasswordController.text;
+
+      // Check if the new password is the same as the old password
+      if (oldPassword == newPassword) {
+        print(
+            'New password is the same as the old password. Skipping API call.');
+        return; // Exit the method early
+      }
+      await UserApiService.updatePassword(
+        context: context,
+        oldPassword: oldPassword,
+        newPassword: newPassword,
+      );
+
+      credentials.setUserCredentials(
+          credentials.username, newPassword, credentials.userType);
+
+      // Connect to MQTT broker
+      await widget.mqttClient.updateConnection();
+    } catch (e) {
+      print('Failed to change password: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -115,7 +193,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  @override
+@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomUpperBar(
@@ -137,69 +215,83 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Account Settings',
-                    style: TextStyle(
-                      color: secondaryTextColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                double screenHeight = constraints.maxHeight;
+                double screenWidth = constraints.maxWidth;
+
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: screenHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: screenWidth * 0.08),
+                        width: double.infinity,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            
+                             SizedBox(height: screenHeight*0.07),
+                            _buildEditableField(
+                              label: 'Username',
+                              controller: _userNameController,
+                              isEditing: _isEditing,
+                              onChanged: (value) {
+                                setState(() {
+                                  isUsernameValid = _validateUsername(value);
+                                });
+                              },
+                              errorText:
+                                  isUsernameValid ? null : 'Invalid username',
+                            ),
+                            const SizedBox(height: 8),
+                            _buildEditableField(
+                              label: 'Email',
+                              controller: _userEmailController,
+                              isEditing: _isEditing,
+                              onChanged: (value) {
+                                setState(() {
+                                  isEmailValid = _validateEmail(value);
+                                });
+                              },
+                              errorText: isEmailValid ? null : 'Invalid email',
+                            ),
+                            _buildEditButton(),
+                            _buildChangePasswordButton(),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Log Out',
+                              style: TextStyle(
+                                color: secondaryTextColor,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            ListTile(
+                              title: const Text(
+                                'Log Out',
+                                style: TextStyle(color: primaryTextColor),
+                              ),
+                              leading: const Icon(Icons.logout,
+                                  color: secondaryTextColor),
+                              onTap: () => _logout(context),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  _buildEditableField(
-                    label: 'Username',
-                    controller: _userNameController,
-                    isEditing: _isEditing,
-                    onChanged: (value) {
-                      setState(() {
-                        isUsernameValid = _validateUsername(value);
-                      });
-                    },
-                    errorText: isUsernameValid ? null : 'Invalid username',
-                  ),
-                  const SizedBox(height: 8),
-                  _buildEditableField(
-                    label: 'Email',
-                    controller: _userEmailController,
-                    isEditing: _isEditing,
-                    onChanged: (value) {
-                      setState(() {
-                        isEmailValid = _validateEmail(value);
-                      });
-                    },
-                    errorText: isEmailValid ? null : 'Invalid email',
-                  ),
-                  _buildEditButton(),
-                  _buildChangePasswordButton(),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Log Out',
-                    style: TextStyle(
-                      color: secondaryTextColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ListTile(
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(color: primaryTextColor),
-                    ),
-                    leading:
-                        const Icon(Icons.logout, color: secondaryTextColor),
-                    onTap: () => _logout(context),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
     );
   }
+
 
   @override
   void dispose() {
@@ -228,34 +320,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: Text(_isEditing ? 'Save' : 'Edit'),
       ),
     );
-  }
-
-  void _saveChanges() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final String username = _userNameController.text;
-      final String email = _userEmailController.text;
-
-      await UserApiService.updateUserInfo(
-          username: username, email: email, context: context);
-      await _fetchUserSettingsDetails();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User updated successfully'),
-          backgroundColor: successColor,
-        ),
-      );
-    } catch (e) {
-      print('Failed to update user info: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   Widget _buildChangePasswordButton() {
@@ -332,30 +396,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
-  }
-
-  Future<void> _changePassword() async {
-    String oldPassword = _oldPasswordController.text;
-    String newPassword = _newPasswordController.text;
-    try {
-      await UserApiService.updatePassword(
-        oldPassword: oldPassword,
-        newPassword: newPassword,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password changed successfully'),
-          backgroundColor: successColor,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to change password: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
-    }
   }
 
   bool _validateForm() {

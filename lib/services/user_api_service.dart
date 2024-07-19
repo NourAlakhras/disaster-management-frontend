@@ -309,39 +309,77 @@ class UserApiService {
     }
   }
 
-  static Future<void> updatePassword({
+  static Future<void> updatePassword(
+    {required BuildContext context,
     required String oldPassword,
     required String newPassword,
   }) async {
-    String? token = await AuthApiService.getAuthToken();
-    final Uri url = Uri.parse('$webServerBaseUrl/api/users/password');
-    final Map<String, String> body = {
-      'old_password': oldPassword,
-      'new_password': newPassword,
-    };
+    try {
+      String? token = await AuthApiService.getAuthToken();
+      final Uri url = Uri.parse('$webServerBaseUrl/api/users/password');
+      final Map<String, String> body = {
+        'old_password': oldPassword,
+        'new_password': newPassword,
+      };
 
-    final response = await http.put(
-      url,
-      headers: <String, String>{
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json; charset=UTF-8',
-      },
-      body: jsonEncode(body),
-    );
+      final response = await http
+          .put(
+            url,
+            headers: <String, String>{
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json; charset=UTF-8',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(const Duration(seconds: 10));
 
-    if (response.statusCode == 200) {
-      // Password updated successfully
-    } else if (response.statusCode == 400) {
-      throw Exception(
-          'Bad Request - No password provided or new password is identical to the current one');
-    } else if (response.statusCode == 401) {
-      throw Exception('Unauthorized - Incorrect old password');
-    } else if (response.statusCode == 404) {
-      throw Exception('Not Found - User not found');
-    } else if (response.statusCode == 500) {
-      throw Exception('Internal Server Error');
-    } else {
-      throw Exception('Failed to update password');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseBody = jsonDecode(response.body);
+        final String message =
+            responseBody['message'] ?? 'Password updated successfully';
+
+        // Show success message in SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: successColor,
+          ),
+        );
+      } else {
+        handleErrorResponse(context, response);
+        // This line will not be reached if handleErrorResponse always throws.
+        // But to satisfy the Dart analyzer, we need to ensure all paths return or throw.
+        throw Exception(
+            'Failed to update user information: ${response.statusCode}');
+      }
+    } on TimeoutException catch (e) {
+      // Handle request timeout
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Request timed out. Please try again later.'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Request timed out: $e');
+    } on FormatException catch (e) {
+      // Handle unexpected response format (e.g., HTML instead of JSON)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected response format: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected response format: $e');
+    } catch (e, stackTrace) {
+      // Handle other errors
+      print('Unexpected error occurred: $e\n$stackTrace');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unexpected error occurred: $e'),
+          backgroundColor: errorColor,
+        ),
+      );
+      throw Exception('Unexpected error occurred: $e');
     }
   }
 

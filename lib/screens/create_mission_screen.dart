@@ -318,9 +318,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       Navigator.pop(
           context, missionId); // Navigate back with the new mission ID
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to create mission')),
-      );
+      print('Failed to create mission');
     }
   }
 }

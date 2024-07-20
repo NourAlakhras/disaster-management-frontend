@@ -8,11 +8,9 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionDevicesListTab extends StatefulWidget {
-
   final List<Device> devices;
   const MissionDevicesListTab({
     super.key,
-
     required this.devices,
   });
 
@@ -23,7 +21,7 @@ class MissionDevicesListTab extends StatefulWidget {
 class _MissionDevicesListTabState extends State<MissionDevicesListTab> {
   int _pageNumber = 1;
   final int _pageSize = 5;
-final mqttClient = MQTTClientWrapper();
+  final mqttClient = MQTTClientWrapper();
 
   @override
   Widget build(BuildContext context) {
@@ -82,8 +80,7 @@ final mqttClient = MQTTClientWrapper();
                           ),
                           Expanded(
                             flex: 2,
-                            child:
-                                SizedBox(), // Placeholder for actions column
+                            child: SizedBox(), // Placeholder for actions column
                           ),
                         ],
                       ),
@@ -96,7 +93,6 @@ final mqttClient = MQTTClientWrapper();
                           MaterialPageRoute(
                             builder: (context) => DeviceProfileScreen(
                               device: device,
-
                             ),
                           ),
                         ),
@@ -165,8 +161,7 @@ final mqttClient = MQTTClientWrapper();
                           foregroundColor: accentColor,
                           backgroundColor: secondaryTextColor,
                           elevation: 0, // No shadow
-                          shape:
-                              const CircleBorder(), // Circular button shape
+                          shape: const CircleBorder(), // Circular button shape
                         ),
                         child: const Icon(Icons.arrow_back),
                       )
@@ -185,8 +180,7 @@ final mqttClient = MQTTClientWrapper();
                           foregroundColor: accentColor,
                           backgroundColor: secondaryTextColor,
                           elevation: 0, // No shadow
-                          shape:
-                              const CircleBorder(), // Circular button shape
+                          shape: const CircleBorder(), // Circular button shape
                         ),
                         child: const Icon(Icons.arrow_forward),
                       )
@@ -225,7 +219,8 @@ final mqttClient = MQTTClientWrapper();
   }
 
   void _deleteDevice(String id) {
-    DeviceApiService.deleteDevice(id).then((deletedDevice) {
+    DeviceApiService.deleteDevice(deviceId: id, context: context)
+        .then((deletedDevice) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Device deleted successfully'),

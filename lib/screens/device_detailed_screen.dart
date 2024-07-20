@@ -123,29 +123,28 @@ class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
                     ),
             ),
           ),
-          // Expanded(
-          //   child: TabbedView(
-          //     length: 2,
-          //     tabs: const <Widget>[
-          //       Tab(text: 'Monitoring'),
-          //       Tab(text: 'Controlling'),
-          //     ],
-          //     tabContents: [
-          //       Container(
-          //         padding: const EdgeInsets.only(top: 10),
-          //         child: MonitoringView(device: widget.device),
-          //       ),
-          //       Container(
-          //         padding: const EdgeInsets.only(top: 10),
-          //         child: ControllingView(
-          //           device: widget.device,
-          //           mqttClient: widget.mqttClient,
-          //           broker: widget.broker,
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
+          Expanded(
+            child: TabbedView(
+              length: 2,
+              tabs: const <Widget>[
+                Tab(text: 'Monitoring'),
+                Tab(text: 'Controlling'),
+              ],
+              tabContents: [
+                Container(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: MonitoringView(device: widget.device),
+                ),
+                Container(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: ControllingView(
+                    device: widget.device,
+                    broker: widget.broker,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

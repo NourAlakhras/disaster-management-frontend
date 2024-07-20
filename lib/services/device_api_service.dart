@@ -1,15 +1,14 @@
-import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/paginated_response.dart';
-import 'package:flutter_3/models/user.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
-import 'package:flutter_3/utils/constants.dart';
-import 'package:flutter_3/utils/exceptions.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_3/utils/app_colors.dart';
+import 'package:flutter_3/utils/http_utils.dart';
+import 'package:flutter_3/utils/snackbar_utils.dart';
 import 'package:flutter_3/utils/enums.dart';
 
 class DeviceApiService {
   static Future<PaginatedResponse<Device>> getAllDevices({
+    required BuildContext context,
     int? pageNumber,
     int? pageSize,
     List<DeviceStatus>? statuses,
@@ -19,33 +18,12 @@ class DeviceApiService {
     String? name,
   }) async {
     try {
-      print('statuses from getAllDevices: $statuses');
-
-      print('types from getAllDevices: $types');
-
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-
       // Convert enums to their corresponding integer values
       final List<int>? typeValues =
           types?.map((t) => deviceTypeValues[t]!).toList();
 
       final List<int>? statusValues =
           statuses?.map((s) => deviceStatusValues[s]!).toList();
-
-      print('_statusValues from getAllDevices: $statusValues');
-
-      print('_typeValues from getAllDevices: $typeValues');
-
-      // Convert status values to strings
-      final List<String> statusStrings =
-          statusValues?.map((s) => s.toString()).toList() ?? [];
-      // Convert status values to strings
-      final List<String> typeStrings =
-          typeValues?.map((s) => s.toString()).toList() ?? [];
-
-      print('statusStrings from getAllDevices: $statusStrings');
-
-      print('typeStrings from getAllDevices: $typeStrings');
 
       // Build query parameters
       Map<String, dynamic> queryParameters = {
@@ -84,277 +62,165 @@ class DeviceApiService {
       // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
 
-      final Uri url =
-          Uri.parse('$webServerBaseUrl/api/devices/all?$queryStringJoined');
-
-      // Print out the generated URL
-      print('URL: $url');
-
-      final String? token = await AuthApiService.getAuthToken();
-      if (token == null) {
-        throw UnauthorizedException();
-      }
-
-      final response = await http.get(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/devices/all?$queryStringJoined',
+        method: 'GET',
       );
 
-      final responseBody = jsonDecode(response.body);
-      print('getAllDevices responseBody: $responseBody');
-
-      if (response.statusCode == 200) {
+      if (response.isNotEmpty) {
         final paginatedResponse = PaginatedResponse<Device>.fromJson(
-            responseBody, (json) => Device.fromJson(json));
+            response, (json) => Device.fromJson(json));
         return paginatedResponse;
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to get devices list.');
       }
-    } on FormatException catch (e) {
-      // Handle unexpected response format (e.g., HTML instead of JSON)
-      throw Exception('Unexpected response format: $e');
-    } catch (e, stackTrace) {
-      // Handle other errors
-      print('Unexpected error occurred: $e\n$stackTrace');
-      throw Exception('Failed to fetch users: $e');
+    } on Exception catch (e) {
+      print('Error during getAllDevices: $e');
+      rethrow;
     }
   }
 
-  static Future<Device> getDeviceDetails(String deviceId) async {
+  static Future<Device> getDeviceDetails(
+      {required BuildContext context, required String deviceId}) async {
     try {
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
-
-      final response = await http.get(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/devices/$deviceId',
+        method: 'GET',
       );
 
-      if (response.statusCode == 200) {
-        print('getDeviceDetails response.body ${response.body}');
-        final Map<String, dynamic> deviceDetails = jsonDecode(response.body);
-        return Device.fromJson(deviceDetails);
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+      if (response.isNotEmpty) {
+        return Device.fromJson(response);
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to get device details.');
       }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to retrieve device details: $e');
+    } on Exception catch (e) {
+      print('Error during getDeviceDetails: $e');
+      rethrow;
     }
   }
 
   static Future<void> updateDevice({
+    required BuildContext context,
     required String deviceId,
     String? name,
     String? oldPassword,
     String? newPassword,
   }) async {
-    const String webServerBaseUrl = Constants.webServerBaseUrl;
-    final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
-
-    // Dynamically build the request body
-    final Map<String, dynamic> requestBody = {};
-    if (name != null) requestBody['name'] = name;
-    if (oldPassword != null) requestBody['old_password'] = oldPassword;
-    if (newPassword != null) requestBody['new_password'] = newPassword;
-
-    print('updateDevice url $url');
-    print('updateDevice requestBody $requestBody');
-
     try {
-      String? token = await AuthApiService.getAuthToken();
+      // Dynamically build the request body
+      final Map<String, dynamic> body = {};
+      if (name != null) body['name'] = name;
+      if (oldPassword != null) body['old_password'] = oldPassword;
+      if (newPassword != null) body['new_password'] = newPassword;
 
-      final response = await http.put(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestBody),
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/devices/$deviceId',
+        method: 'PUT',
+        body: body,
       );
 
-      if (response.statusCode == 200) {
-        // Device updated successfully, no need to return anything
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 409) {
-        throw ConflictException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+      if (response.isNotEmpty) {
+        final String message =
+            response['message'] ?? 'Device information updated successfully';
+        SnackbarUtils.showSnackBar(context, message,
+            backgroundColor: successColor);
       } else {
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to update device information.');
       }
-    } catch (e) {
-      throw Exception('Failed to update device: $e');
+    } on Exception catch (e) {
+      print('Error during updateDevice: $e');
+      rethrow;
     }
   }
 
   static Future<void> verifyPassword({
+    required BuildContext context,
     required String deviceId,
     required String password,
   }) async {
-    const String webServerBaseUrl = Constants.webServerBaseUrl;
-    final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
-
-    // Dynamically build the request body
-    final Map<String, dynamic> requestBody = {};
-    requestBody['old_password'] = password;
-
-    print('verifyPassword url $url');
-    print('verifyPassword requestBody $requestBody');
-
     try {
-      String? token = await AuthApiService.getAuthToken();
+      // Dynamically build the request body
+      final Map<String, dynamic> body = {};
+      body['old_password'] = password;
 
-      final response = await http.put(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestBody),
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/devices/$deviceId',
+        method: 'PUT',
+        body: body,
       );
 
-      if (response.statusCode == 200) {
-        // Device updated successfully, no need to return anything
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 409) {
-        throw ConflictException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+      if (response.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Password verified successfully'),
+            backgroundColor: successColor,
+          ),
+        );
       } else {
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to verify password.');
       }
-    } catch (e) {
-      throw Exception('Failed to update device: $e');
+    } on Exception catch (e) {
+      print('Error during verifyPassword: $e');
+      rethrow;
     }
   }
 
-  static Future<Device> deleteDevice(String deviceId) async {
+  static Future<Device> deleteDevice(
+      {required BuildContext context, required String deviceId}) async {
     try {
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/devices/$deviceId');
-
-      final response = await http.delete(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/devices/$deviceId',
+        method: 'DELETE',
       );
 
-      if (response.statusCode == 200) {
-        print('deleteDevice response.body ${response.body}');
-        final Map<String, dynamic> deviceDetails = jsonDecode(response.body);
-        return Device.fromJson(deviceDetails);
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+      if (response.isNotEmpty) {
+        final String message =
+            response['message'] ?? 'Device deleted successfully';
+        SnackbarUtils.showSnackBar(context, message,
+            backgroundColor: successColor);
+
+        return Device.fromJson(response);
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to delete device.');
       }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to retrieve device details: $e');
+    } on Exception catch (e) {
+      print('Error during deleteDevice: $e');
+      rethrow;
     }
   }
 
   static Future<void> updateDeviceState({
+    required BuildContext context,
     required String deviceId,
     required String newState,
   }) async {
     try {
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url =
-          Uri.parse('$webServerBaseUrl/api/devices/$deviceId/state');
-
-      final Map<String, dynamic> requestBody = {
+      final Map<String, dynamic> body = {
         'state': newState,
       };
-
-      String? token = await AuthApiService.getAuthToken();
-
-      final response = await http.put(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestBody),
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/devices/$deviceId/state',
+        method: 'PUT',
+        body: body,
       );
 
-      if (response.statusCode == 200) {
-        // Device state updated successfully
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 409) {
-        throw ConflictException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+      if (response.isNotEmpty) {
+        final String message =
+            response['message'] ?? 'Device state updated successfully';
+        SnackbarUtils.showSnackBar(context, message,
+            backgroundColor: successColor);
       } else {
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to update device information.');
       }
-    } catch (e) {
-      throw Exception('Failed to update device state: $e');
+    } on Exception catch (e) {
+      print('Error during updateDeviceState: $e');
+      rethrow;
     }
   }
 }

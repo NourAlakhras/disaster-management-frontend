@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/material.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/services/mission_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -37,9 +38,10 @@ class Mission {
     if (validateName(value)) {
       _name = value;
     } else {
-        throw ArgumentError('Mission name must be between 3 and 20 characters');
+      throw ArgumentError('Mission name must be between 3 and 20 characters');
     }
   }
+
   factory Mission.fromJson(Map<String, dynamic> json) {
     List<Device> devices = [];
     Device? brokerDevice;
@@ -55,7 +57,7 @@ class Mission {
         device_id: json['broker']['broker_id'] as String? ?? '',
         name: json['broker']['broker_name'] as String? ?? '',
       );
-    } 
+    }
 
     List<User> users = [];
     if (json['users'] != null) {
@@ -108,11 +110,11 @@ class Mission {
     }
   }
 
-  Future<void> fetchDetailedDeviceInfo() async {
+  Future<void> fetchDetailedDeviceInfo({required BuildContext context}) async {
     if (devices != null) {
       await Future.wait(devices!.map((device) async {
-        final detailedDevice =
-            await DeviceApiService.getDeviceDetails(device.device_id);
+        final detailedDevice = await DeviceApiService.getDeviceDetails(
+            deviceId: device.device_id, context: context);
         return detailedDevice;
       }).toList())
           .then((updatedDevices) {

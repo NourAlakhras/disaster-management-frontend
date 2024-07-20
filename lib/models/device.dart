@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/services/device_api_service.dart';
 import 'package:flutter_3/utils/enums.dart'; // Import enums file
@@ -45,11 +46,13 @@ class Device {
     );
   }
 
-  Future<void> fetchDeviceDetails(VoidCallback setStateCallback) async {
+  Future<void> fetchDeviceDetails(
+      {required BuildContext context, required setStateCallback}) async {
     setStateCallback(); // Notify the widget to start loading
 
     try {
-      final deviceDetails = await DeviceApiService.getDeviceDetails(device_id);
+      final deviceDetails = await DeviceApiService.getDeviceDetails(
+          deviceId: device_id, context: context);
 
       name = deviceDetails.name;
       mac = deviceDetails.mac;
@@ -86,10 +89,13 @@ class Device {
           DeviceStatus.AVAILABLE, // Default to AVAILABLE if status not found
     );
   }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Device && runtimeType == other.runtimeType && device_id == other.device_id;
+      other is Device &&
+          runtimeType == other.runtimeType &&
+          device_id == other.device_id;
 
   @override
   int get hashCode => device_id.hashCode;

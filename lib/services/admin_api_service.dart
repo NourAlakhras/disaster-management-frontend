@@ -1,15 +1,14 @@
-import 'dart:convert';
-import 'package:flutter_3/models/mission.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_3/models/paginated_response.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_3/utils/constants.dart';
-import 'package:flutter_3/utils/exceptions.dart';
+import 'package:flutter_3/utils/app_colors.dart';
+import 'package:flutter_3/utils/http_utils.dart';
+import 'package:flutter_3/utils/snackbar_utils.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
 
 class AdminApiService {
   static Future<PaginatedResponse<User>> getAllUsers({
+    required BuildContext context,
     int? pageNumber,
     int? pageSize,
     List<UserStatus>? statuses,
@@ -18,34 +17,12 @@ class AdminApiService {
     String? username,
   }) async {
     try {
-      print('statuses from getAllUsers: $statuses');
-
-      print('types from getAllUsers: $types');
-
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-
       // Convert enums to their corresponding integer values
-
       final List<int>? _typeValues =
           types?.map((t) => userTypeValues[t]!).toList();
 
       final List<int>? _statusValues =
           statuses?.map((s) => userStatusValues[s]!).toList();
-
-      print('_statusValues from getAllUsers: $_statusValues');
-
-      print('_typeValues from getAllUsers: $_typeValues');
-
-      // Convert status values to strings
-      final List<String> statusStrings =
-          _statusValues?.map((s) => s.toString()).toList() ?? [];
-      // Convert status values to strings
-      final List<String> typeStrings =
-          _typeValues?.map((s) => s.toString()).toList() ?? [];
-
-      print('statusStrings from getAllUsers: $statusStrings');
-
-      print('typeStrings from getAllUsers: $typeStrings');
 
       // Build query parameters
       Map<String, dynamic> queryParameters = {
@@ -71,7 +48,6 @@ class AdminApiService {
       if (username != "" && username != null && username.isNotEmpty) {
         queryParameters['username'] = username;
       }
-      print('queryParameters : $queryParameters');
 
 // Convert query parameters to a list of key-value pairs
       final List<String> queryString =
@@ -80,225 +56,127 @@ class AdminApiService {
 // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
 
-      final Uri url =
-          Uri.parse('$webServerBaseUrl/api/users/all?$queryStringJoined');
-
-// Print out the generated URL
-      print('URL: $url');
-
-      final String? token = await AuthApiService.getAuthToken();
-      if (token == null) {
-        throw UnauthorizedException();
-      }
-
-      final response = await http.get(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/users/all?$queryStringJoined',
+        method: 'GET',
       );
 
-      final responseBody = jsonDecode(response.body);
-      print('responseBody: $responseBody');
-
-      if (response.statusCode == 200) {
+      if (response.isNotEmpty) {
         final paginatedResponse = PaginatedResponse<User>.fromJson(
-            responseBody, (json) => User.fromJson(json));
+            response, (json) => User.fromJson(json));
         return paginatedResponse;
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to get users list.');
       }
-    } on FormatException catch (e) {
-      // Handle unexpected response format (e.g., HTML instead of JSON)
-      throw Exception('Unexpected response format: $e');
-    } catch (e, stackTrace) {
-      // Handle other errors
-      print('Unexpected error occurred: $e\n$stackTrace');
-      throw Exception('Failed to fetch users: $e');
+    } on Exception catch (e) {
+      print('Error during getAllUsers: $e');
+      rethrow;
     }
   }
 
-  static Future<void> approveUser(String userId, bool isAdmin) async {
+  static Future<void> approveUser(
+      {required BuildContext context,
+      required String userId,
+      required bool isAdmin}) async {
     try {
-      print('hi $isAdmin');
-      int type = isAdmin ? 2 : 1;
-      print(type);
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/users/$userId/approval');
+      final response = await HttpUtils.makeRequest(
+          context: context,
+          endpoint: '/api/users/$userId/approval',
+          method: 'PUT',
+          body: {
+            'approved': true,
+            'type': isAdmin
+                ? userTypeValues[UserType.ADMIN]
+                : userTypeValues[UserType.REGULAR],
+          });
 
-      final response = await http.put(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({
-          'approved': true,
-          'type': isAdmin
-              ? userTypeValues[UserType.ADMIN]
-              : userTypeValues[UserType.REGULAR],
-        }),
+      if (response.isNotEmpty) {
+        final String message =
+            response['message'] ?? 'User approved successfully';
+        SnackbarUtils.showSnackBar(context, message,
+            backgroundColor: successColor);
+      } else {
+        throw Exception('Failed to approve user $userId');
+      }
+    } on Exception catch (e) {
+      print('Error during approveUser: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> rejectUser(
+      {required BuildContext context, required String userId}) async {
+    try {
+      final response = await HttpUtils.makeRequest(
+          context: context,
+          endpoint: '/api/users/$userId/approval',
+          method: 'PUT',
+          body: {
+            'approved': false,
+          });
+
+      if (response.isNotEmpty) {
+        final String message =
+            response['message'] ?? 'User rejected successfully';
+        SnackbarUtils.showSnackBar(context, message,
+            backgroundColor: successColor);
+      } else {
+        throw Exception('Failed to reject user .');
+      }
+    } on Exception catch (e) {
+      print('Error during rejectUser: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> deleteUser(
+      {required BuildContext context, required String userId}) async {
+    try {
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/users/$userId',
+        method: 'DELETE',
       );
-      print(url);
-      print(token);
-      if (response.statusCode == 200) {
-        // User account status updated successfully
-        print('User account status updated successfully.');
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+      if (response.isNotEmpty) {
+        final String message =
+            response['message'] ?? 'User account is deleted successfully';
+        SnackbarUtils.showSnackBar(context, message,
+            backgroundColor: successColor);
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to delete user account.');
       }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to approve user: $e');
+    } on Exception catch (e) {
+      print('Error during deleteUser: $e');
+      rethrow;
     }
   }
 
-  static Future<void> rejectUser(String userId) async {
+  static Future<User> getUserDetails(
+      {required BuildContext context, required String userId}) async {
     try {
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/users/$userId/approval');
-
-      final response = await http.put(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode({
-          'approved': false,
-        }),
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/users/$userId',
+        method: 'GET',
       );
-      print(url);
-      print(token);
-      if (response.statusCode == 200) {
-        // User account status updated successfully
-        print('User account status updated successfully.');
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+
+      if (response.isNotEmpty) {
+        return User.fromJson(response);
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to get user details.');
       }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to approve user: $e');
+    } on Exception catch (e) {
+      print('Error during getUserDetails: $e');
+      rethrow;
     }
   }
 
-  static Future<void> deleteUser(String userId) async {
+  static Future<int> getUserCount(
+      {required BuildContext context,
+      List<int>? status,
+      List<int>? type}) async {
     try {
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/users/$userId');
-
-      final response = await http.delete(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-      );
-      print(url);
-      print(token);
-      if (response.statusCode == 200) {
-        // User account status updated successfully
-        print('User account is deactivated successfully.');
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
-      } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
-      }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to deactivate user: $e');
-    }
-  }
-
-  static Future<User> getUserDetails(String userId) async {
-    try {
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/users/$userId');
-
-      final response = await http.get(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-      );
-      print(url);
-      print(token);
-      if (response.statusCode == 200) {
-        print('getUserDetails response.body ${response.body}');
-
-        final Map<String, dynamic> userDetails = jsonDecode(response.body);
-        return User.fromJson(userDetails);
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
-      } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
-      }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to retrieve user info: $e');
-    }
-  }
-
-  static Future<int> getUserCount({List<int>? status, List<int>? type}) async {
-    try {
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/users/count');
-
       // Construct query parameters based on provided filters
       Map<String, dynamic> queryParameters = {};
       if (status != null && status.isNotEmpty) {
@@ -308,47 +186,35 @@ class AdminApiService {
         queryParameters['type'] = type.join(',');
       }
 
-      final response = await http.get(
-        url.replace(
-            queryParameters:
-                queryParameters), // Use replace to include query parameters
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+      // Construct the query string from parameters
+      final String queryString = queryParameters.entries
+          .map((e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/users/count?$queryString',
+        method: 'GET',
       );
 
-      if (response.statusCode == 200) {
-        // Parse the response body to get the count
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        final int count = responseBody['count'];
+      if (response.isNotEmpty) {
+        final int count = response['count'];
         return count;
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to get users count.');
       }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to get user count: $e');
+    } on Exception catch (e) {
+      print('Error during getUserCount: $e');
+      rethrow;
     }
   }
 
   static Future<int> getDeviceCount(
-      {List<int>? status, List<int>? type}) async {
+      {required BuildContext context,
+      List<int>? status,
+      List<int>? type}) async {
     try {
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/devices/count');
-
       // Construct query parameters based on provided filters
       Map<String, dynamic> queryParameters = {};
       if (status != null && status.isNotEmpty) {
@@ -357,138 +223,97 @@ class AdminApiService {
       if (type != null && type.isNotEmpty) {
         queryParameters['type'] = type.join(',');
       }
+      // Construct the query string from parameters
+      final String queryString = queryParameters.entries
+          .map((e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .join('&');
 
-      final response = await http.get(
-        url.replace(
-            queryParameters:
-                queryParameters), // Use replace to include query parameters
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/devices/count?$queryString',
+        method: 'GET',
       );
 
-      if (response.statusCode == 200) {
-        // Parse the response body to get the count
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        final int count = responseBody['count'];
+      if (response.isNotEmpty) {
+        final int count = response['count'];
         return count;
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to get devices count.');
       }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to get device count: $e');
+    } on Exception catch (e) {
+      print('Error during getDeviceCount: $e');
+      rethrow;
     }
   }
 
-  static Future<int> getMissionCount({List<int>? status}) async {
+  static Future<int> getMissionCount(
+      {required BuildContext context, List<int>? status}) async {
     try {
-      String? token = await AuthApiService.getAuthToken();
-      const String webServerBaseUrl = Constants.webServerBaseUrl;
-      final Uri url = Uri.parse('$webServerBaseUrl/api/missions/count');
-
       // Construct query parameters based on provided filters
       Map<String, dynamic> queryParameters = {};
       if (status != null && status.isNotEmpty) {
         queryParameters['status'] = status.join(',');
       }
 
-      final response = await http.get(
-        url.replace(queryParameters: queryParameters),
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
+      // Construct the query string from parameters
+      final String queryString = queryParameters.entries
+          .map((e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/missions/count?$queryString',
+        method: 'GET',
       );
 
-      if (response.statusCode == 200) {
-        // Parse the response body to get the count
-        final Map<String, dynamic> responseBody = jsonDecode(response.body);
-        final int count = responseBody['count'];
+      if (response.isNotEmpty) {
+        final int count = response['count'];
         return count;
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
       } else {
-        // Handle unexpected response
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to get devices count.');
       }
-    } catch (e) {
-      // Handle errors
-      throw Exception('Failed to get mission count: $e');
+    } on Exception catch (e) {
+      print('Error during getDeviceCount: $e');
+      rethrow;
     }
   }
 
   static Future<void> updateUser({
+    required BuildContext context,
     required String user_id,
     String? email,
     UserType? type,
   }) async {
-    const String webServerBaseUrl = Constants.webServerBaseUrl;
-    final Uri url = Uri.parse('$webServerBaseUrl/api/users/$user_id');
-
-    final Map<String, dynamic> requestBody = {};
+    final Map<String, dynamic> body = {};
 
     if (email != null) {
-      requestBody['email'] = email;
+      body['email'] = email;
     }
 
     if (type != null) {
-      requestBody['type'] = userTypeValues[type];
+      body['type'] = userTypeValues[type];
     }
 
-    print('updateUser url $url');
-    print('updateUser requestBody $requestBody');
-
     try {
-      String? token = await AuthApiService.getAuthToken();
-
-      final response = await http.put(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(requestBody),
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/users/$user_id',
+        method: 'PUT',
+        body: body,
       );
-
-      if (response.statusCode == 200) {
-        // Mission updated successfully, no need to return anything
-      } else if (response.statusCode == 400) {
-        throw BadRequestException();
-      } else if (response.statusCode == 401) {
-        throw UnauthorizedException();
-      } else if (response.statusCode == 403) {
-        throw ForbiddenException();
-      } else if (response.statusCode == 404) {
-        throw NotFoundException();
-      } else if (response.statusCode == 409) {
-        throw ConflictException();
-      } else if (response.statusCode == 500) {
-        throw InternalServerErrorException();
+      if (response.isNotEmpty) {
+        final String message =
+            response['message'] ?? 'User information updated successfully';
+        SnackbarUtils.showSnackBar(context, message,
+            backgroundColor: successColor);
       } else {
-        throw Exception(
-            'Unexpected response from server: ${response.statusCode}');
+        throw Exception('Failed to update user information.');
       }
-    } catch (e) {
-      throw Exception('Failed to update mission: $e');
+    } on Exception catch (e) {
+      print('Error during updateUser: $e');
+      rethrow;
     }
   }
 }

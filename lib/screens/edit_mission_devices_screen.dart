@@ -49,7 +49,7 @@ class _EditMissionDevicesScreenState extends State<EditMissionDevicesScreen> {
         pageSize: 5,
         statuses: [DeviceStatus.AVAILABLE, DeviceStatus.ASSIGNED],
         types: typesToInclude,
-        brokerId: widget.brokerId, // Fetch devices by broker ID
+        brokerId: widget.brokerId, context: context, // Fetch devices by broker ID
       );
       if (!mounted) return;
 

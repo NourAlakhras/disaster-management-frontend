@@ -8,13 +8,12 @@ import 'package:flutter_3/services/device_api_service.dart'; // Import your devi
 
 class ControllingView extends StatefulWidget {
   final Device device;
-  final MQTTClientWrapper mqttClient;
+
   final Device? broker;
 
   const ControllingView({
     Key? key,
     required this.device,
-    required this.mqttClient,
     required this.broker,
   }) : super(key: key);
 
@@ -23,6 +22,8 @@ class ControllingView extends StatefulWidget {
 }
 
 class _ControllingViewState extends State<ControllingView> {
+  final mqttClient = MQTTClientWrapper();
+
   double _x1 = 0;
   double _y1 = 0;
   double _x2 = 0;
@@ -45,6 +46,7 @@ class _ControllingViewState extends State<ControllingView> {
   void updateDeviceState(String state) {
     try {
       DeviceApiService.updateDeviceState(
+        context: context,
         deviceId: widget.device.device_id,
         newState: state,
       );
@@ -77,7 +79,7 @@ class _ControllingViewState extends State<ControllingView> {
     print('Publishing to topic: $topic');
     print('Message: $messageJson');
 
-    widget.mqttClient.publishMessage(topic, messageJson);
+    mqttClient.publishMessage(topic, messageJson);
   }
 
   @override

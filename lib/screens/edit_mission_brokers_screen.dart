@@ -50,7 +50,7 @@ class _EditMissionBrokerScreenState extends State<EditMissionBrokerScreen> {
         pageSize: 5,
         statuses: [DeviceStatus.AVAILABLE],
         types: [DeviceType.BROKER],
-        missionId: widget.missionId,
+        missionId: widget.missionId, context: context,
       );
       if (!mounted) return;
 

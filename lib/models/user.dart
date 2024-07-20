@@ -1,6 +1,7 @@
 // lib\models\user.dart
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -60,11 +61,13 @@ class User {
         .key;
   }
 
-  Future<void> fetchUserDetails(VoidCallback setStateCallback) async {
+  Future<void> fetchUserDetails(
+      {required context, required VoidCallback setStateCallback}) async {
     setStateCallback(); // Notify the widget to start loading
 
     try {
-      final userDetails = await AdminApiService.getUserDetails(user_id);
+      final userDetails = await AdminApiService.getUserDetails(
+          context: context, userId: user_id);
 
       username = userDetails.username;
       email = userDetails.email ?? 'No email available';
@@ -80,29 +83,36 @@ class User {
     }
   }
 
-  Future<void> approve(bool isAdmin, VoidCallback setStateCallback) async {
+  Future<void> approve(
+      {required context,
+      required bool isAdmin,
+      required VoidCallback setStateCallback}) async {
     try {
-      await AdminApiService.approveUser(user_id, isAdmin);
-      await fetchUserDetails(setStateCallback);
+      await AdminApiService.approveUser(
+          context: context, userId: user_id, isAdmin: isAdmin);
+      await fetchUserDetails(context: context,setStateCallback: setStateCallback);
     } catch (e) {
       print('Failed to approve user: $e');
       setStateCallback(); // Notify the widget even in case of an error
     }
   }
 
-  Future<void> reject(VoidCallback setStateCallback) async {
+  Future<void> reject(
+      {required context, required VoidCallback setStateCallback}) async {
     try {
-      await AdminApiService.rejectUser(user_id);
-      await fetchUserDetails(setStateCallback);
+      await AdminApiService.rejectUser(context: context, userId: user_id);
+      await fetchUserDetails(
+          context: context, setStateCallback: setStateCallback);
     } catch (e) {
       print('Failed to reject user: $e');
       setStateCallback(); // Notify the widget even in case of an error
     }
   }
 
-  Future<void> delete(VoidCallback setStateCallback) async {
+  Future<void> delete(
+      {required context, required VoidCallback setStateCallback}) async {
     try {
-      await AdminApiService.deleteUser(user_id);
+      await AdminApiService.deleteUser(context: context, userId: user_id);
       // Handle successful deletion, possibly notify the user or navigate away
     } catch (e) {
       print('Failed to delete user: $e');

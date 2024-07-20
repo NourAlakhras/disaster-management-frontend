@@ -13,7 +13,6 @@ import 'package:flutter_3/screens/user_profile.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class UsersListScreen extends StatefulWidget {
-
   const UsersListScreen({super.key});
 
   @override
@@ -73,6 +72,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
     try {
       final userResponse = await AdminApiService.getAllUsers(
+        context: context,
         pageNumber: pageNumber,
         pageSize: pageSize,
         statuses: statuses,
@@ -108,9 +108,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
             color: primaryTextColor,
             onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          SettingsScreen()),
+                  MaterialPageRoute(builder: (context) => SettingsScreen()),
                 )),
         actions: [
           IconButton(
@@ -195,11 +193,11 @@ class _UsersListScreenState extends State<UsersListScreen> {
                           onTap: () => Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => UserProfileScreen(
-                                    user: user),
+                                builder: (context) =>
+                                    UserProfileScreen(user: user),
                               )).then((_) {
                             setState(() {
-                              // Call setState to refresh the page.
+                              _fetchUsers();
                             });
                           }),
                           child: Container(
@@ -372,54 +370,39 @@ class _UsersListScreenState extends State<UsersListScreen> {
 
   Future<void> _approveUser(User user, {required bool isAdmin}) async {
     try {
-      await user.approve(isAdmin, () {
-        setState(() {}); // Refresh state after approval
-      });
+      await user.approve(
+          context: context,
+          isAdmin: isAdmin,
+          setStateCallback: () {
+            setState(() {}); // Refresh state after approval
+          });
     } catch (error) {
       print('Failed to approve user: $error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to approve user: $error'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
   Future<void> _rejectUser(User user) async {
     try {
-      await user.reject(() {
-        setState(() {}); // Refresh state after rejection
-      });
+      await user.reject(
+          context: context,
+          setStateCallback: () {
+            setState(() {}); // Refresh state after rejection
+          });
     } catch (error) {
       print('Failed to reject user: $error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to reject user: $error'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
   Future<void> _deleteUser(User user) async {
     try {
-      await user.delete(() {
-        setState(() {}); // Refresh state after deletion
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User deleted successfully'),
-          backgroundColor: successColor,
-        ),
-      );
+      await user.delete(
+          context: context,
+          setStateCallback: () {
+            setState(() {}); // Refresh state after deletion
+          });
+      print('User deleted successfully');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete user: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('Failed to delete user: $e');
     }
   }
 

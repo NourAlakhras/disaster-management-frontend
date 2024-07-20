@@ -13,9 +13,7 @@ import 'package:flutter_3/utils/app_colors.dart';
 class UserProfileScreen extends StatefulWidget {
   final User user;
 
-
-  const UserProfileScreen(
-      {super.key, required this.user});
+  const UserProfileScreen({super.key, required this.user});
 
   @override
   _UserProfileScreenState createState() => _UserProfileScreenState();
@@ -165,25 +163,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       _isLoading = true;
     });
     try {
-      await widget.user.fetchUserDetails(() {
-        if (mounted) {
-          setState(() {
-            _userEmailController.text =
-                widget.user.email ?? 'No email available';
-            _userMissions = widget.user.missions ?? [];
-            print('user object ${widget.user}');
+      await widget.user.fetchUserDetails(
+          context: context,
+          setStateCallback: () {
+            if (mounted) {
+              setState(() {
+                _userEmailController.text =
+                    widget.user.email ?? 'No email available';
+                _userMissions = widget.user.missions ?? [];
+                print('user object ${widget.user}');
+              });
+            }
           });
-        }
-      });
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to fetch user details: $e'),
-            backgroundColor: errorColor,
-          ),
-        );
-      }
+      print('Failed to fetch user details: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -241,7 +234,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               MaterialPageRoute(
                 builder: (context) => MissionDevicesBaseScreen(
                   mission: mission,
-                  
                 ),
               ));
         },
@@ -282,17 +274,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Future<void> _approveUser(User user, {required bool isAdmin}) async {
     try {
-      await user.approve(isAdmin, () {
-        setState(() {});
-      });
+      await user.approve(
+          context: context,
+          isAdmin: isAdmin,
+          setStateCallback: () {
+            setState(() {});
+          });
     } catch (error) {
       print('Failed to approve user: $error');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to approve user: $error'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -305,12 +294,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         try {
           await action();
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to perform action: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          print('Failed to perform action: $e');
         } finally {
           setState(() {});
         }
@@ -352,23 +336,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Future<void> _deleteUser() async {
     try {
-      await widget.user.delete(() {
-        setState(() {}); // Refresh state after deletion
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User deleted successfully'),
-          backgroundColor: successColor,
-        ),
-      );
-      Navigator.pop(context); // Navigate back after successful deletion
+      await widget.user.delete(
+          context: context,
+          setStateCallback: () {
+            setState(() {}); // Refresh state after deletion
+          });
+
+      Navigator.pop(context, true); // Pop with a result indicating success
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete user: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('Failed to delete user: $e');
     }
   }
 
@@ -382,7 +358,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             _buildActionButton('Approve', () => _showApprovalDialog(user)),
             _buildActionButton(
                 'Reject',
-                () => user.reject(() {
+                () => user.reject(
+                    context: context,
+                    setStateCallback: () {
                       setState(() {}); // Refresh state after rejection
                     })),
           ]);
@@ -495,18 +473,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       if (updateData.isNotEmpty) {
         // Call update user API only if there are changes
         await AdminApiService.updateUser(
+          context: context,
           user_id: userId,
           email: updateData['email'],
         );
         await _fetchUserDetails();
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User updated successfully'),
-            backgroundColor: successColor,
-          ),
-        );
       } else {
         // Show a message indicating no changes
         ScaffoldMessenger.of(context).showSnackBar(
@@ -517,13 +488,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         );
       }
     } catch (e) {
-      // Show error message if update fails
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update user: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('Failed to update user: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -541,6 +506,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ElevatedButton(
               onPressed: () async {
                 await AdminApiService.updateUser(
+                  context: context,
                   user_id: widget.user.user_id,
                   type: UserType.REGULAR,
                 );
@@ -555,6 +521,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ElevatedButton(
               onPressed: () async {
                 await AdminApiService.updateUser(
+                  context: context,
                   user_id: widget.user.user_id,
                   type: UserType.ADMIN,
                 );

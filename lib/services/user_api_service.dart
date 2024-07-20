@@ -1,24 +1,15 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/paginated_response.dart';
 import 'package:flutter_3/models/user.dart';
-import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:http/http.dart' as http;
-import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/services/auth_api_service.dart';
-import 'package:flutter_3/utils/constants.dart';
-import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/models/mission.dart';
-import 'package:flutter_3/utils/error_handler.dart';
-import 'package:flutter_3/utils/error_utils.dart';
 import 'package:flutter_3/utils/http_utils.dart';
 import 'package:flutter_3/utils/snackbar_utils.dart';
 
 class UserApiService {
-  static const String webServerBaseUrl = Constants.webServerBaseUrl;
 
   static Future<Map<String, dynamic>> signUp(
       {required BuildContext context,
@@ -192,8 +183,6 @@ class UserApiService {
         queryParameters['name'] = name;
       }
 
-      print('queryParameters : $queryParameters');
-
 // Convert query parameters to a list of key-value pairs
       final List<String> queryString =
           queryParameters.entries.map((e) => '${e.key}=${e.value}').toList();
@@ -201,67 +190,22 @@ class UserApiService {
 // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
 
-      final Uri url = Uri.parse(
-          '$webServerBaseUrl/api/users/cur_missions?$queryStringJoined');
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/users/cur_missions?$queryStringJoined',
+        method: 'GET',
+      );
 
-// Print out the generated URL
-      print('URL: $url');
-
-      final String? token = await AuthApiService.getAuthToken();
-      if (token == null) {
-        throw UnauthorizedException();
-      }
-
-      final response = await http.get(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      final responseBody = jsonDecode(response.body);
-      print('mission responseBody: $responseBody');
-
-      if (response.statusCode == 200) {
+      if (response.isNotEmpty) {
         final paginatedResponse = PaginatedResponse<Mission>.fromJson(
-            responseBody, (json) => Mission.fromJson(json));
+            response, (json) => Mission.fromJson(json));
         return paginatedResponse;
       } else {
-        handleErrorResponse(context, response);
-        // This line will not be reached if handleErrorResponse always throws.
-        // But to satisfy the Dart analyzer, we need to ensure all paths return or throw.
-        throw Exception(
-            "Failed to get user's current missions: ${response.statusCode}");
+        throw Exception('Failed to get current missions.');
       }
-    } on TimeoutException catch (e) {
-      // Handle request timeout
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Request timed out. Please try again later.'),
-          backgroundColor: errorColor,
-        ),
-      );
-      throw Exception('Request timed out: $e');
-    } on FormatException catch (e) {
-      // Handle unexpected response format (e.g., HTML instead of JSON)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unexpected response format: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
-      throw Exception('Unexpected response format: $e');
-    } catch (e, stackTrace) {
-      // Handle other errors
-      print('Unexpected error occurred: $e\n$stackTrace');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unexpected error occurred: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
-      throw Exception('Unexpected error occurred: $e');
+    } on Exception catch (e) {
+      print('Error during getCurrentMissions: $e');
+      rethrow;
     }
   }
 
@@ -289,67 +233,21 @@ class UserApiService {
 
       // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
+      final response = await HttpUtils.makeRequest(
+        context: context,
+        endpoint: '/api/users/cur_missions?$queryStringJoined',
+        method: 'GET',
+      );
 
-      final Uri url = Uri.parse(
-          '$webServerBaseUrl/api/users/cur_missions?$queryStringJoined');
-
-      // Print out the generated URL
-      print('URL: $url');
-
-      final String? token = await AuthApiService.getAuthToken();
-      if (token == null) {
-        throw UnauthorizedException();
-      }
-
-      final response = await http.get(
-        url,
-        headers: <String, String>{
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-      ).timeout(const Duration(seconds: 10));
-
-      final responseBody = jsonDecode(response.body);
-      print('mission responseBody: $responseBody');
-
-      if (response.statusCode == 200) {
-        final int curMissionsCount = responseBody['cur_missions_count'] ?? 0;
+      if (response.isNotEmpty) {
+        final int curMissionsCount = response['cur_missions_count'] ?? 0;
         return curMissionsCount;
       } else {
-        handleErrorResponse(context, response);
-        // This line will not be reached if handleErrorResponse always throws.
-        // But to satisfy the Dart analyzer, we need to ensure all paths return or throw.
-        throw Exception(
-            'Failed to get current missions count: ${response.statusCode}');
+        throw Exception('Failed to get current missions count.');
       }
-    } on TimeoutException catch (e) {
-      // Handle request timeout
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Request timed out. Please try again later.'),
-          backgroundColor: errorColor,
-        ),
-      );
-      throw Exception('Request timed out: $e');
-    } on FormatException catch (e) {
-      // Handle unexpected response format (e.g., HTML instead of JSON)
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unexpected response format: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
-      throw Exception('Unexpected response format: $e');
-    } catch (e, stackTrace) {
-      // Handle other errors
-      print('Unexpected error occurred: $e\n$stackTrace');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Unexpected error occurred: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
-      throw Exception('Unexpected error occurred: $e');
+    } on Exception catch (e) {
+      print('Error during getCurrentMissionsCount: $e');
+      rethrow;
     }
   }
 }

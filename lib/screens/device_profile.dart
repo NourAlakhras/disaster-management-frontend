@@ -13,9 +13,7 @@ import 'package:flutter_3/utils/app_colors.dart';
 class DeviceProfileScreen extends StatefulWidget {
   final Device device;
 
-
-  const DeviceProfileScreen(
-      {super.key,  required this.device});
+  const DeviceProfileScreen({super.key, required this.device});
 
   @override
   _DeviceProfileScreenState createState() => _DeviceProfileScreenState();
@@ -46,7 +44,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
           icon: const Icon(Icons.arrow_back),
           color: primaryTextColor,
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pop(context, true);
           },
         ),
         actions: [
@@ -190,15 +188,17 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   }
 
   Future<void> fetchDeviceDetails() async {
-    widget.device.fetchDeviceDetails(() {
-      if (mounted) {
-        setState(() {
-          _deviceNameController.text = widget.device.name;
-          _selectedMissions =
-              widget.device.mission != null ? [widget.device.mission!] : [];
+    widget.device.fetchDeviceDetails(
+        context: context,
+        setStateCallback: () {
+          if (mounted) {
+            setState(() {
+              _deviceNameController.text = widget.device.name;
+              _selectedMissions =
+                  widget.device.mission != null ? [widget.device.mission!] : [];
+            });
+          }
         });
-      }
-    });
   }
 
   Widget _buildNonEditableMissionSelection() {
@@ -240,7 +240,6 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                                   builder: (context) =>
                                       MissionDevicesBaseScreen(
                                     mission: mission,
-
                                   ),
                                 ),
                               );
@@ -386,20 +385,13 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
   }
 
   void _deleteDevice(String id) {
-    DeviceApiService.deleteDevice(id).then((deletedDevice) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Device deleted successfully'),
-          backgroundColor: successColor,
-        ),
-      );
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete device: $error'),
-          backgroundColor: errorColor,
-        ),
-      );
+    setState(() {
+      DeviceApiService.deleteDevice(context: context, deviceId: id)
+          .then((deletedDevice) {})
+          .catchError((error) {
+        print('Failed to delete device: $error');
+      });
+      fetchDeviceDetails();
     });
   }
 
@@ -440,22 +432,11 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
         name: deviceName,
         oldPassword: oldPassword,
         newPassword: newPassword,
+        context: context,
       );
       await fetchDeviceDetails();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Device updated successfully'),
-          backgroundColor: successColor,
-        ),
-      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update device: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('Failed to update device: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -519,24 +500,14 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
       await DeviceApiService.verifyPassword(
         deviceId: widget.device.device_id,
         password: oldPassword,
+        context: context,
       );
       setState(() {
         _isEditing = true;
         widget.device.password = oldPassword;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password verified successfully'),
-          backgroundColor: successColor,
-        ),
-      );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Incorrect password: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('$e');
     } finally {
       setState(() {
         _isLoading = false;

@@ -11,10 +11,8 @@ import 'package:flutter_3/widgets/filter_drawer.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class DevicesListScreen extends StatefulWidget {
-
   const DevicesListScreen({
     super.key,
-
   });
 
   @override
@@ -74,6 +72,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         types: types,
         statuses: statuses,
         name: name,
+        context: context,
       );
       setState(() {
         _filteredDevices = deviceResponse.items;
@@ -101,9 +100,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             color: primaryTextColor,
             onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          SettingsScreen()),
+                  MaterialPageRoute(builder: (context) => SettingsScreen()),
                 ).then((_) {
                   setState(() {
                     // Call setState to refresh the page.
@@ -194,18 +191,24 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                       ..._filteredDevices.map((device) {
                         print(device.device_id);
 
+                        Object? result;
                         return InkWell(
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => DeviceProfileScreen(
+                          onTap: () async => {
+                            result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DeviceProfileScreen(
                                     device: device,
-                                    ),
-                              )).then((_) {
-                            setState(() {
-                              // Call setState to refresh the page.
-                            });
-                          }),
+                                  ),
+                                )),
+                            if (result == true)
+                              {
+                                // Refresh your data here
+                                setState(() {
+                                  _fetchDevices();
+                                })
+                              }
+                          },
                           child: Container(
                             decoration: const BoxDecoration(
                               border: Border(
@@ -392,21 +395,11 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       return;
     }
 
-    DeviceApiService.deleteDevice(device.device_id).then((deletedDevice) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Device deleted successfully'),
-          backgroundColor: successColor,
-        ),
-      );
+    DeviceApiService.deleteDevice(context: context, deviceId: device.device_id)
+        .then((deletedDevice) {
       _fetchDevices(); // Fetch the updated list of devices
     }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to delete device: $error'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('Failed to delete device: $error');
     });
   }
 

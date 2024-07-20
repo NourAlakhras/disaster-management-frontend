@@ -9,8 +9,6 @@ import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 
 class DashboardScreen extends StatefulWidget {
-
-
   const DashboardScreen({super.key});
 
   @override
@@ -47,28 +45,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       if (userType == UserType.ADMIN) {
         // Fetch admin statistics
-        allUsersCount = await AdminApiService.getUserCount();
-        allDevicesCount = await AdminApiService.getDeviceCount();
-        allMissionsCount = await AdminApiService.getMissionCount();
+        allUsersCount = await AdminApiService.getUserCount(context: context);
+        allDevicesCount =
+            await AdminApiService.getDeviceCount(context: context);
+        allMissionsCount = await AdminApiService.getMissionCount(context: context);
 
         for (var status in UserStatus.values) {
           if (status != UserStatus.REJECTED) {
             final count = await AdminApiService.getUserCount(
-                status: [userStatusValues[status]!]);
+                context: context, status: [userStatusValues[status]!]);
             combinedUserCounts[getUserStatusTitle(status)] = count;
           }
         }
 
         for (var type in UserType.values) {
-          final count =
-              await AdminApiService.getUserCount(type: [userTypeValues[type]!]);
+          final count = await AdminApiService.getUserCount(
+              context: context, type: [userTypeValues[type]!]);
           combinedUserCounts[getuserTypeTitle(type)] = count;
         }
 
         for (var status in MissionStatus.values) {
           if (status != MissionStatus.CANCELLED) {
             missionCountByStatus[status] =
-                await AdminApiService.getMissionCount(
+                await AdminApiService.getMissionCount(context:context,
                     status: [missionStatusValues[status]!]);
           }
         }
@@ -76,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         for (var status in DeviceStatus.values) {
           if (status != DeviceStatus.INACTIVE) {
             deviceCountByStatus[status] = await AdminApiService.getDeviceCount(
-                status: [deviceStatusValues[status]!]);
+                context: context, status: [deviceStatusValues[status]!]);
           }
         }
       } else {
@@ -118,9 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: primaryTextColor,
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      SettingsScreen()),
+              MaterialPageRoute(builder: (context) => SettingsScreen()),
             ).then((_) {
               setState(() {
                 // Call setState to refresh the page.
@@ -163,9 +160,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: primaryTextColor,
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      SettingsScreen()),
+              MaterialPageRoute(builder: (context) => SettingsScreen()),
             ).then((_) {
               setState(() {
                 // Call setState to refresh the page.

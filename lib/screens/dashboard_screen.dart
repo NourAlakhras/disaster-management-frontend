@@ -9,15 +9,17 @@ import 'package:flutter_3/services/admin_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 
 class DashboardScreen extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
 
-  const DashboardScreen({super.key, required this.mqttClient});
+
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  final mqttClient = MQTTClientWrapper();
+
   bool _isLoading = false;
   int allUsersCount = 0;
   int allMissionsCount = 0;
@@ -79,15 +81,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
       } else {
         // Fetch regular user statistics
-        userCurrentMissionsCount =
-            await UserApiService.getCurrentMissionsCount();
+        userCurrentMissionsCount = await UserApiService.getCurrentMissionsCount(
+          context: context,
+        );
 
         for (var status in MissionStatus.values) {
           if (status != MissionStatus.CANCELLED &&
               status != MissionStatus.FINISHED) {
             missionCountByStatus[status] =
                 await UserApiService.getCurrentMissionsCount(
-                    statuses: [status]);
+                    context: context, statuses: [status]);
           }
         }
       }
@@ -117,7 +120,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               context,
               MaterialPageRoute(
                   builder: (context) =>
-                      SettingsScreen(mqttClient: widget.mqttClient)),
+                      SettingsScreen()),
             ).then((_) {
               setState(() {
                 // Call setState to refresh the page.
@@ -162,7 +165,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               context,
               MaterialPageRoute(
                   builder: (context) =>
-                      SettingsScreen(mqttClient: widget.mqttClient)),
+                      SettingsScreen()),
             ).then((_) {
               setState(() {
                 // Call setState to refresh the page.

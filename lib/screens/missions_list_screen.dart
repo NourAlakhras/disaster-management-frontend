@@ -15,9 +15,9 @@ import 'package:flutter_3/widgets/filter_drawer.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionsListScreen extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
 
-  const MissionsListScreen({super.key, required this.mqttClient});
+
+  const MissionsListScreen({super.key});
 
   @override
   _MissionsListScreenState createState() => _MissionsListScreenState();
@@ -25,6 +25,8 @@ class MissionsListScreen extends StatefulWidget {
 
 class _MissionsListScreenState extends State<MissionsListScreen>
     with SingleTickerProviderStateMixin {
+      final mqttClient = MQTTClientWrapper();
+
   List<Mission> _filteredMissions = [];
   int _pageNumberAllMissions = 1;
   int _pageNumberMyMissions = 1;
@@ -97,12 +99,14 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                   name: name,
                 )
               : await UserApiService.getCurrentMissions(
+                  context: context,
                   pageNumber: _pageNumberMyMissions,
                   pageSize: pageSize,
                   statuses: statuses,
                   name: name,
                 ))
           : await UserApiService.getCurrentMissions(
+              context: context,
               pageNumber: _pageNumberMyMissions,
               pageSize: pageSize,
               statuses: statuses,
@@ -136,7 +140,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
             context,
             MaterialPageRoute(
                 builder: (context) =>
-                    SettingsScreen(mqttClient: widget.mqttClient)),
+                    SettingsScreen()),
           ).then((_) {
             setState(() {
               // Call setState to refresh the page.
@@ -249,7 +253,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                         builder: (context) =>
                                             MissionProfileScreen(
                                                 mission: mission,
-                                                mqttClient: widget.mqttClient),
+                                             ),
                                       )).then((_) {
                                     setState(() {
                                       _fetchMissions();

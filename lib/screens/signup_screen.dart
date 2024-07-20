@@ -57,7 +57,11 @@ class _SignupScreenState extends State<SignupScreen> {
       _isLoading = true;
     });
     try {
-      await UserApiService.signUp(email, password, username);
+      await UserApiService.signUp(
+          context: context,
+          email: email,
+          password: password,
+          username: username);
 
       // Show a dialog with a message
       showDialog(
@@ -87,10 +91,7 @@ class _SignupScreenState extends State<SignupScreen> {
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Signup failed: $e'),
-        backgroundColor: errorColor,
-      ));
+      print('Signup failed: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -141,7 +142,7 @@ class _SignupScreenState extends State<SignupScreen> {
           },
         ),
       ),
-       body: LayoutBuilder(
+      body: LayoutBuilder(
         builder: (context, constraints) {
           double screenHeight = constraints.maxHeight;
           double screenWidth = constraints.maxWidth;
@@ -264,46 +265,47 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       const Gap(15),
-                    CustomButton(
-                      text: "Sign up",
-                      onPressed: () {
-                        if (_validateForm()) {
-                          _signUp(context);
-                        }
-                      },
-                    ),
+                      CustomButton(
+                        text: "Sign up",
+                        onPressed: () {
+                          if (_validateForm()) {
+                            _signUp(context);
+                          }
+                        },
+                      ),
                       const Gap(20),
                       if (_isLoading)
                         const Center(
                           child: CircularProgressIndicator(),
                         ),
-                    Container(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          const Text(
-                            "Already have an account?",
-                            style: TextStyle(color: secondaryTextColor),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/login');
-                            },
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(color: primaryTextColor),
+                      Container(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: <Widget>[
+                            const Text(
+                              "Already have an account?",
+                              style: TextStyle(color: secondaryTextColor),
                             ),
-                          ),
-                        ],
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pushNamed(context, '/login');
+                              },
+                              child: const Text(
+                                "Login",
+                                style: TextStyle(color: primaryTextColor),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}}
+          );
+        },
+      ),
+    );
+  }
+}

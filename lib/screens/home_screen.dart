@@ -12,15 +12,16 @@ import 'package:flutter_3/screens/devices_list_screen.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
 
-  const HomeScreen({required this.mqttClient, super.key});
+  const HomeScreen({ super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final mqttClient = MQTTClientWrapper();
+
   final GlobalKey<CurvedNavigationBarState> _bottomNavigationKey = GlobalKey();
   final PageController _pageController = PageController(initialPage: 0);
 
@@ -98,17 +99,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
           children: userType == UserType.ADMIN
               ? [
-                  Center(child: DashboardScreen(mqttClient: widget.mqttClient)),
-                  Center(child: UsersListScreen(mqttClient: widget.mqttClient)),
+                  Center(child: DashboardScreen()),
+                  Center(child: UsersListScreen()),
                   Center(
-                      child: MissionsListScreen(mqttClient: widget.mqttClient)),
+                      child: MissionsListScreen()),
                   Center(
-                      child: DevicesListScreen(mqttClient: widget.mqttClient)),
+                      child: DevicesListScreen()),
                 ]
               : [
-                  Center(child: DashboardScreen(mqttClient: widget.mqttClient)),
+                  Center(child: DashboardScreen()),
                   Center(
-                      child: MissionsListScreen(mqttClient: widget.mqttClient)),
+                      child: MissionsListScreen()),
                 ],
         ),
       ),

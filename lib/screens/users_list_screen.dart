@@ -13,15 +13,16 @@ import 'package:flutter_3/screens/user_profile.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class UsersListScreen extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
 
-  const UsersListScreen({super.key, required this.mqttClient});
+  const UsersListScreen({super.key});
 
   @override
   _UsersListScreenState createState() => _UsersListScreenState();
 }
 
 class _UsersListScreenState extends State<UsersListScreen> {
+  final mqttClient = MQTTClientWrapper();
+
   List<User> _filteredUsers = [];
   bool _isLoading = false;
   int _pageNumber = 1;
@@ -58,7 +59,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
     int? pageSize,
     String? name,
   }) async {
-    // Assign default statuses if not provided
     statuses ??= _filteredStatuses;
     types ??= _filteredTypes;
     pageNumber ??= _pageNumber;
@@ -70,6 +70,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
     setState(() {
       _isLoading = true;
     });
+
     try {
       final userResponse = await AdminApiService.getAllUsers(
         pageNumber: pageNumber,
@@ -78,6 +79,9 @@ class _UsersListScreenState extends State<UsersListScreen> {
         types: types,
         username: name,
       );
+
+      if (!mounted) return;
+
       setState(() {
         _filteredUsers = userResponse.items;
         _hasNext = userResponse.hasNext;
@@ -106,7 +110,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                   context,
                   MaterialPageRoute(
                       builder: (context) =>
-                          SettingsScreen(mqttClient: widget.mqttClient)),
+                          SettingsScreen()),
                 )),
         actions: [
           IconButton(
@@ -192,7 +196,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => UserProfileScreen(
-                                    user: user, mqttClient: widget.mqttClient),
+                                    user: user),
                               )).then((_) {
                             setState(() {
                               // Call setState to refresh the page.

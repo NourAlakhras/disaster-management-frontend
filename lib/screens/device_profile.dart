@@ -12,16 +12,18 @@ import 'package:flutter_3/utils/app_colors.dart';
 
 class DeviceProfileScreen extends StatefulWidget {
   final Device device;
-  final MQTTClientWrapper mqttClient;
+
 
   const DeviceProfileScreen(
-      {super.key, required this.mqttClient, required this.device});
+      {super.key,  required this.device});
 
   @override
   _DeviceProfileScreenState createState() => _DeviceProfileScreenState();
 }
 
 class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
+  final mqttClient = MQTTClientWrapper();
+
   final TextEditingController _deviceNameController = TextEditingController();
   final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
@@ -238,7 +240,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                                   builder: (context) =>
                                       MissionDevicesBaseScreen(
                                     mission: mission,
-                                    mqttClient: widget.mqttClient,
+
                                   ),
                                 ),
                               );
@@ -350,7 +352,6 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
               MaterialPageRoute(
                 builder: (context) => DeviceDetailedScreen(
                   device: widget.device,
-                  mqttClient: widget.mqttClient,
                   broker: widget.device.broker,
                 ),
               )).then((_) {

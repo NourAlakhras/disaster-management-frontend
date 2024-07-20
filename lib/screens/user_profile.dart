@@ -12,10 +12,10 @@ import 'package:flutter_3/utils/app_colors.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final User user;
-  final MQTTClientWrapper mqttClient;
+
 
   const UserProfileScreen(
-      {super.key, required this.mqttClient, required this.user});
+      {super.key, required this.user});
 
   @override
   _UserProfileScreenState createState() => _UserProfileScreenState();
@@ -241,7 +241,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               MaterialPageRoute(
                 builder: (context) => MissionDevicesBaseScreen(
                   mission: mission,
-                  mqttClient: widget.mqttClient,
+                  
                 ),
               ));
         },

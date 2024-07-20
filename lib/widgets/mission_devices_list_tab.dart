@@ -8,11 +8,11 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionDevicesListTab extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
+
   final List<Device> devices;
   const MissionDevicesListTab({
     super.key,
-    required this.mqttClient,
+
     required this.devices,
   });
 
@@ -23,6 +23,7 @@ class MissionDevicesListTab extends StatefulWidget {
 class _MissionDevicesListTabState extends State<MissionDevicesListTab> {
   int _pageNumber = 1;
   final int _pageSize = 5;
+final mqttClient = MQTTClientWrapper();
 
   @override
   Widget build(BuildContext context) {
@@ -95,7 +96,7 @@ class _MissionDevicesListTabState extends State<MissionDevicesListTab> {
                           MaterialPageRoute(
                             builder: (context) => DeviceProfileScreen(
                               device: device,
-                              mqttClient: widget.mqttClient,
+
                             ),
                           ),
                         ),

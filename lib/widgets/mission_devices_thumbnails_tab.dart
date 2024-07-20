@@ -13,14 +13,12 @@ import 'package:flutter_3/utils/app_colors.dart';
 import 'package:provider/provider.dart' as prov;
 
 class MissionDevicesThumbnailsTab extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
+
   final List<Device> devices;
   final Device? broker;
 
   const MissionDevicesThumbnailsTab({
-    super.key,
-    required this.mqttClient,
-    required this.devices,
+    super.key,    required this.devices,
     required this.broker,
   });
 
@@ -31,6 +29,8 @@ class MissionDevicesThumbnailsTab extends StatefulWidget {
 
 class _MissionDevicesThumbnailsTabState
     extends State<MissionDevicesThumbnailsTab> {
+      final mqttClient = MQTTClientWrapper();
+
   Map<String, int> batteryLevels = {}; // Store battery levels for each device
   Map<String, int> wifiLevels = {}; // Store Wi-Fi levels for each device
   int _pageNumber = 1;
@@ -143,7 +143,7 @@ class _MissionDevicesThumbnailsTabState
                     context,
                     MaterialPageRoute(
                       builder: (context) => DeviceDetailedScreen(
-                        mqttClient: widget.mqttClient,
+
                         device: device,
                         broker: widget.broker,
                       ),

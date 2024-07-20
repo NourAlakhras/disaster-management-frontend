@@ -18,16 +18,17 @@ import 'package:flutter_3/widgets/editable_field_widget.dart';
 
 class MissionProfileScreen extends StatefulWidget {
   final Mission mission;
-  final MQTTClientWrapper mqttClient;
 
   const MissionProfileScreen(
-      {super.key, required this.mqttClient, required this.mission});
+      {super.key, required this.mission});
 
   @override
   _MissionProfileScreenState createState() => _MissionProfileScreenState();
 }
 
 class _MissionProfileScreenState extends State<MissionProfileScreen> {
+  final mqttClient = MQTTClientWrapper();
+
   final TextEditingController _missionNameController = TextEditingController();
   List<User> _selectedUsers = [];
   List<Device> _selectedDevices = [];
@@ -288,7 +289,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                                 MaterialPageRoute(
                                   builder: (context) => DeviceDetailedScreen(
                                     device: device,
-                                    mqttClient: widget.mqttClient,
+  
                                     broker: widget.mission.broker,
                                   ),
                                 ),
@@ -341,7 +342,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                             MaterialPageRoute(
                               builder: (context) => DeviceDetailedScreen(
                                 device: _selectedBroker!,
-                                mqttClient: widget.mqttClient,
+
                                 broker: widget.mission.broker,
                               ),
                             ),
@@ -639,7 +640,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
               MaterialPageRoute(
                 builder: (context) => MissionDevicesBaseScreen(
                   mission: widget.mission,
-                  mqttClient: widget.mqttClient,
+
                 ),
               ));
         },

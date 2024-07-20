@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user_credentials.dart';
+import 'package:flutter_3/services/auth_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
 
-  const SettingsScreen({super.key, required this.mqttClient});
+
+  const SettingsScreen({super.key});
 
   @override
   _SettingsScreenState createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final MQTTClientWrapper mqttClientWrapper =
+      MQTTClientWrapper(); // Access singleton instance
+
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _userEmailController = TextEditingController();
   final TextEditingController _oldPasswordController = TextEditingController();
@@ -56,24 +60,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _logout(BuildContext context) async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _updateConnection() async {
     try {
-      widget.mqttClient.logout();
-      await UserApiService.logout(context: context);
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/',
-        (route) => false,
+      await mqttClientWrapper.updateConnection(); // Use the singleton instance
+      // Show success message or handle UI updates as needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connection updated successfully.')),
       );
-    } catch (e) {
-      print('Failed to logout: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
+    } catch (e, stackTrace) {
+      print('Error in update connection: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update connection.')),
+      );
+    }
+  }
+
+  Future<void> _logout() async {
+    try {
+      mqttClientWrapper.logout(); // Use the singleton instance
+      await AuthApiService.clearToken();
+      UserCredentials().clearUserCredentials();
+
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    } catch (e, stackTrace) {
+      print('Error in logout: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to logout.')),
+      );
     }
   }
 
@@ -93,8 +110,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       credentials.setUserCredentials(
           username, credentials.password, credentials.userType);
 
-      // Connect to MQTT broker
-      await widget.mqttClient.updateConnection();
+      _updateConnection();
     } catch (e) {
       print('Failed to update user info: $e');
     } finally {
@@ -128,8 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       credentials.setUserCredentials(
           credentials.username, newPassword, credentials.userType);
 
-      // Connect to MQTT broker
-      await widget.mqttClient.updateConnection();
+      _updateConnection();
     } catch (e) {
       print('Failed to change password: $e');
     } finally {
@@ -193,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-@override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomUpperBar(
@@ -234,8 +249,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            
-                             SizedBox(height: screenHeight*0.07),
+                            SizedBox(height: screenHeight * 0.07),
                             _buildEditableField(
                               label: 'Username',
                               controller: _userNameController,
@@ -279,7 +293,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                               leading: const Icon(Icons.logout,
                                   color: secondaryTextColor),
-                              onTap: () => _logout(context),
+                              onTap: () async {
+                                // Perform logout and navigation
+                                await _logout(); // Wait for logout to complete
+                              },
                             ),
                           ],
                         ),
@@ -291,7 +308,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
     );
   }
-
 
   @override
   void dispose() {

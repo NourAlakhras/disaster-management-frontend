@@ -11,11 +11,10 @@ import 'package:flutter_3/widgets/filter_drawer.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class DevicesListScreen extends StatefulWidget {
-  final MQTTClientWrapper mqttClient;
 
   const DevicesListScreen({
     super.key,
-    required this.mqttClient,
+
   });
 
   @override
@@ -23,6 +22,8 @@ class DevicesListScreen extends StatefulWidget {
 }
 
 class _DevicesListScreenState extends State<DevicesListScreen> {
+  final mqttClient = MQTTClientWrapper();
+
   List<Device> _allDevices = [];
   List<Device> _filteredDevices = [];
   bool _isLoading = false;
@@ -102,7 +103,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                   context,
                   MaterialPageRoute(
                       builder: (context) =>
-                          SettingsScreen(mqttClient: widget.mqttClient)),
+                          SettingsScreen()),
                 ).then((_) {
                   setState(() {
                     // Call setState to refresh the page.
@@ -199,7 +200,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                               MaterialPageRoute(
                                 builder: (context) => DeviceProfileScreen(
                                     device: device,
-                                    mqttClient: widget.mqttClient),
+                                    ),
                               )).then((_) {
                             setState(() {
                               // Call setState to refresh the page.

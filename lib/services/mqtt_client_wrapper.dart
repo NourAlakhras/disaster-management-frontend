@@ -11,6 +11,13 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 typedef MqttDataCallback = void Function(Map<String, dynamic> data);
 
 class MQTTClientWrapper {
+  MQTTClientWrapper._internal(); // private constructor
+
+  static final MQTTClientWrapper _instance = MQTTClientWrapper._internal();
+
+  factory MQTTClientWrapper() {
+    return _instance;
+  }
   late MqttServerClient client;
   MqttDataCallback onDataReceived = (data) {}; // Default no-op function
   Timer? _statusTimer;
@@ -18,11 +25,15 @@ class MQTTClientWrapper {
 
   Set<String> subscribedTopics = {};
 
-  void _startStatusTimer() {
+void _startStatusTimer() {
+    _statusTimer?.cancel();
     const timeoutDuration = Duration(seconds: 5); // Initial 5 seconds
     int elapsedTimeInSeconds = 0;
+    // Print subscribed topics every 5 seconds
+    if (elapsedTimeInSeconds % 5 == 0) {
+      print('Subscribed Topics: $subscribedTopics');
+    }
 
-    _statusTimer?.cancel();
     _statusTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       elapsedTimeInSeconds++;
       final status = client.connectionStatus;
@@ -40,6 +51,7 @@ class MQTTClientWrapper {
       }
     });
   }
+
 
   Future<void> prepareMqttClient() async {
     try {
@@ -99,7 +111,6 @@ class MQTTClientWrapper {
       client.autoReconnect = true;
       client.onDisconnected = _onDisconnected;
       client.onConnected = _onConnected;
-      client.onSubscribed = _onSubscribed;
       client.onAutoReconnect = _onAutoReconnect;
     } catch (e, stackTrace) {
       print('Error in _setupMqttClient: $e');
@@ -170,22 +181,28 @@ class MQTTClientWrapper {
   void unsubscribeFromTopic(String topic) {
     try {
       print('Unsubscribing from the $topic topic');
-      client.unsubscribe(topic);
-      subscribedTopics.remove(topic);
+      if (subscribedTopics.contains(topic)) {
+        subscribedTopics.remove(topic);
+        print('subscribedTopics after removal: $subscribedTopics');
+        client.unsubscribe(topic);
+        print('Unsubscribed from $topic');
+      } else {
+        print('Topic $topic was not in the subscribedTopics list');
+      }
     } catch (e, stackTrace) {
       print('Error in unsubscribeFromTopic: $e');
       print('Stack trace: $stackTrace');
-      // Handle error as needed
     }
   }
 
   void unsubscribeFromMultipleTopics(List<String> topics) {
     try {
-      topics.forEach(unsubscribeFromTopic);
+      topics.forEach((topic) {
+        unsubscribeFromTopic(topic);
+      });
     } catch (e, stackTrace) {
       print('Error in unsubscribeFromMultipleTopics: $e');
       print('Stack trace: $stackTrace');
-      // Handle error as needed
     }
   }
 
@@ -221,16 +238,6 @@ class MQTTClientWrapper {
     }
   }
 
-  void _onSubscribed(String topic) {
-    try {
-      print('Subscription confirmed for topic $topic');
-    } catch (e, stackTrace) {
-      print('Error in _onSubscribed: $e');
-      print('Stack trace: $stackTrace');
-      // Handle error as needed
-    }
-  }
-
   void _onDisconnected() {
     try {
       print('Disconnected from MQTT broker');
@@ -248,8 +255,9 @@ class MQTTClientWrapper {
 
   void _onConnected() {
     try {
+      print(' hiiiiiiiiiiiiiii _subscribeToTopics _onConnected ');
       print('Connected to MQTT broker');
-
+      print(' subscribedTopics  _onConnected  $subscribedTopics');
       // Dismiss reconnect dialogs if shown
       if (_showingDialog) {
         _showingDialog = false;
@@ -265,10 +273,15 @@ class MQTTClientWrapper {
     }
   }
 
-  final StreamController<MqttConnectionState> _connectionStatusController =
+  StreamController<MqttConnectionState> _connectionStatusController =
       StreamController<MqttConnectionState>.broadcast();
 
   void _listenToConnectionStatus() {
+    _connectionStatusController
+        .close(); // Close previous controller if it exists
+    _connectionStatusController =
+        StreamController<MqttConnectionState>.broadcast();
+
     _connectionStatusController.stream.listen((MqttConnectionState state) {
       if (state == MqttConnectionState.connecting) {
         _onAutoReconnect();
@@ -294,26 +307,43 @@ class MQTTClientWrapper {
     });
   }
 
-  Future<void> updateConnection() async {
-      try {
+Future<void> updateConnection() async {
+    try {
       // Disconnect MQTT client
-      disconnect();// Clear subscribed topics
+      client.disconnect(); // Disconnect current client
+
+      // Stop auto reconnect and cancel any existing timers
+      client.autoReconnect = false;
+      _statusTimer?.cancel();
+
+      // Clear subscribed topics
       if (subscribedTopics.isNotEmpty) {
-        MQTTClientWrapper()
-            .unsubscribeFromMultipleTopics(subscribedTopics.toList());
+        unsubscribeFromMultipleTopics(subscribedTopics.toList());
         subscribedTopics.clear();
       }
-            await prepareMqttClient();
-      } catch (e, stackTrace) {
-      print('Error in update connection: $e');
+
+      // Close the old StreamController and initialize a new one
+      _connectionStatusController.close();
+      _connectionStatusController =
+          StreamController<MqttConnectionState>.broadcast();
+
+      // Cancel the existing connectivity subscription
+      _connectivitySubscription?.cancel();
+
+      // Re-initialize the MQTT client with new credentials
+      await prepareMqttClient();
+    } catch (e, stackTrace) {
+      print('Error in updateConnection: $e');
       print('Stack trace: $stackTrace');
       // Handle error as needed
     }
   }
+
+
   void logout() {
     try {
       // Disconnect MQTT client
-      disconnect();
+      client.disconnect();
 
       // Stop auto reconnection
       client.autoReconnect = false;
@@ -322,17 +352,18 @@ class MQTTClientWrapper {
       _statusTimer?.cancel();
 
       // Clear subscribed topics
-      if (subscribedTopics.isNotEmpty) {
-        MQTTClientWrapper()
-            .unsubscribeFromMultipleTopics(subscribedTopics.toList());
-        subscribedTopics.clear();
+      if (MQTTClientWrapper().subscribedTopics.isNotEmpty) {
+        MQTTClientWrapper().unsubscribeFromMultipleTopics(
+            MQTTClientWrapper().subscribedTopics.toList());
+        MQTTClientWrapper().subscribedTopics.clear();
       }
-
-      // Close connection status controller
       _connectionStatusController.close();
+      _connectivitySubscription?.cancel();
 
-      // Cancel connectivity subscription
-      _connectivitySubscription?.cancel(); // Restart the app
+
+      _connectionStatusController =
+          StreamController<MqttConnectionState>.broadcast();
+
     } catch (e, stackTrace) {
       print('Error in logout: $e');
       print('Stack trace: $stackTrace');

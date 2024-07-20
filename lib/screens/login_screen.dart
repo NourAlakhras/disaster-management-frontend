@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomeScreen(mqttClient: _mqttClient),
+          builder: (context) => HomeScreen(),
         ),
       );
     } catch (e) {

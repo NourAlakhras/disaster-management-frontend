@@ -12,13 +12,11 @@ import 'package:flutter_3/utils/app_colors.dart';
 
 class DeviceDetailedScreen extends StatefulWidget {
   final Device device;
-  final MQTTClientWrapper mqttClient;
   final Device? broker;
 
   const DeviceDetailedScreen({
     super.key,
     required this.device,
-    required this.mqttClient,
     required this.broker,
   });
 
@@ -27,6 +25,8 @@ class DeviceDetailedScreen extends StatefulWidget {
 }
 
 class _DeviceDetailedScreenState extends State<DeviceDetailedScreen> {
+  final mqttClient = MQTTClientWrapper();
+
   final RTMPClientService _rtmpClientService = RTMPClientService();
   late Timer _reconnectTimer;
   bool _isPlayerInitialized = false;

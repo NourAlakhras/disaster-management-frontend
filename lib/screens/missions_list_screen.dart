@@ -15,8 +15,6 @@ import 'package:flutter_3/widgets/filter_drawer.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class MissionsListScreen extends StatefulWidget {
-
-
   const MissionsListScreen({super.key});
 
   @override
@@ -25,7 +23,7 @@ class MissionsListScreen extends StatefulWidget {
 
 class _MissionsListScreenState extends State<MissionsListScreen>
     with SingleTickerProviderStateMixin {
-      final mqttClient = MQTTClientWrapper();
+  final mqttClient = MQTTClientWrapper();
 
   List<Mission> _filteredMissions = [];
   int _pageNumberAllMissions = 1;
@@ -93,6 +91,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
       final missionResponse = UserCredentials().getUserType() == UserType.ADMIN
           ? (_tabController.index == 0
               ? await MissionApiService.getAllMissions(
+                  context: context,
                   pageNumber: _pageNumberAllMissions,
                   pageSize: pageSize,
                   statuses: statuses,
@@ -138,9 +137,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
           color: primaryTextColor,
           onPressed: () => Navigator.push(
             context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    SettingsScreen()),
+            MaterialPageRoute(builder: (context) => SettingsScreen()),
           ).then((_) {
             setState(() {
               // Call setState to refresh the page.
@@ -252,8 +249,8 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                       MaterialPageRoute(
                                         builder: (context) =>
                                             MissionProfileScreen(
-                                                mission: mission,
-                                             ),
+                                          mission: mission,
+                                        ),
                                       )).then((_) {
                                     setState(() {
                                       _fetchMissions();
@@ -468,13 +465,17 @@ class _MissionsListScreenState extends State<MissionsListScreen>
             ],
             onSelected: (value) async {
               if (value == 1) {
-                await mission.start(() {
-                  setState(() {});
-                });
+                await mission.start(
+                    updateState: () {
+                      setState(() {});
+                    },
+                    context: context);
               } else if (value == 2) {
-                await mission.cancel(() {
-                  setState(() {});
-                });
+                await mission.cancel(
+                    updateState: () {
+                      setState(() {});
+                    },
+                    context: context);
               }
               setState(() {});
             },
@@ -490,13 +491,17 @@ class _MissionsListScreenState extends State<MissionsListScreen>
             ],
             onSelected: (value) async {
               if (value == 1) {
-                await mission.pause(() {
-                  setState(() {});
-                });
+                await mission.pause(
+                    updateState: () {
+                      setState(() {});
+                    },
+                    context: context);
               } else if (value == 2) {
-                await mission.end(() {
-                  setState(() {});
-                });
+                await mission.end(
+                    updateState: () {
+                      setState(() {});
+                    },
+                    context: context);
               }
               setState(() {});
             },
@@ -512,13 +517,17 @@ class _MissionsListScreenState extends State<MissionsListScreen>
             ],
             onSelected: (value) async {
               if (value == 1) {
-                await mission.resume(() {
-                  setState(() {});
-                });
+                await mission.resume(
+                    updateState: () {
+                      setState(() {});
+                    },
+                    context: context);
               } else if (value == 2) {
-                await mission.end(() {
-                  setState(() {});
-                });
+                await mission.end(
+                    updateState: () {
+                      setState(() {});
+                    },
+                    context: context);
               }
               setState(() {});
             },

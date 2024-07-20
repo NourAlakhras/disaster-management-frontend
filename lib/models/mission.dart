@@ -89,11 +89,15 @@ class Mission {
     );
   }
 
-  Future<void> fetchMissionDetails(VoidCallback setStateCallback) async {
+  Future<void> fetchMissionDetails(
+      {required context, required VoidCallback setStateCallback}) async {
     setStateCallback();
 
     try {
-      final missionDetails = await MissionApiService.getMissionDetails(id);
+      final missionDetails = await MissionApiService.getMissionDetails(
+        missionId: id,
+        context: context,
+      );
 
       name = missionDetails.name;
       startDate = missionDetails.startDate;
@@ -142,6 +146,7 @@ class Mission {
   }
 
   Future<String?> createMission({
+    required BuildContext context,
     required String missionName,
     required List<String> userIds,
     required String brokerId,
@@ -153,6 +158,7 @@ class Mission {
         deviceIds: deviceIds,
         userIds: userIds,
         brokerId: brokerId,
+        context: context,
       );
       return missionId;
     } catch (e) {
@@ -161,31 +167,52 @@ class Mission {
     }
   }
 
-  Future<void> start(VoidCallback updateState) async {
-    await _updateMissionStatus("start", updateState);
+  Future<void> start(
+      {required BuildContext context,
+      required VoidCallback updateState}) async {
+    await _updateMissionStatus(context: context, command:  "start",  updateState: updateState);
   }
 
-  Future<void> pause(VoidCallback updateState) async {
-    await _updateMissionStatus("pause", updateState);
+  Future<void> pause(
+      {required BuildContext context,
+      required VoidCallback updateState}) async {
+    await _updateMissionStatus(
+        context: context, command: "pause", updateState: updateState);
   }
 
-  Future<void> end(VoidCallback updateState) async {
-    await _updateMissionStatus("end", updateState);
+  Future<void> end(
+      {required BuildContext context,
+      required VoidCallback updateState}) async {
+    await _updateMissionStatus(
+        context: context, command: "end", updateState: updateState);
   }
 
-  Future<void> cancel(VoidCallback updateState) async {
-    await _updateMissionStatus("cancel", updateState);
+  Future<void> cancel(
+      {required BuildContext context,
+      required VoidCallback updateState}) async {
+    await _updateMissionStatus(
+        context: context, command: "cancel", updateState: updateState);
   }
 
-  Future<void> resume(VoidCallback updateState) async {
-    await _updateMissionStatus("continue", updateState);
+  Future<void> resume(
+      {required BuildContext context,
+      required VoidCallback updateState}) async {
+    await _updateMissionStatus(
+        context: context, command: "continue", updateState: updateState);
   }
 
   Future<void> _updateMissionStatus(
-      String command, VoidCallback updateState) async {
+      {required BuildContext context,
+      required String command,
+      required VoidCallback updateState}) async {
     try {
-      await MissionApiService.updateMissionStatus(id, command);
-      await fetchMissionDetails(updateState);
+      await MissionApiService.updateMissionStatus(
+        context: context,
+        missionId: id,
+        command: command,
+      );
+      await fetchMissionDetails(
+          context: context, setStateCallback: updateState);
     } catch (error) {
       print('Failed to update mission status: $error');
     }

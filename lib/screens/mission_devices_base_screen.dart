@@ -48,7 +48,6 @@ class _MissionDevicesBaseScreenState extends State<MissionDevicesBaseScreen> {
   }
 
   void _subscribeToTopics() {
-
     for (var device in _filteredDevices) {
       mqttTopics.addAll([
         'cloud/reg/${widget.mission.broker?.name}/${device.name}/sensor-data',
@@ -229,12 +228,10 @@ class _MissionDevicesBaseScreenState extends State<MissionDevicesBaseScreen> {
   }
 
   Future<void> fetchMissionDetails() async {
-    widget.mission.fetchMissionDetails(() {
-      if (mounted) {
-        setState(() {
-          _filteredDevices = widget.mission.devices!;
-        });
-      }
+    widget.mission.fetchMissionDetails( context: context, setStateCallback:() {
+      setState(() {
+        _filteredDevices = widget.mission.devices!;
+      });
     });
   }
 }

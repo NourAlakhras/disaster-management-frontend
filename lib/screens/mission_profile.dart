@@ -19,8 +19,7 @@ import 'package:flutter_3/widgets/editable_field_widget.dart';
 class MissionProfileScreen extends StatefulWidget {
   final Mission mission;
 
-  const MissionProfileScreen(
-      {super.key, required this.mission});
+  const MissionProfileScreen({super.key, required this.mission});
 
   @override
   _MissionProfileScreenState createState() => _MissionProfileScreenState();
@@ -186,26 +185,23 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
     });
 
     try {
-      await widget.mission.fetchMissionDetails(() {
-        if (mounted) {
-          setState(() {
-            _missionNameController.text = widget.mission.name;
-            _selectedBroker = widget.mission.broker;
-            _selectedDevices = widget.mission.devices!
-                .where((device) => device.type != DeviceType.BROKER)
-                .toList();
-            _selectedUsers = widget.mission.users!.toList();
-          });
-        }
-      });
+      await widget.mission.fetchMissionDetails(
+          setStateCallback: () {
+            if (mounted) {
+              setState(() {
+                _missionNameController.text = widget.mission.name;
+                _selectedBroker = widget.mission.broker;
+                _selectedDevices = widget.mission.devices!
+                    .where((device) => device.type != DeviceType.BROKER)
+                    .toList();
+                _selectedUsers = widget.mission.users!.toList();
+              });
+            }
+          },
+          context: context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to fetch mission details: $e'),
-            backgroundColor: errorColor,
-          ),
-        );
+        print('Failed to fetch mission details: $e');
       }
     } finally {
       if (mounted) {
@@ -289,7 +285,6 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                                 MaterialPageRoute(
                                   builder: (context) => DeviceDetailedScreen(
                                     device: device,
-  
                                     broker: widget.mission.broker,
                                   ),
                                 ),
@@ -342,7 +337,6 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                             MaterialPageRoute(
                               builder: (context) => DeviceDetailedScreen(
                                 device: _selectedBroker!,
-
                                 broker: widget.mission.broker,
                               ),
                             ),
@@ -521,8 +515,8 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                       _selectedDevices = [];
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content:
-                              Text('Broker changed, devices selection cleared.'),
+                          content: Text(
+                              'Broker changed, devices selection cleared.'),
                           backgroundColor: warningColor,
                         ),
                       );
@@ -532,8 +526,8 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                     _selectedDevices = [];
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content:
-                            Text('No broker selected, devices selection cleared.'),
+                        content: Text(
+                            'No broker selected, devices selection cleared.'),
                         backgroundColor: errorColor,
                       ),
                     );
@@ -541,7 +535,6 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                   _selectedBroker = selectedBroker;
                   print(' profile _selectedBroker $_selectedBroker');
                 });
-
               },
               icon: const Icon(Icons.edit),
               tooltip: 'Edit',
@@ -640,7 +633,6 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
               MaterialPageRoute(
                 builder: (context) => MissionDevicesBaseScreen(
                   mission: widget.mission,
-
                 ),
               ));
         },
@@ -683,21 +675,21 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
 
   Widget _buildActionButton(
     String label,
-    Future<void> Function(VoidCallback) action,
+    Future<void> Function(
+            {required BuildContext context,
+            required void Function() updateState})
+        action,
   ) {
     return ElevatedButton(
       onPressed: () async {
         try {
-          await action(() {
-            setState(() {});
-          });
+          await action(
+              context: context,
+              updateState: () {
+                setState(() {});
+              });
         } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to update mission status: $e'),
-              backgroundColor: errorColor,
-            ),
-          );
+          print('Failed to update mission status: $e');
         } finally {
           setState(() {});
         }
@@ -757,6 +749,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
       if (updateData.isNotEmpty) {
         // Call update mission API only if there are changes
         await MissionApiService.updateMission(
+          context: context,
           name: updateData['name'],
           deviceIds: updateData['deviceIds'],
           userIds: updateData['userIds'],
@@ -766,14 +759,6 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
 
         // Fetch updated mission details to reflect changes
         await fetchMissionDetails();
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Mission updated successfully'),
-            backgroundColor: successColor,
-          ),
-        );
       } else {
         // Show a message indicating no changes
         ScaffoldMessenger.of(context).showSnackBar(
@@ -784,21 +769,9 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
         );
       }
     } on ArgumentError catch (e) {
-      // Show error message if update fails
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update mission: ${e.message}'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('Failed to update mission: ${e.message}');
     } catch (e) {
-      // Show error message if update fails
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update mission: $e'),
-          backgroundColor: errorColor,
-        ),
-      );
+      print('Failed to update mission: ${e}');
     } finally {
       setState(() {
         _isLoading = false;

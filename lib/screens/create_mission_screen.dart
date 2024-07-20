@@ -303,7 +303,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       devices: _selectedDevices,
     );
 
-    final missionId = await mission.createMission(
+    final missionId = await mission.createMission(context:context,
       missionName: mission.name,
       userIds: _selectedUsers.map((user) => user.user_id).toList(),
       brokerId: _selectedBroker!.device_id,

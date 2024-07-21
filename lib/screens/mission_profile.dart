@@ -277,7 +277,8 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                       device.type.toString().split('.').last.toLowerCase(),
                       style: const TextStyle(color: secondaryTextColor),
                     ),
-                    trailing: (widget.mission.status == MissionStatus.ONGOING)
+                   trailing: (widget.mission.status == MissionStatus.ONGOING &&
+                            _shouldBuildMonitorButton(device))
                         ? ElevatedButton(
                             onPressed: () {
                               Navigator.push(
@@ -304,6 +305,12 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
     );
   }
 
+bool _shouldBuildMonitorButton(Device device) {
+    final deviceType = device.type.toString().split('.').last.toLowerCase();
+    return deviceType != 'broker' &&
+        deviceType != 'charging machine' &&
+        deviceType != 'not charging machine';
+  }
   Widget _buildNonEditableBrokerSelection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,26 +336,26 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                   _selectedBroker!.name,
                   style: const TextStyle(color: secondaryTextColor),
                 ),
-                trailing: (widget.mission.status == MissionStatus.ONGOING)
-                    ? ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DeviceDetailedScreen(
-                                device: _selectedBroker!,
-                                broker: widget.mission.broker,
-                              ),
-                            ),
-                          ).then((_) {
-                            setState(() {
-                              // Call setState to refresh the page.
-                            });
-                          });
-                        },
-                        child: const Text('Monitor Device'),
-                      )
-                    : const SizedBox.shrink(),
+                // trailing: (widget.mission.status == MissionStatus.ONGOING)
+                //     ? ElevatedButton(
+                //         onPressed: () {
+                //           Navigator.push(
+                //             context,
+                //             MaterialPageRoute(
+                //               builder: (context) => DeviceDetailedScreen(
+                //                 device: _selectedBroker!,
+                //                 broker: widget.mission.broker,
+                //               ),
+                //             ),
+                //           ).then((_) {
+                //             setState(() {
+                //               // Call setState to refresh the page.
+                //             });
+                //           });
+                //         },
+                //         child: const Text('Monitor Device'),
+                //       )
+                //     : const SizedBox.shrink(),
               ),
       ],
     );

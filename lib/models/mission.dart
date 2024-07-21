@@ -6,6 +6,7 @@ import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:intl/intl.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class Mission {
   String id;
@@ -70,19 +71,28 @@ class Mission {
     if (json['start_date'] != null) {
       startDate =
           DateFormat('E, dd MMM yyyy HH:mm:ss').parse(json['start_date']);
+      print('UTC Start Date: $startDate');
     }
 
     DateTime? endDate;
     if (json['end_date'] != null) {
       endDate = DateFormat('E, dd MMM yyyy HH:mm:ss').parse(json['end_date']);
+      print('UTC End Date: $endDate');
     }
-
+    // Convert to Riyadh local time
+    final tz.TZDateTime? localStartDate = startDate != null
+        ? tz.TZDateTime.from(startDate, tz.getLocation('Asia/Riyadh'))
+        : null;
+    final tz.TZDateTime? localEndDate = endDate != null
+        ? tz.TZDateTime.from(endDate, tz.getLocation('Asia/Riyadh'))
+        : null;
+        
     return Mission(
       id: json['mission_id'] as String? ?? json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       broker: brokerDevice,
-      startDate: startDate,
-      endDate: endDate,
+      startDate: localStartDate,
+      endDate: localEndDate,
       status: json.containsKey('status') ? _getStatus(json['status']) : null,
       devices: devices,
       users: users,
@@ -170,7 +180,8 @@ class Mission {
   Future<void> start(
       {required BuildContext context,
       required VoidCallback updateState}) async {
-    await _updateMissionStatus(context: context, command:  "start",  updateState: updateState);
+    await _updateMissionStatus(
+        context: context, command: "start", updateState: updateState);
   }
 
   Future<void> pause(

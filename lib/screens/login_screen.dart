@@ -73,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
       print('responseData $responseData');
 
       // Extract data from the response
+      final String userId = responseData['id'];
       final String username = responseData['username'];
       final String token = responseData['token'];
       final UserType userType = _getuserType(responseData['type']);
@@ -83,7 +84,8 @@ class _LoginScreenState extends State<LoginScreen> {
       // Set user credentials globally
       final credentials = UserCredentials();
 
-      credentials.setUserCredentials(username, password, userType);
+      credentials.setUserCredentials(
+          userId:userId, username: username, password: password, userType: userType);
 
       // Connect to MQTT broker
       await _mqttClient.prepareMqttClient();

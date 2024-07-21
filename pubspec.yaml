@@ -30,7 +30,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  timezone: ^0.9.4
   velocity_x: ^4.1.2
   flutter_svg: ^2.0.10+1
   mqtt_client: ^10.3.0

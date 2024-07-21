@@ -7,8 +7,12 @@ import 'package:flutter_3/providers/sensor_data_provider.dart';
 import 'package:flutter_3/theme.dart';
 import 'package:flutter_3/utils/constants.dart';
 import 'package:provider/provider.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 void main() {
+  tz.initializeTimeZones();
+
   WidgetsFlutterBinding
       .ensureInitialized(); // Ensure Flutter is initialized before runApp()
   runApp(MyApp());
@@ -17,22 +21,21 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-     return 
-      MultiProvider(
+    return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SensorDataProvider()),
         // Add other providers here if necessary
       ],
       child: MaterialApp(
-      navigatorKey: Constants.navigatorKey,
-      theme: CustomTheme.darkTheme,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const WelcomeScreen(),
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/edit_users': (context) => EditMissionUsersScreen(),
-          },
+        navigatorKey: Constants.navigatorKey,
+        theme: CustomTheme.darkTheme,
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const WelcomeScreen(),
+          '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignupScreen(),
+          '/edit_users': (context) => EditMissionUsersScreen(),
+        },
       ),
     );
   }

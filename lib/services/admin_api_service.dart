@@ -216,26 +216,26 @@ class AdminApiService {
       List<int>? type}) async {
     try {
       // Construct query parameters based on provided filters
-      Map<String, dynamic> queryParameters = {};
+      List<String> queryParameters = [];
+
       if (status != null && status.isNotEmpty) {
-        queryParameters['status'] = status.join(',');
+        queryParameters.addAll(status.map((s) => 'status=$s'));
       }
       if (type != null && type.isNotEmpty) {
-        queryParameters['type'] = type.join(',');
+        queryParameters.addAll(type.map((t) => 'type=$t'));
       }
-      // Construct the query string from parameters
-      final String queryString = queryParameters.entries
-          .map((e) =>
-              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
 
+      // Join query parameters with '&' to form the final query string
+      final String queryStringJoined = queryParameters.join('&');
+      print('queryStringJoined $queryStringJoined');
       final response = await HttpUtils.makeRequest(
         context: context,
-        endpoint: '/api/devices/count?$queryString',
+        endpoint: '/api/devices/count?$queryStringJoined',
         method: 'GET',
       );
 
       if (response.isNotEmpty) {
+        print('response $response');
         final int count = response['count'];
         return count;
       } else {

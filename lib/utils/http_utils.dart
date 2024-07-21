@@ -17,7 +17,7 @@ class HttpUtils {
     required String method,
     Map<String, dynamic>? body,
   }) async {
-    final Uri url = Uri.parse('$webServerBaseUrl$endpoint');
+    final Uri initialUrl = Uri.parse('$webServerBaseUrl$endpoint');
     String? token = await AuthApiService.getAuthToken();
     final headers = <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
@@ -25,34 +25,26 @@ class HttpUtils {
     };
 
     try {
-      http.Response response;
-      switch (method) {
-        case 'POST':
-          response = await http
-              .post(url, headers: headers, body: jsonEncode(body))
-              .timeout(const Duration(seconds: 10));
-          break;
-        case 'PUT':
-          response = await http
-              .put(url, headers: headers, body: jsonEncode(body))
-              .timeout(const Duration(seconds: 10));
-          break;
-        case 'GET':
-          response = await http
-              .get(url, headers: headers)
-              .timeout(const Duration(seconds: 10));
-          break;
-        case 'DELETE':
-          response = await http
-              .delete(url, headers: headers, body: jsonEncode(body))
-              .timeout(const Duration(seconds: 10));
-          break;
-        default:
-          throw Exception('Unsupported HTTP method');
+      http.Response response = await _performRequest(
+        method: method,
+        url: initialUrl,
+        headers: headers,
+        body: body,
+      );
+
+      if (response.statusCode == 308) {
+        String? newUrl = response.headers['location'];
+        if (newUrl != null) {
+          response = await _performRequest(
+            method: method,
+            url: Uri.parse(newUrl),
+            headers: headers,
+            body: body,
+          );
+        }
       }
 
       final responseBody = jsonDecode(response.body);
-
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return responseBody;
       } else {
@@ -83,6 +75,34 @@ class HttpUtils {
     } catch (e, stackTrace) {
       print('Unexpected error occurred: $e\n$stackTrace');
       throw Exception('Unexpected error occurred: $e');
+    }
+  }
+
+  static Future<http.Response> _performRequest({
+    required String method,
+    required Uri url,
+    required Map<String, String> headers,
+    Map<String, dynamic>? body,
+  }) async {
+    switch (method) {
+      case 'POST':
+        return await http
+            .post(url, headers: headers, body: jsonEncode(body))
+            .timeout(const Duration(seconds: 10));
+      case 'PUT':
+        return await http
+            .put(url, headers: headers, body: jsonEncode(body))
+            .timeout(const Duration(seconds: 10));
+      case 'GET':
+        return await http
+            .get(url, headers: headers)
+            .timeout(const Duration(seconds: 10));
+      case 'DELETE':
+        return await http
+            .delete(url, headers: headers, body: jsonEncode(body))
+            .timeout(const Duration(seconds: 10));
+      default:
+        throw Exception('Unsupported HTTP method');
     }
   }
 }

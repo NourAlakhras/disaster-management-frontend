@@ -7,8 +7,6 @@ import 'package:flutter_3/services/user_api_service.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
-
-
   const SettingsScreen({super.key});
 
   @override
@@ -18,7 +16,8 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final MQTTClientWrapper mqttClientWrapper =
       MQTTClientWrapper(); // Access singleton instance
-
+  String _currentUsername = '';
+  String _currentEmail = '';
   final TextEditingController _userNameController = TextEditingController();
   final TextEditingController _userEmailController = TextEditingController();
   final TextEditingController _oldPasswordController = TextEditingController();
@@ -50,6 +49,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       setState(() {
         _userNameController.text = userDetails.username;
         _userEmailController.text = userDetails.email!;
+        _currentUsername = userDetails.username;
+        _currentEmail = userDetails.email!;
       });
     } catch (e) {
       print('Error fetching user info: $e');
@@ -65,14 +66,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await mqttClientWrapper.updateConnection(); // Use the singleton instance
       // Show success message or handle UI updates as needed
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Connection updated successfully.')),
+        const SnackBar(content: Text('Connection updated successfully.')),
       );
     } catch (e, stackTrace) {
       print('Error in update connection: $e');
       print('Stack trace: $stackTrace');
       // Handle error as needed
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update connection.')),
+        const SnackBar(content: Text('Failed to update connection.')),
       );
     }
   }
@@ -89,7 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       print('Stack trace: $stackTrace');
       // Handle error as needed
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to logout.')),
+        const SnackBar(content: Text('Failed to logout.')),
       );
     }
   }
@@ -100,17 +101,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     try {
-      final String username = _userNameController.text;
-      final String email = _userEmailController.text;
+      final String newUsername = _userNameController.text;
+      final String newEmail = _userEmailController.text;
+      final String password = UserCredentials().password;
+      // Determine the fields to update
+      final bool isUsernameChanged =
+          newUsername.isNotEmpty && newUsername != _currentUsername;
+      final bool isEmailChanged =
+          newEmail.isNotEmpty && newEmail != _currentEmail;
 
-      await UserApiService.updateUserInfo(
-          username: username, email: email, context: context);
       await _fetchUserSettingsDetails();
-
-      credentials.setUserCredentials(
-          username, credentials.password, credentials.userType);
-
+      if (isUsernameChanged || isEmailChanged) {
+        await UserApiService.updateUserInfo(
+          username: isUsernameChanged ? newUsername : null,
+          password: password,
+          email: isEmailChanged ? newEmail : null,
+          context: context,
+        );
+      }
+      if (isUsernameChanged) {
+        credentials.setUserCredentials(
+            username: newUsername,
+            password: credentials.password,
+            userType: credentials.userType);
+      }
       _updateConnection();
+      _fetchUserSettingsDetails();
     } catch (e) {
       print('Failed to update user info: $e');
     } finally {
@@ -142,7 +158,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
 
       credentials.setUserCredentials(
-          credentials.username, newPassword, credentials.userType);
+          username: credentials.username,
+          password: newPassword,
+          userType: credentials.userType);
 
       _updateConnection();
     } catch (e) {
@@ -210,103 +228,108 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomUpperBar(
-        title: 'Settings',
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          color: primaryTextColor,
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            color: primaryTextColor,
-            onPressed: () {},
-          )
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                double screenHeight = constraints.maxHeight;
-                double screenWidth = constraints.maxWidth;
-
-                return SingleChildScrollView(
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: screenHeight,
-                    ),
-                    child: IntrinsicHeight(
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: screenWidth * 0.08),
-                        width: double.infinity,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            SizedBox(height: screenHeight * 0.07),
-                            _buildEditableField(
-                              label: 'Username',
-                              controller: _userNameController,
-                              isEditing: _isEditing,
-                              onChanged: (value) {
-                                setState(() {
-                                  isUsernameValid = _validateUsername(value);
-                                });
-                              },
-                              errorText:
-                                  isUsernameValid ? null : 'Invalid username',
-                            ),
-                            const SizedBox(height: 8),
-                            _buildEditableField(
-                              label: 'Email',
-                              controller: _userEmailController,
-                              isEditing: _isEditing,
-                              onChanged: (value) {
-                                setState(() {
-                                  isEmailValid = _validateEmail(value);
-                                });
-                              },
-                              errorText: isEmailValid ? null : 'Invalid email',
-                            ),
-                            _buildEditButton(),
-                            _buildChangePasswordButton(),
-                            const SizedBox(height: 20),
-                            const Text(
-                              'Log Out',
-                              style: TextStyle(
-                                color: secondaryTextColor,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            ListTile(
-                              title: const Text(
-                                'Log Out',
-                                style: TextStyle(color: primaryTextColor),
-                              ),
-                              leading: const Icon(Icons.logout,
-                                  color: secondaryTextColor),
-                              onTap: () async {
-                                // Perform logout and navigation
-                                await _logout(); // Wait for logout to complete
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Scaffold(
+            appBar: CustomUpperBar(
+              title: 'Settings',
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                color: primaryTextColor,
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.notifications),
+                  color: primaryTextColor,
+                  onPressed: () {},
+                )
+              ],
             ),
-    );
+            body: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      double screenHeight = constraints.maxHeight;
+                      double screenWidth = constraints.maxWidth;
+
+                      return SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: screenHeight,
+                          ),
+                          child: IntrinsicHeight(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.08),
+                              width: double.infinity,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  SizedBox(height: screenHeight * 0.07),
+                                  _buildEditableField(
+                                    label: 'Username',
+                                    controller: _userNameController,
+                                    isEditing: _isEditing,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        isUsernameValid =
+                                            _validateUsername(value);
+                                      });
+                                    },
+                                    errorText: isUsernameValid
+                                        ? null
+                                        : 'Invalid username',
+                                  ),
+                                  const SizedBox(height: 8),
+                                  _buildEditableField(
+                                    label: 'Email',
+                                    controller: _userEmailController,
+                                    isEditing: _isEditing,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        isEmailValid = _validateEmail(value);
+                                      });
+                                    },
+                                    errorText:
+                                        isEmailValid ? null : 'Invalid email',
+                                  ),
+                                  _buildEditButton(),
+                                  _buildChangePasswordButton(),
+                                  const SizedBox(height: 20),
+                                  const Text(
+                                    'Log Out',
+                                    style: TextStyle(
+                                      color: secondaryTextColor,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  ListTile(
+                                    title: const Text(
+                                      'Log Out',
+                                      style: TextStyle(color: primaryTextColor),
+                                    ),
+                                    leading: const Icon(Icons.logout,
+                                        color: secondaryTextColor),
+                                    onTap: () async {
+                                      // Perform logout and navigation
+                                      await _logout(); // Wait for logout to complete
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          );
   }
 
   @override

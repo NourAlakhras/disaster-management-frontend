@@ -25,8 +25,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int userCurrentMissionsCount = 0;
   Map<String, int> combinedUserCounts = {};
   Map<MissionStatus, int> missionCountByStatus = {};
-  Map<DeviceStatus, int> deviceCountByStatus = {};
-
+  Map<String, int> combinedDeviceCounts = {};
+  List<DeviceStatus>? _filteredStatuses = DeviceStatus.values
+      .where((status) => status != DeviceStatus.INACTIVE)
+      .toList();
   @override
   void initState() {
     super.initState();
@@ -48,14 +50,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
         allUsersCount = await AdminApiService.getUserCount(context: context);
         allDevicesCount =
             await AdminApiService.getDeviceCount(context: context);
-        allMissionsCount = await AdminApiService.getMissionCount(context: context);
+        allMissionsCount =
+            await AdminApiService.getMissionCount(context: context);
 
         for (var status in UserStatus.values) {
-          if (status != UserStatus.REJECTED) {
-            final count = await AdminApiService.getUserCount(
-                context: context, status: [userStatusValues[status]!]);
-            combinedUserCounts[getUserStatusTitle(status)] = count;
-          }
+          final count = await AdminApiService.getUserCount(
+              context: context, status: [userStatusValues[status]!]);
+          combinedUserCounts[getUserStatusTitle(status)] = count;
         }
 
         for (var type in UserType.values) {
@@ -65,18 +66,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
         }
 
         for (var status in MissionStatus.values) {
-          if (status != MissionStatus.CANCELLED) {
-            missionCountByStatus[status] =
-                await AdminApiService.getMissionCount(context:context,
-                    status: [missionStatusValues[status]!]);
-          }
+          missionCountByStatus[status] = await AdminApiService.getMissionCount(
+              context: context, status: [missionStatusValues[status]!]);
         }
 
         for (var status in DeviceStatus.values) {
-          if (status != DeviceStatus.INACTIVE) {
-            deviceCountByStatus[status] = await AdminApiService.getDeviceCount(
+
+            final count = await AdminApiService.getDeviceCount(
                 context: context, status: [deviceStatusValues[status]!]);
-          }
+            combinedDeviceCounts[getDeviceStatusTitle(status)] = count;
+          
+        }
+
+        for (var type in DeviceType.values) {
+          final count = await AdminApiService.getDeviceCount(
+            context: context,
+            status: _filteredStatuses
+                ?.map((status) => deviceStatusValues[status]!)
+                .toList(),
+            type: [deviceTypeValues[type]!],
+          );
+          combinedDeviceCounts[getDeviceTypeTitle(type)] = count;
         }
       } else {
         // Fetch regular user statistics
@@ -144,7 +154,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           allUsersCount),
                       _buildSection('Missions Statistics', missionCountByStatus,
                           allMissionsCount),
-                      _buildSection('Devices Statistics', deviceCountByStatus,
+                      _buildSection('Devices Statistics', combinedDeviceCounts,
                           allDevicesCount),
                     ],
                   ),
@@ -222,6 +232,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 'Total:',
                 style: TextStyle(
                   color: primaryTextColor,
+                  fontWeight: FontWeight.bold,
+
                   fontSize: 18,
                 ),
               ),
@@ -229,6 +241,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 '$totalCount',
                 style: const TextStyle(
                   color: primaryTextColor,
+                  fontWeight: FontWeight.bold,
+
                   fontSize: 18,
                 ),
               ),
@@ -260,6 +274,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  String getuserTypeTitle(UserType userType) {
+    return userType == UserType.REGULAR
+        ? 'Active Regular Users'
+        : 'Active Admin Users';
+  }
+
+Widget _buildStatisticsCard({required dynamic title, required int count}) {
+    String titleString =
+        title is Enum ? getTitleFromEnum(title) : title.toString();
+
+    return Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [cardColor, barColor],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculate the responsive font size based on the constraints
+            double titleFontSize =
+                constraints.maxWidth * 0.095; // Adjust the ratio as needed
+            double countFontSize =
+                constraints.maxWidth * 0.12; // Adjust the ratio as needed
+
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(18, 30, 12, 30),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    titleString,
+                    style: TextStyle(
+                      fontSize: titleFontSize,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Count: $count',
+                    style: TextStyle(
+                      fontSize: countFontSize,
+                      color: accentColor,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+
+  String getTitleFromEnum(dynamic enumValue) {
+    if (enumValue is UserStatus) {
+      return getUserStatusTitle(enumValue);
+    } else if (enumValue is UserType) {
+      return getuserTypeTitle(enumValue);
+    } else if (enumValue is MissionStatus) {
+      return getMissionStatusTitle(enumValue);
+    } else if (enumValue is DeviceStatus) {
+      return getDeviceStatusTitle(enumValue);
+    }
+    return '';
+  }
+
   String getUserStatusTitle(UserStatus status) {
     switch (status) {
       case UserStatus.AVAILABLE:
@@ -275,75 +363,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       default:
         return '';
     }
-  }
-
-  String getuserTypeTitle(UserType userType) {
-    return userType == UserType.REGULAR ? 'Regular Users' : 'Admin Users';
-  }
-
-  Widget _buildStatisticsCard({required dynamic title, required int count}) {
-    String titleString =
-        title is Enum ? getTitleFromEnum(title) : title.toString();
-    return Container(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-        decoration: BoxDecoration(
-          // ignore: prefer_const_constructors
-          gradient: LinearGradient(
-            colors: [cardColor, barColor],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(8.0),
-          // boxShadow: [
-          //   BoxShadow(
-          //     color: Colors.white.withOpacity(0.4),
-          //     spreadRadius: 2,
-          //     blurRadius: 2,
-          //     offset: const Offset(0, 1),
-          //   ),
-          // ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 30, 12, 30),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                titleString,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                'Count: $count',
-                style: const TextStyle(
-                  fontSize: 18,
-                  color: accentColor,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String getTitleFromEnum(dynamic enumValue) {
-    if (enumValue is UserStatus) {
-      return getUserStatusTitle(enumValue);
-    } else if (enumValue is UserType) {
-      return getuserTypeTitle(enumValue);
-    } else if (enumValue is MissionStatus) {
-      return getMissionStatusTitle(enumValue);
-    } else if (enumValue is DeviceStatus) {
-      return getDeviceStatusTitle(enumValue);
-    }
-    return '';
   }
 
   String getMissionStatusTitle(MissionStatus missionStatus) {
@@ -371,6 +390,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         return 'Assigned Devices';
       case DeviceStatus.INACTIVE:
         return 'Inactive Devices';
+      default:
+        return '';
+    }
+  }
+
+  String getDeviceTypeTitle(DeviceType deviceType) {
+    switch (deviceType) {
+      case DeviceType.UGV:
+        return 'Active UGVs';
+      case DeviceType.UAV:
+        return 'Active UAVs';
+      case DeviceType.DOG:
+        return 'Active Dogs';
+      case DeviceType.CHARGING_STATION:
+        return 'Active Charging Stations';
+      case DeviceType.BROKER:
+        return 'Active Brokers';
       default:
         return '';
     }

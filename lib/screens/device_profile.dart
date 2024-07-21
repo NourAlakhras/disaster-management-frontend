@@ -35,6 +35,14 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
     fetchDeviceDetails();
   }
 
+  bool _shouldBuildMonitorButton() {
+    final deviceType =
+        widget.device.type.toString().split('.').last.toLowerCase();
+    return deviceType != 'broker' &&
+        deviceType != 'charging machine' &&
+        deviceType != 'not charging machine';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,7 +188,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
                       : _buildNonEditableMissionSelection(),
                   const SizedBox(height: 20),
                   _buildEditButton(),
-                  _buildMonitorButton(),
+                  if (_shouldBuildMonitorButton()) _buildMonitorButton(),
                 ],
               ),
             ),

@@ -4,6 +4,7 @@ import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/mission_devices_base_screen.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
+import 'package:flutter_3/services/auth_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/confirmation_dialog.dart';
@@ -21,7 +22,8 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
   final TextEditingController _userEmailController = TextEditingController();
-
+  final MQTTClientWrapper mqttClientWrapper =
+      MQTTClientWrapper(); // Access singleton instance
   bool _isLoading = false;
   bool _isEditing = false;
   List<Mission> _userMissions = [];
@@ -157,24 +159,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _fetchUserDetails() async {
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
     try {
-      await widget.user.fetchUserDetails(
-          context: context,
-          setStateCallback: () {
-            if (mounted) {
-              setState(() {
-                _userEmailController.text =
-                    widget.user.email ?? 'No email available';
-                _userMissions = widget.user.missions ?? [];
-                print('user object ${widget.user}');
-              });
-            }
-          });
+      if (UserCredentials().username != '') {
+        await widget.user.fetchUserDetails(
+            context: context,
+            setStateCallback: () {
+              if (mounted) {
+                setState(() {
+                  _userEmailController.text =
+                      widget.user.email ?? 'No email available';
+                  _userMissions = widget.user.missions ?? [];
+                  print('user object ${widget.user}');
+                });
+              }
+            });
+      }
     } catch (e) {
       print('Failed to fetch user details: $e');
     } finally {
@@ -278,7 +282,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           context: context,
           isAdmin: isAdmin,
           setStateCallback: () {
-            setState(() {});
+            if (mounted) {
+              setState(() {
+                // Your state update logic here
+              });
+            }
           });
     } catch (error) {
       print('Failed to approve user: $error');
@@ -305,7 +313,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Future<void> _handleDeleteUser(User user) async {
     // Check if the user is trying to delete their own account
-    if (widget.user.user_id == user.user_id) {
+    if (UserCredentials().userId == user.user_id) {
       final bool confirmed = await showConfirmationDialog(
         context: context,
         title: 'Delete Account',
@@ -318,6 +326,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       if (confirmed) {
         // Handle deletion logic here
         await _deleteUser();
+        await _logout();
+        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
       }
     } else {
       final bool confirmed = await showConfirmationDialog(
@@ -334,15 +344,34 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    try {
+      mqttClientWrapper.logout(); // Use the singleton instance
+      await AuthApiService.clearToken();
+      UserCredentials().clearUserCredentials();
+    } catch (e, stackTrace) {
+      print('Error in logout: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to logout.')),
+      );
+    }
+  }
+
   Future<void> _deleteUser() async {
     try {
-      await widget.user.delete(
-          context: context,
-          setStateCallback: () {
-            setState(() {}); // Refresh state after deletion
-          });
+      if (mounted) {
+        await widget.user.delete(
+            context: context,
+            setStateCallback: () {
+              if (mounted) {
+                setState(() {}); // Refresh state after deletion
+              }
+            });
 
-      Navigator.pop(context, true); // Pop with a result indicating success
+        Navigator.pop(context, true); // Pop with a result indicating success
+      }
     } catch (e) {
       print('Failed to delete user: $e');
     }

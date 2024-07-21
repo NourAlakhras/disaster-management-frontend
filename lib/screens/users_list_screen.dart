@@ -3,6 +3,7 @@ import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/settings_screen.dart';
 import 'package:flutter_3/services/admin_api_service.dart';
+import 'package:flutter_3/services/auth_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/widgets/confirmation_dialog.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
@@ -20,8 +21,8 @@ class UsersListScreen extends StatefulWidget {
 }
 
 class _UsersListScreenState extends State<UsersListScreen> {
-  final mqttClient = MQTTClientWrapper();
-
+  final MQTTClientWrapper mqttClientWrapper =
+      MQTTClientWrapper(); // Access singleton instance
   List<User> _filteredUsers = [];
   bool _isLoading = false;
   int _pageNumber = 1;
@@ -407,20 +408,56 @@ class _UsersListScreenState extends State<UsersListScreen> {
   }
 
   Future<void> _handleDeleteUser(User user) async {
-    final bool confirmed = await showConfirmationDialog(
-      context: context,
-      title: 'Delete Account',
-      message: 'Are you sure you want to delete this user?',
-      confirmText: 'Delete',
-      cancelText: 'Cancel',
-    );
+    print('UserCredentials().userId ${UserCredentials().userId}');
+    // Check if the user is trying to delete their own account
+    if (UserCredentials().userId == user.user_id) {
+      final bool confirmed = await showConfirmationDialog(
+        context: context,
+        title: 'Delete Account',
+        message:
+            'You cannot delete your own account. Are you sure you want to proceed?',
+        confirmText: 'Yes, Proceed',
+        cancelText: 'Cancel',
+      );
 
-    if (confirmed) {
-      await _deleteUser(user);
-      setState(() {
-        // Refresh user list after deletion
-        _fetchUsers();
-      });
+      if (confirmed) {
+        // Handle deletion logic here
+        await _deleteUser(user);
+        await _logout();
+      }
+    } else {
+      final bool confirmed = await showConfirmationDialog(
+        context: context,
+        title: 'Delete Account',
+        message: 'Are you sure you want to delete this user?',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+      );
+
+      if (confirmed) {
+        await _deleteUser(user);
+        setState(() {
+          // Refresh user list after deletion
+          _fetchUsers();
+        });
+      }
+    }
+  }
+
+  Future<void> _logout() async {
+    try {
+      mqttClientWrapper.logout(); // Use the singleton instance
+      await AuthApiService.clearToken();
+      UserCredentials().clearUserCredentials();
+
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+    } catch (e, stackTrace) {
+      print('Error in logout: $e');
+      print('Stack trace: $stackTrace');
+      // Handle error as needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to logout.')),
+      );
     }
   }
 

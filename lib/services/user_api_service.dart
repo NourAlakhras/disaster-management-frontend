@@ -10,7 +10,6 @@ import 'package:flutter_3/utils/http_utils.dart';
 import 'package:flutter_3/utils/snackbar_utils.dart';
 
 class UserApiService {
-
   static Future<Map<String, dynamic>> signUp(
       {required BuildContext context,
       required String email,
@@ -91,13 +90,22 @@ class UserApiService {
 
   static Future<void> updateUserInfo(
       {required BuildContext context,
-      required String username,
-      required String email}) async {
+      required String password,
+      String? username,
+      String? email}) async {
     try {
-      final Map<String, String> body = {
-        'username': username,
-        'email': email,
-      };
+      final Map<String, String> body = {};
+
+      if (username != null) {
+        body['username'] = username;
+      }
+
+      if (email != null) {
+        body['email'] = email;
+      }
+
+      // Always include the password in the body
+      body['password'] = password;
 
       final response = await HttpUtils.makeRequest(
         context: context,

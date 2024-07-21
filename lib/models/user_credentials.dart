@@ -15,7 +15,12 @@ class UserCredentials {
 
   UserCredentials._internal();
 
-  void setUserCredentials(String username, String password, UserType userType) {
+  void setUserCredentials(
+      {String? userId,
+      required String username,
+      required String password,
+      required UserType userType}) {
+    this.userId = userId ?? '';
     this.username = username;
     this.password = password;
     this.userType = userType;

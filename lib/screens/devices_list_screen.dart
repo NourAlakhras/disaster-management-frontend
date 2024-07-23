@@ -387,7 +387,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     if (device.type == DeviceType.BROKER &&
         device.status == DeviceStatus.ASSIGNED) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text("You're not allowed to delete an assigned broker"),
           backgroundColor: errorColor,
         ),

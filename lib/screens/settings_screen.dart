@@ -66,14 +66,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await mqttClientWrapper.updateConnection(); // Use the singleton instance
       // Show success message or handle UI updates as needed
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection updated successfully.')),
+        SnackBar(content: Text('Connection updated successfully.')),
       );
     } catch (e, stackTrace) {
       print('Error in update connection: $e');
       print('Stack trace: $stackTrace');
       // Handle error as needed
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update connection.')),
+        SnackBar(content: Text('Failed to update connection.')),
       );
     }
   }
@@ -90,7 +90,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       print('Stack trace: $stackTrace');
       // Handle error as needed
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to logout.')),
+        SnackBar(content: Text('Failed to logout.')),
       );
     }
   }
@@ -202,7 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: onChanged,
                       decoration: InputDecoration(
                         errorText: errorText,
-                        errorStyle: const TextStyle(color: errorColor),
+                        errorStyle: TextStyle(color: errorColor),
                       ),
                     )
                   : Text(
@@ -219,7 +219,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               errorText!,
-              style: const TextStyle(color: errorColor),
+              style:  TextStyle(color: errorColor),
             ),
           ),
       ],
@@ -394,7 +394,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               if (!isPasswordValid)
-                const Text(
+                 Text(
                   'Invalid password',
                   style: TextStyle(color: errorColor),
                 ),
@@ -411,7 +411,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               if (!isConfirmPasswordValid)
-                const Text(
+                 Text(
                   'Passwords do not match',
                   style: TextStyle(color: errorColor),
                 ),

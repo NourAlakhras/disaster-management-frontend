@@ -422,7 +422,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
       // Check if the new password is the same as the old password
       if (newPassword == null && deviceName == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Nothing has been updated'),
             backgroundColor: warningColor,
           ),
@@ -492,7 +492,7 @@ class _DeviceProfileScreenState extends State<DeviceProfileScreen> {
 
     if (oldPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Please enter the device password'),
           backgroundColor: errorColor,
         ),

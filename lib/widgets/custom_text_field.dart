@@ -49,7 +49,7 @@ class CustomTextField extends StatelessWidget {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               errorText!,
-              style: const TextStyle(color: errorColor),
+              style:  TextStyle(color: errorColor),
             ),
           ),
       ],

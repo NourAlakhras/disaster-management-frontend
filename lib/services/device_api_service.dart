@@ -155,7 +155,7 @@ class DeviceApiService {
 
       if (response.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Password verified successfully'),
             backgroundColor: successColor,
           ),

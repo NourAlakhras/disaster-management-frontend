@@ -103,7 +103,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
               onPressed: () async {
                 if (_selectedBroker == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Please select a broker first.'),
                       backgroundColor: errorColor,
                     ),
@@ -176,7 +176,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                       print('selectedBroker $selectedBroker');
                       _selectedDevices = [];
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content:
                               Text('Broker changed, device selection cleared.'),
                           backgroundColor: warningColor,
@@ -260,7 +260,7 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
                       } else {
                         if (!_isBrokerSelected) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text('Please select a broker.'),
                               backgroundColor: errorColor,
                             ),
@@ -303,7 +303,8 @@ class _CreateMissionScreenState extends State<CreateMissionScreen> {
       devices: _selectedDevices,
     );
 
-    final missionId = await mission.createMission(context:context,
+    final missionId = await mission.createMission(
+      context: context,
       missionName: mission.name,
       userIds: _selectedUsers.map((user) => user.user_id).toList(),
       brokerId: _selectedBroker!.device_id,

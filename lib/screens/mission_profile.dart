@@ -277,7 +277,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                       device.type.toString().split('.').last.toLowerCase(),
                       style: const TextStyle(color: secondaryTextColor),
                     ),
-                   trailing: (widget.mission.status == MissionStatus.ONGOING &&
+                    trailing: (widget.mission.status == MissionStatus.ONGOING &&
                             _shouldBuildMonitorButton(device))
                         ? ElevatedButton(
                             onPressed: () {
@@ -305,12 +305,13 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
     );
   }
 
-bool _shouldBuildMonitorButton(Device device) {
+  bool _shouldBuildMonitorButton(Device device) {
     final deviceType = device.type.toString().split('.').last.toLowerCase();
     return deviceType != 'broker' &&
         deviceType != 'charging machine' &&
         deviceType != 'not charging machine';
   }
+
   Widget _buildNonEditableBrokerSelection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,26 +337,6 @@ bool _shouldBuildMonitorButton(Device device) {
                   _selectedBroker!.name,
                   style: const TextStyle(color: secondaryTextColor),
                 ),
-                // trailing: (widget.mission.status == MissionStatus.ONGOING)
-                //     ? ElevatedButton(
-                //         onPressed: () {
-                //           Navigator.push(
-                //             context,
-                //             MaterialPageRoute(
-                //               builder: (context) => DeviceDetailedScreen(
-                //                 device: _selectedBroker!,
-                //                 broker: widget.mission.broker,
-                //               ),
-                //             ),
-                //           ).then((_) {
-                //             setState(() {
-                //               // Call setState to refresh the page.
-                //             });
-                //           });
-                //         },
-                //         child: const Text('Monitor Device'),
-                //       )
-                //     : const SizedBox.shrink(),
               ),
       ],
     );
@@ -429,7 +410,7 @@ bool _shouldBuildMonitorButton(Device device) {
               onPressed: () async {
                 if (_selectedBroker == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text('Please select a broker first.'),
                       backgroundColor: errorColor,
                     ),
@@ -487,7 +468,7 @@ bool _shouldBuildMonitorButton(Device device) {
               onPressed: () async {
                 if (widget.mission.status != MissionStatus.CREATED) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text(
                           'You are not able to change the broker of a started mission.'),
                       backgroundColor: errorColor,
@@ -511,7 +492,7 @@ bool _shouldBuildMonitorButton(Device device) {
                     if (_selectedBroker == null) {
                       _selectedDevices = [];
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
                               'Broker selected, devices selection is ready for new selection.'),
                           backgroundColor: successColor,
@@ -521,7 +502,7 @@ bool _shouldBuildMonitorButton(Device device) {
                         selectedBroker.device_id) {
                       _selectedDevices = [];
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
+                        SnackBar(
                           content: Text(
                               'Broker changed, devices selection cleared.'),
                           backgroundColor: warningColor,
@@ -532,7 +513,7 @@ bool _shouldBuildMonitorButton(Device device) {
                   } else {
                     _selectedDevices = [];
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text(
                             'No broker selected, devices selection cleared.'),
                         backgroundColor: errorColor,
@@ -600,7 +581,7 @@ bool _shouldBuildMonitorButton(Device device) {
                 } else {
                   if (!_isBrokerSelected) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('Please select a broker.'),
                         backgroundColor: errorColor,
                       ),
@@ -608,7 +589,7 @@ bool _shouldBuildMonitorButton(Device device) {
                   }
                   if (!_isMissionNameValid) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content:
                             Text('Mission name must be 3-20 characters long'),
                         backgroundColor: errorColor,
@@ -769,7 +750,7 @@ bool _shouldBuildMonitorButton(Device device) {
       } else {
         // Show a message indicating no changes
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('No changes to update'),
             backgroundColor: warningColor,
           ),

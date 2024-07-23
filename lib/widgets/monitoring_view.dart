@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/sensor_data.dart';
-import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_3/utils/app_colors.dart';
@@ -130,7 +129,7 @@ class _MonitoringViewState extends State<MonitoringView> {
   final Map<String, Map<String, double>> thresholds = {
     'temperature': {'low': 0, 'high': 30},
     'humidity': {'low': 30, 'high': 70},
-    'gas concentration': {'low': 0, 'high': 50},
+    'gas': {'low': 0, 'high': 50},
     'air quality': {'low': 0, 'high': 100},
     'smoke detection': {'low': 0, 'high': 1},
     'earthquake detection': {'low': 0, 'high': 1},

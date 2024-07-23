@@ -222,7 +222,7 @@ class _MissionDevicesListTabState extends State<MissionDevicesListTab> {
     DeviceApiService.deleteDevice(deviceId: id, context: context)
         .then((deletedDevice) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Device deleted successfully'),
           backgroundColor: successColor,
         ),

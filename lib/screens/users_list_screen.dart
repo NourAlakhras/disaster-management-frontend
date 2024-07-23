@@ -456,7 +456,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
       print('Stack trace: $stackTrace');
       // Handle error as needed
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to logout.')),
+        SnackBar(content: Text('Failed to logout.')),
       );
     }
   }

@@ -10,14 +10,14 @@ const Color secondaryTextColor = Color(0xffd3dcde);
 
 const Color accentColor = Color(0xff0f7173);
 
-const Color errorColor = Colors.red;
-const Color warningColor = Colors.orange;
-const Color successColor = Colors.green;
+Color errorColor = Colors.red.shade900;
+const Color warningColor = Color(0xff0f7173);
+Color successColor = Colors.green.shade900;
 
 
-const Color lowValueColor = Colors.blue;
-const Color normalValueColor = Colors.green;
-const Color highValueColor = Colors.red;
+Color lowValueColor = Color(0xFFB71C1C);
+Color normalValueColor = Colors.green.shade900;
+Color highValueColor = Color(0xFFB71C1C);
 const Color noValueColor= Color(0xff11212d);
 
 

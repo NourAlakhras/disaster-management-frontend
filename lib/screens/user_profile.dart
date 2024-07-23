@@ -354,7 +354,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       print('Stack trace: $stackTrace');
       // Handle error as needed
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to logout.')),
+        SnackBar(content: Text('Failed to logout.')),
       );
     }
   }
@@ -510,7 +510,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       } else {
         // Show a message indicating no changes
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('No changes to update'),
             backgroundColor: warningColor,
           ),

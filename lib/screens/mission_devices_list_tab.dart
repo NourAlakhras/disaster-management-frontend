@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/device_profile.dart';
-import 'package:flutter_3/services/device_api_service.dart';
+import 'package:flutter_3/services/api_services/device_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/utils/app_colors.dart';

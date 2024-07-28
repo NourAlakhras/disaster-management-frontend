@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/mission.dart';
-import 'package:flutter_3/services/device_api_service.dart';
+import 'package:flutter_3/services/api_services/device_api_service.dart';
 import 'package:flutter_3/utils/enums.dart'; // Import enums file
 
 class Device {

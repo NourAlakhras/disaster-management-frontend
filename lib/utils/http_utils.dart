@@ -1,8 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
+
 import 'package:flutter_3/utils/constants.dart';
+import 'package:flutter_3/utils/shared_preferences_utils.dart';
 import 'package:http/http.dart' as http;
 import 'error_utils.dart';
 import 'snackbar_utils.dart';
@@ -18,7 +19,7 @@ class HttpUtils {
     Map<String, dynamic>? body,
   }) async {
     final Uri initialUrl = Uri.parse('$webServerBaseUrl$endpoint');
-    String? token = await AuthApiService.getAuthToken();
+    String? token = await SharedPreferencesUtils.getAuthToken();
     final headers = <String, String>{
       'Content-Type': 'application/json; charset=UTF-8',
       if (token != null) 'Authorization': 'Bearer $token',

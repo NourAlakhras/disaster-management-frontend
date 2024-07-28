@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user.dart';
-import 'package:flutter_3/services/admin_api_service.dart';
+import 'package:flutter_3/services/api_services/admin_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';

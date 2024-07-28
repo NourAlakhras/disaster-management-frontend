@@ -1,6 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-class AuthApiService {
+class SharedPreferencesUtils {
   static Future<void> cacheToken(String token) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('auth_token', token);
@@ -15,5 +15,4 @@ class AuthApiService {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return prefs.getString('auth_token');
   }
-  
 }

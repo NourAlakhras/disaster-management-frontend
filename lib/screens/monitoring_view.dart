@@ -20,19 +20,17 @@ class MonitoringView extends StatefulWidget {
   @override
   _MonitoringViewState createState() => _MonitoringViewState();
 }
+
 class _MonitoringViewState extends State<MonitoringView> {
   GoogleMapController? _controller; // Nullable controller
   late LatLng _deviceLocation;
   final Set<Marker> _markers = {};
-  late Map<String, dynamic> _sensorData;
-  late Map<String, dynamic> _gpsData;
 
   @override
   void initState() {
     super.initState();
     _deviceLocation = const LatLng(0.0, 0.0);
-    _sensorData = {};
-    _gpsData = {};
+
     _loadThresholds();
   }
 
@@ -158,7 +156,7 @@ class _MonitoringViewState extends State<MonitoringView> {
   }
 
   // Define icon mapping
- final Map<String, IconData> iconMap = {
+  final Map<String, IconData> iconMap = {
     'location': Icons.map_outlined,
     'battery': Icons.battery_full,
     'temperature': Icons.thermostat,
@@ -190,7 +188,7 @@ class _MonitoringViewState extends State<MonitoringView> {
     'vibration': Icons.vibration,
     'particulate matter': Icons.filter_list,
     'oxygen level': Icons.local_airport,
-    'co2': Icons.air, 
+    'co2': Icons.air,
     'uv index': Icons.wb_sunny,
     'noise level': Icons.volume_down,
 
@@ -199,7 +197,6 @@ class _MonitoringViewState extends State<MonitoringView> {
     'pm2.5': Icons.filter_list, // Particulate matter 2.5
     'pm10': Icons.filter_list, // Particulate matter 10
   };
-
 
   void _showThresholdDialog(String key) {
     final currentLow = thresholds[key.toLowerCase()]?['low'] ?? '';

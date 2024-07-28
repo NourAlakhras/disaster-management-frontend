@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/services/rtmp_client_service.dart';
-import 'package:flutter_3/widgets/controlling_view.dart';
-import 'package:flutter_3/widgets/monitoring_view.dart';
+import 'package:flutter_3/screens/controlling_view.dart';
+import 'package:flutter_3/screens/monitoring_view.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/tabbed_view.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';

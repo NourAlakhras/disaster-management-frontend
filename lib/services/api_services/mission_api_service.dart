@@ -3,10 +3,9 @@ import 'package:flutter_3/models/paginated_response.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/utils/http_utils.dart';
+import 'package:flutter_3/utils/shared_preferences_utils.dart';
 import 'package:flutter_3/utils/snackbar_utils.dart';
-import 'package:flutter_3/utils/exceptions.dart';
 import 'package:flutter_3/models/mission.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
 
 class MissionApiService {
   static Future<String?> createMission({
@@ -118,10 +117,6 @@ class MissionApiService {
 // Join query parameters with '&' to form the final query string
       final String queryStringJoined = queryString.join('&');
 
-      final String? token = await AuthApiService.getAuthToken();
-      if (token == null) {
-        throw UnauthorizedException();
-      }
       final response = await HttpUtils.makeRequest(
         context: context,
         endpoint: '/api/missions/all?$queryStringJoined',

@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/settings_screen.dart';
-import 'package:flutter_3/services/admin_api_service.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
+import 'package:flutter_3/services/api_services/admin_api_service.dart';
+
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/utils/shared_preferences_utils.dart';
 import 'package:flutter_3/widgets/confirmation_dialog.dart';
 import 'package:flutter_3/widgets/custom_search_bar.dart';
 import 'package:flutter_3/utils/enums.dart';
@@ -447,7 +448,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
   Future<void> _logout() async {
     try {
       mqttClientWrapper.logout(); // Use the singleton instance
-      await AuthApiService.clearToken();
+      await SharedPreferencesUtils.clearToken();
       UserCredentials().clearUserCredentials();
 
       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/settings_screen.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
-import 'package:flutter_3/services/user_api_service.dart';
+import 'package:flutter_3/services/api_services/user_api_service.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
-import 'package:flutter_3/services/admin_api_service.dart';
+import 'package:flutter_3/services/api_services/admin_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -127,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: primaryTextColor,
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => SettingsScreen()),
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
             ).then((_) {
               setState(() {
                 // Call setState to refresh the page.
@@ -170,7 +170,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             color: primaryTextColor,
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => SettingsScreen()),
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
             ).then((_) {
               setState(() {
                 // Call setState to refresh the page.
@@ -220,7 +220,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 colors: [cardColor, barColor],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -233,7 +233,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: TextStyle(
                   color: primaryTextColor,
                   fontWeight: FontWeight.bold,
-
                   fontSize: 18,
                 ),
               ),
@@ -242,7 +241,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 style: const TextStyle(
                   color: primaryTextColor,
                   fontWeight: FontWeight.bold,
-
                   fontSize: 18,
                 ),
               ),
@@ -289,7 +287,7 @@ Widget _buildStatisticsCard({required dynamic title, required int count}) {
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             colors: [cardColor, barColor],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,

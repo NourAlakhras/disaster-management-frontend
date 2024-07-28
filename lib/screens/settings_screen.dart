@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/models/user_credentials.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
+
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
+import 'package:flutter_3/utils/shared_preferences_utils.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
-import 'package:flutter_3/services/user_api_service.dart';
+import 'package:flutter_3/services/api_services/user_api_service.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -81,7 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _logout() async {
     try {
       mqttClientWrapper.logout(); // Use the singleton instance
-      await AuthApiService.clearToken();
+      await SharedPreferencesUtils.clearToken();
       UserCredentials().clearUserCredentials();
 
       Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
@@ -219,7 +220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               errorText!,
-              style:  TextStyle(color: errorColor),
+              style: TextStyle(color: errorColor),
             ),
           ),
       ],
@@ -394,7 +395,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               if (!isPasswordValid)
-                 Text(
+                Text(
                   'Invalid password',
                   style: TextStyle(color: errorColor),
                 ),
@@ -411,7 +412,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
               if (!isConfirmPasswordValid)
-                 Text(
+                Text(
                   'Passwords do not match',
                   style: TextStyle(color: errorColor),
                 ),

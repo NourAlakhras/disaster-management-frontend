@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_3/services/device_api_service.dart';
-import 'package:flutter_3/services/mission_api_service.dart';
+import 'package:flutter_3/services/api_services/device_api_service.dart';
+import 'package:flutter_3/services/api_services/mission_api_service.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/models/device.dart';
 import 'package:flutter_3/models/user.dart';

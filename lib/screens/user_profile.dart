@@ -3,10 +3,11 @@ import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/models/user_credentials.dart';
 import 'package:flutter_3/screens/mission_devices_base_screen.dart';
-import 'package:flutter_3/services/admin_api_service.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
+import 'package:flutter_3/services/api_services/admin_api_service.dart';
+
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/utils/shared_preferences_utils.dart';
 import 'package:flutter_3/widgets/confirmation_dialog.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/utils/app_colors.dart';
@@ -347,7 +348,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<void> _logout() async {
     try {
       mqttClientWrapper.logout(); // Use the singleton instance
-      await AuthApiService.clearToken();
+      await SharedPreferencesUtils.clearToken();
       UserCredentials().clearUserCredentials();
     } catch (e, stackTrace) {
       print('Error in logout: $e');

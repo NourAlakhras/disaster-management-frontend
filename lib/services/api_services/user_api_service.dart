@@ -4,9 +4,10 @@ import 'package:flutter_3/models/paginated_response.dart';
 import 'package:flutter_3/models/user.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 import 'package:flutter_3/utils/enums.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
+
 import 'package:flutter_3/models/mission.dart';
 import 'package:flutter_3/utils/http_utils.dart';
+import 'package:flutter_3/utils/shared_preferences_utils.dart';
 import 'package:flutter_3/utils/snackbar_utils.dart';
 
 class UserApiService {
@@ -59,7 +60,7 @@ class UserApiService {
 
       if (response.isNotEmpty) {
         final String token = response['token'];
-        await AuthApiService.cacheToken(token);
+        await SharedPreferencesUtils.cacheToken(token);
         return response;
       } else {
         throw Exception('Failed to login.');

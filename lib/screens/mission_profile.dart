@@ -7,7 +7,7 @@ import 'package:flutter_3/screens/edit_mission_brokers_screen.dart';
 import 'package:flutter_3/screens/edit_mission_devices_screen.dart';
 import 'package:flutter_3/screens/edit_mission_users_screen.dart';
 import 'package:flutter_3/screens/mission_devices_base_screen.dart';
-import 'package:flutter_3/services/mission_api_service.dart';
+import 'package:flutter_3/services/api_services/mission_api_service.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
 import 'package:flutter_3/utils/enums.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';

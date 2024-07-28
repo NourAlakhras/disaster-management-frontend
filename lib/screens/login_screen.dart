@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_3/screens/home_screen.dart';
-import 'package:flutter_3/services/auth_api_service.dart';
+
 import 'package:flutter_3/utils/enums.dart';
+import 'package:flutter_3/utils/shared_preferences_utils.dart';
 import 'package:flutter_3/widgets/custom_upper_bar.dart';
 import 'package:flutter_3/widgets/custom_text_field.dart';
 import 'package:flutter_3/widgets/custom_button.dart';
 import 'package:gap/gap.dart';
 import 'package:flutter_3/services/mqtt_client_wrapper.dart';
-import 'package:flutter_3/services/user_api_service.dart';
+import 'package:flutter_3/services/api_services/user_api_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 import 'package:flutter_3/models/user_credentials.dart';
@@ -79,13 +80,16 @@ class _LoginScreenState extends State<LoginScreen> {
       final UserType userType = _getuserType(responseData['type']);
 
       // Cache the token
-      await AuthApiService.cacheToken(token);
+      await SharedPreferencesUtils.cacheToken(token);
 
       // Set user credentials globally
       final credentials = UserCredentials();
 
       credentials.setUserCredentials(
-          userId:userId, username: username, password: password, userType: userType);
+          userId: userId,
+          username: username,
+          password: password,
+          userType: userType);
 
       // Connect to MQTT broker
       await _mqttClient.prepareMqttClient();

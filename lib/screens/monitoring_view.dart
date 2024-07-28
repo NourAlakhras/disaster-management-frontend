@@ -7,7 +7,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_3/utils/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_3/providers/sensor_data_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Ensure this import path is correct
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MonitoringView extends StatefulWidget {
   final Device device;
@@ -22,42 +22,48 @@ class MonitoringView extends StatefulWidget {
 }
 
 class _MonitoringViewState extends State<MonitoringView> {
-  GoogleMapController? _controller; // Nullable controller
+  GoogleMapController? _controller;
   late LatLng _deviceLocation;
   final Set<Marker> _markers = {};
+  final Map<String, Map<String, double>> thresholds = {};
 
   @override
   void initState() {
     super.initState();
     _deviceLocation = const LatLng(0.0, 0.0);
-
     _loadThresholds();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 
   Future<void> _loadThresholds() async {
     final prefs = await SharedPreferences.getInstance();
-    thresholds.forEach((key, value) {
-      final low = prefs.getDouble('${key}_low') ?? value['low'];
-      final high = prefs.getDouble('${key}_high') ?? value['high'];
-      setState(() {
-        thresholds[key] = {'low': low!, 'high': high!};
-      });
-    });
+    final keys = prefs.getKeys();
+    for (var key in keys) {
+      if (key.endsWith('_low') || key.endsWith('_high')) {
+        final sensorKey = key.replaceAll('_low', '').replaceAll('_high', '');
+        if (!thresholds.containsKey(sensorKey)) {
+          thresholds[sensorKey] = {'low': 0.0, 'high': 0.0};
+        }
+        if (key.endsWith('_low')) {
+          thresholds[sensorKey]!['low'] = prefs.getDouble(key) ?? 0.0;
+        } else if (key.endsWith('_high')) {
+          thresholds[sensorKey]!['high'] = prefs.getDouble(key) ?? 0.0;
+        }
+      }
+    }
+    setState(() {});
+  }
+
+  Future<void> _saveThresholds(String key, double low, double high) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble('${key}_low', low);
+    await prefs.setDouble('${key}_high', high);
   }
 
   List<Widget> _buildSensorDataTiles(Map<String, SensorData> sensorData) {
     return sensorData.entries.map((entry) {
-      final key = entry.key.split('/').last.toLowerCase();
-      print('final key  $key // Extract sensor type from key');
-
+      final key = _normalizeSensorName(entry.key.split('/').last);
       final sensorData = entry.value;
-      final sensorStatus =
-          _getSensorStatus(key.toLowerCase(), sensorData.value);
+      final sensorStatus = _getSensorStatus(key, sensorData.value);
       final icon = iconMap[key] ?? Icons.info;
 
       Color getStatusColor() {
@@ -89,7 +95,7 @@ class _MonitoringViewState extends State<MonitoringView> {
           ),
         ),
         title: Text(
-          key[0].toUpperCase() + key.substring(1).toLowerCase(),
+          key[0].toUpperCase() + key.substring(1),
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: primaryTextColor,
@@ -123,21 +129,14 @@ class _MonitoringViewState extends State<MonitoringView> {
     );
   }
 
-  // Define thresholds for sensor data
-  final Map<String, Map<String, double>> thresholds = {
-    'temperature': {'low': 0, 'high': 30},
-    'humidity': {'low': 30, 'high': 70},
-    'gas': {'low': 0, 'high': 50},
-    'air quality': {'low': 0, 'high': 100},
-    'smoke detection': {'low': 0, 'high': 1},
-    'earthquake detection': {'low': 0, 'high': 1},
-    'radiation level': {'low': 0, 'high': 100},
-    'sound level': {'low': 0, 'high': 70},
-    'distance': {'low': 0, 'high': 100},
-    'light': {'low': 0, 'high': 1000},
-  };
+  String _normalizeSensorName(String sensorName) {
+    final normalized =
+        sensorName.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
+    return normalized
+        .split(' ')
+        .first; // Take the first part of the name for simplicity
+  }
 
-  // Determine the status of the sensor data
   String _getSensorStatus(String key, dynamic value) {
     if (value is! num) {
       return 'unknown';
@@ -199,8 +198,8 @@ class _MonitoringViewState extends State<MonitoringView> {
   };
 
   void _showThresholdDialog(String key) {
-    final currentLow = thresholds[key.toLowerCase()]?['low'] ?? '';
-    final currentHigh = thresholds[key.toLowerCase()]?['high'] ?? '';
+    final currentLow = thresholds[key]?['low'] ?? '';
+    final currentHigh = thresholds[key]?['high'] ?? '';
 
     final TextEditingController lowController =
         TextEditingController(text: currentLow.toString());
@@ -245,13 +244,12 @@ class _MonitoringViewState extends State<MonitoringView> {
 
                 if (lowThreshold != null && highThreshold != null) {
                   setState(() {
-                    thresholds[key.toLowerCase()] = {
+                    thresholds[key] = {
                       'low': lowThreshold,
                       'high': highThreshold,
                     };
                   });
-                  await _saveThresholds(
-                      key.toLowerCase(), lowThreshold, highThreshold);
+                  await _saveThresholds(key, lowThreshold, highThreshold);
                 }
                 Navigator.of(context).pop();
               },
@@ -263,26 +261,17 @@ class _MonitoringViewState extends State<MonitoringView> {
     );
   }
 
-  Future<void> _saveThresholds(String key, double low, double high) async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setDouble('${key}_low', low);
-    prefs.setDouble('${key}_high', high);
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<SensorDataProvider>(
       builder: (context, sensorDataProvider, child) {
-        // Fetch filtered data based on the device name
         final deviceSensorData =
             sensorDataProvider.getFilteredSensorData([widget.device.name]);
         final deviceGPSData =
             sensorDataProvider.getFilteredGPSData([widget.device.name]);
 
-        // Update device location based on GPS data
         if (deviceGPSData.isNotEmpty) {
-          final gpsData = deviceGPSData
-              .values.first; // Assuming only one GPS data entry per device
+          final gpsData = deviceGPSData.values.first;
           _deviceLocation = LatLng(gpsData.lat, gpsData.long);
           _updateCameraPosition(_deviceLocation);
           _updateMarker(_deviceLocation);
@@ -296,7 +285,7 @@ class _MonitoringViewState extends State<MonitoringView> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: noValueColor, // Set a color for the icon background
+                    color: noValueColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Center(
@@ -342,15 +331,17 @@ class _MonitoringViewState extends State<MonitoringView> {
                         () => LongPressGestureRecognizer())),
                   compassEnabled: true,
                   buildingsEnabled: true,
+                  mapType: MapType.normal,
                   indoorViewEnabled: true,
                   myLocationButtonEnabled: true,
                   rotateGesturesEnabled: true,
                   tiltGesturesEnabled: true,
                   zoomControlsEnabled: true,
                   zoomGesturesEnabled: true,
+                  myLocationEnabled: false,
                   initialCameraPosition: CameraPosition(
                     target: _deviceLocation,
-                    zoom: 15.0,
+                    zoom: 14.0,
                   ),
                   markers: _markers,
                   onMapCreated: (GoogleMapController controller) {
@@ -359,7 +350,9 @@ class _MonitoringViewState extends State<MonitoringView> {
                 ),
               ),
             ],
-            ..._buildSensorDataTiles(deviceSensorData),
+            if (deviceSensorData.isNotEmpty) ...[
+              ..._buildSensorDataTiles(deviceSensorData),
+            ],
           ],
         );
       },

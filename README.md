@@ -1,16 +1,70 @@
-# flutter_3
+# Disaster Management and Recovery Mobile Application
 
-A new Flutter project.
 
-## Getting Started
 
-This project is a starting point for a Flutter application.
+## Overview
 
-A few resources to get you started if this is your first Flutter project:
+The app is built with Flutter and has the following structure:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- **lib**: Contains the core application files.
+  - **models**: Data models for the app.
+  - **screens**: UI screens for different app functionalities.
+  - **widgets**: Custom UI components.
+  - **services**: API service files for backend communication.
+  - **utils**: Utility files and constants.
+  - **providers**: State management using the Provider package.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Main Entry Points**
+
+- `main.dart`: The entry point of the application.
+- `theme.dart`: Defines the project's theme.
+
+## Setup and Installation
+
+### Prerequisites
+
+1. Ensure Flutter is installed. Follow the [Flutter installation guide](https://flutter.dev/docs/get-started/install).
+2. Install a code editor like [Visual Studio Code](https://code.visualstudio.com/) or [Android Studio](https://developer.android.com/studio) with the Flutter and Dart plugins.
+3. Ensure an internet connection for downloading dependencies.
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/NourAlakhras/disaster-management-frontend.git
+```
+
+### Install Dependencies
+
+Navigate to the project directory and run:
+
+```bash
+flutter pub get
+```
+
+### Run the Application
+
+Connect your development device (physical or emulator) and run:
+
+```bash
+flutter run
+```
+
+### Build for Production
+
+For Android:
+
+```bash
+flutter build apk
+```
+
+For iOS:
+
+```bash
+flutter build ios
+```
+
+## Contact
+
+For further questions, please contact [Nour Alakhras](Nooralakhras999@hotmail.com).
+
+```

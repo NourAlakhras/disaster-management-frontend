@@ -270,7 +270,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                           flex: 5,
                                           child: Text(mission.name,
                                               style: const TextStyle(
-                                                  fontSize: 17,
+                                                  fontSize: 15,
                                                   color: secondaryTextColor)),
                                         ),
                                         Expanded(
@@ -282,7 +282,7 @@ class _MissionsListScreenState extends State<MissionsListScreen>
                                                   .last
                                                   .toLowerCase(),
                                               style: const TextStyle(
-                                                  fontSize: 17,
+                                                  fontSize: 15,
                                                   color: secondaryTextColor)),
                                         ),
                                         Expanded(

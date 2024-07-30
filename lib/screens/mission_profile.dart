@@ -93,7 +93,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                         const Text(
                           'Start Date: ',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                             color: primaryTextColor,
                           ),
@@ -113,7 +113,7 @@ class _MissionProfileScreenState extends State<MissionProfileScreen> {
                             const Text(
                               'End Date:',
                               style: TextStyle(
-                                fontSize: 18,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                                 color: primaryTextColor,
                               ),

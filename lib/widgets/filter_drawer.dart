@@ -106,9 +106,11 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                     // Close the drawer
                     Navigator.pop(context);
                   },
-                  child: const Text('Apply Filters'),
+                  child: const Text('Apply Filters',style: const TextStyle(
+                                      fontSize: 12,
+                                    ),),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 5),
                 ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -126,7 +128,9 @@ class _FilterDrawerWidgetState extends State<FilterDrawerWidget> {
                   child: const Row(
                     children: [
                       Icon(Icons.delete),
-                      Text('Clear Filters'),
+                      Text('Clear Filters',style: const TextStyle(
+                                      fontSize: 12,
+                                    ),),
                     ],
                   ),
                 ),

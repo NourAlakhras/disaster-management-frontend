@@ -105,6 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final String newUsername = _userNameController.text;
       final String newEmail = _userEmailController.text;
       final String password = UserCredentials().password;
+      final userId = UserCredentials().userId;
       // Determine the fields to update
       final bool isUsernameChanged =
           newUsername.isNotEmpty && newUsername != _currentUsername;
@@ -122,6 +123,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
       if (isUsernameChanged) {
         credentials.setUserCredentials(
+          userId:userId,
             username: newUsername,
             password: credentials.password,
             userType: credentials.userType);
@@ -158,7 +160,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         newPassword: newPassword,
       );
 
+      final userId = UserCredentials().userId;
       credentials.setUserCredentials(
+userId: userId,
           username: credentials.username,
           password: newPassword,
           userType: credentials.userType);

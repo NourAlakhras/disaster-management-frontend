@@ -110,7 +110,7 @@ class UserApiService {
 
       final response = await HttpUtils.makeRequest(
         context: context,
-        endpoint: '/api/users',
+        endpoint: '/api/users/',
         method: 'PUT',
         body: body,
       );

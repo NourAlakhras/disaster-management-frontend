@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Set user credentials globally
       final credentials = UserCredentials();
-
+      print(userId);
       credentials.setUserCredentials(
           userId: userId,
           username: username,

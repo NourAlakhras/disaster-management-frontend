@@ -223,7 +223,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                   flex: 5,
                                   child: Text(device.name,
                                       style: const TextStyle(
-                                          fontSize: 17,
+                                          fontSize: 15,
                                           color:
                                               secondaryTextColor)), // Light text color
                                 ),
@@ -236,7 +236,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                           .last
                                           .toLowerCase(),
                                       style: const TextStyle(
-                                          fontSize: 17,
+                                          fontSize: 15,
                                           color:
                                               secondaryTextColor)), // Light text color
                                 ),

@@ -231,7 +231,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                         .last
                                         .toLowerCase(),
                                     style: const TextStyle(
-                                      fontSize: 17,
+                                      fontSize: 15,
                                       color: secondaryTextColor,
                                     ),
                                   ),
@@ -245,7 +245,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                                         .last
                                         .toLowerCase(),
                                     style: const TextStyle(
-                                      fontSize: 17,
+                                      fontSize: 15,
                                       color: secondaryTextColor,
                                     ),
                                   ),

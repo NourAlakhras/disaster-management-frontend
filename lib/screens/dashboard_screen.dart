@@ -298,7 +298,7 @@ Widget _buildStatisticsCard({required dynamic title, required int count}) {
           builder: (context, constraints) {
             // Calculate the responsive font size based on the constraints
             double titleFontSize =
-                constraints.maxWidth * 0.095; // Adjust the ratio as needed
+                constraints.maxWidth * 0.080; // Adjust the ratio as needed
             double countFontSize =
                 constraints.maxWidth * 0.12; // Adjust the ratio as needed
 

@@ -67,5 +67,3 @@ flutter build ios
 
 For further questions, please contact [Nour Alakhras](mailto:nooralakhras999@hotmail.com).
 
-
-```
